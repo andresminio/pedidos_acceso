@@ -3,7 +3,7 @@
 
 create extension if not exists "pgcrypto";
 
-create table if not exists public.solicitudes (
+create table if not exists public.pedidos_solicitudes (
   id                  uuid primary key default gen_random_uuid(),
   anio                integer not null,
   cuatrimestre        smallint not null check (cuatrimestre in (1, 2, 3)),
@@ -22,14 +22,14 @@ create table if not exists public.solicitudes (
   updated_at          timestamptz not null default now()
 );
 
-create index if not exists solicitudes_anio_cuatrimestre_idx
-  on public.solicitudes (anio, cuatrimestre);
+create index if not exists pedidos_solicitudes_anio_cuatrimestre_idx
+  on public.pedidos_solicitudes (anio, cuatrimestre);
 
-create index if not exists solicitudes_estado_idx
-  on public.solicitudes (estado);
+create index if not exists pedidos_solicitudes_estado_idx
+  on public.pedidos_solicitudes (estado);
 
 -- Mantiene updated_at al día en cada UPDATE
-create or replace function public.set_updated_at()
+create or replace function public.pedidos_set_updated_at()
 returns trigger as $$
 begin
   new.updated_at = now();
@@ -37,30 +37,30 @@ begin
 end;
 $$ language plpgsql;
 
-drop trigger if exists solicitudes_set_updated_at on public.solicitudes;
-create trigger solicitudes_set_updated_at
-  before update on public.solicitudes
+drop trigger if exists pedidos_solicitudes_set_updated_at on public.pedidos_solicitudes;
+create trigger pedidos_solicitudes_set_updated_at
+  before update on public.pedidos_solicitudes
   for each row
-  execute function public.set_updated_at();
+  execute function public.pedidos_set_updated_at();
 
 -- RLS: solo usuarios autenticados de la oficina (Supabase Auth) pueden
 -- leer/escribir. El panel debe pedir login (magic link o email+password)
 -- antes de mostrar datos; el cliente usa siempre la anon key, nunca la
 -- service role key.
-alter table public.solicitudes enable row level security;
+alter table public.pedidos_solicitudes enable row level security;
 
 create policy "Usuarios autenticados pueden leer"
-  on public.solicitudes
+  on public.pedidos_solicitudes
   for select
   using (auth.role() = 'authenticated');
 
 create policy "Usuarios autenticados pueden insertar"
-  on public.solicitudes
+  on public.pedidos_solicitudes
   for insert
   with check (auth.role() = 'authenticated');
 
 create policy "Usuarios autenticados pueden actualizar"
-  on public.solicitudes
+  on public.pedidos_solicitudes
   for update
   using (auth.role() = 'authenticated')
   with check (auth.role() = 'authenticated');

@@ -11,8 +11,12 @@ URL del proyecto: `https://uywxcspzavewdyvuvcot.supabase.co`
 
 1. Andá a [supabase.com/dashboard/project/uywxcspzavewdyvuvcot](https://supabase.com/dashboard/project/uywxcspzavewdyvuvcot).
 2. Abrí **SQL Editor** → pegá el contenido de `supabase/schema.sql` → **Run**.
-   Esto crea la tabla `solicitudes`, los índices, el trigger de `updated_at`
-   y las políticas de RLS (solo usuarios autenticados leen/escriben).
+   Esto crea la tabla `pedidos_solicitudes`, los índices, el trigger de
+   `updated_at` y las políticas de RLS (solo usuarios autenticados
+   leen/escriben). Si ya habías corrido una versión anterior con la tabla
+   llamada `solicitudes`, corré en cambio `supabase/migration_rename_pedidos.sql`
+   una sola vez para renombrarla (no vuelvas a correr `schema.sql` sobre
+   una base que ya tiene la tabla vieja).
 3. En **Project Settings → API** copiá:
    - `Project URL` → va en `NEXT_PUBLIC_SUPABASE_URL`
    - `anon public` key → va en `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -50,7 +54,7 @@ URL del proyecto: `https://uywxcspzavewdyvuvcot.supabase.co`
 ## 4. Conectar el sync: Database Webhook en Supabase
 
 1. En Supabase: **Database → Webhooks → Create a new hook**.
-2. Tabla: `solicitudes`. Eventos: `INSERT` y `UPDATE`.
+2. Tabla: `pedidos_solicitudes`. Eventos: `INSERT` y `UPDATE`.
 3. Tipo: **HTTP Request**.
    URL: `https://<tu-app>.vercel.app/api/sync-sheets`
 4. Headers: agregá `x-webhook-secret: <el mismo valor de SYNC_WEBHOOK_SECRET>`.

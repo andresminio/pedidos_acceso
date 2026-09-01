@@ -19,7 +19,7 @@ export default function PanelSolicitudes() {
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("solicitudes")
+      .from("pedidos_solicitudes")
       .select("*")
       .order("fecha", { ascending: false });
     if (error) {
@@ -37,7 +37,7 @@ export default function PanelSolicitudes() {
 
   async function handleCreate(input: SolicitudInput) {
     setSaving(true);
-    const { error } = await supabase.from("solicitudes").insert({
+    const { error } = await supabase.from("pedidos_solicitudes").insert({
       ...input,
       categoria: input.categoria || null,
       subcategoria: input.subcategoria || null,
@@ -56,7 +56,7 @@ export default function PanelSolicitudes() {
 
   async function handleUpdate(id: string, patch: Partial<Solicitud>) {
     const { error } = await supabase
-      .from("solicitudes")
+      .from("pedidos_solicitudes")
       .update(patch)
       .eq("id", id);
     if (error) {
