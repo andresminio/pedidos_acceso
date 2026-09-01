@@ -145,12 +145,38 @@ export default function SolicitudForm({
                 />
               </Field>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Categoría">
-                  <input
-                    value={form.categoria}
-                    onChange={(e) => update("categoria", e.target.value)}
-                    className="input"
-                  />
+                <Field label="Tema">
+                  {nuevoTema ? (
+                    <input
+                      autoFocus
+                      placeholder="Nombre del nuevo tema"
+                      onBlur={(e) => confirmarNuevoTema(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          confirmarNuevoTema(e.currentTarget.value);
+                        }
+                      }}
+                      className="input"
+                    />
+                  ) : (
+                    <select
+                      required
+                      value={form.categoria}
+                      onChange={(e) => handleTemaChange(e.target.value)}
+                      className="input"
+                    >
+                      <option value="" disabled>
+                        Elegir tema…
+                      </option>
+                      {temas.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                      <option value={AGREGAR_NUEVO}>+ Agregar nuevo tema</option>
+                    </select>
+                  )}
                 </Field>
                 <Field label="Subcategoría">
                   <input

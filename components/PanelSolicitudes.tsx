@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { ESTADOS } from "@/lib/types";
+import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
 
@@ -208,7 +208,15 @@ function FilaSolicitud({
       <td className="px-3 py-2">
         <select
           value={row.estado}
-          onChange={(e) => onUpdate(row.id, { estado: e.target.value })}
+          onChange={(e) => {
+            const nuevoEstado = e.target.value;
+            onUpdate(row.id, {
+              estado: nuevoEstado,
+              // Al volver a Pendiente no tiene sentido dejar un sub-estado
+              // de "cerrado" colgado.
+              ...(nuevoEstado === "Pendiente" ? { subestado: null } : {}),
+            });
+          }}
           className="input"
         >
           {ESTADOS.map((e) => (
@@ -219,11 +227,19 @@ function FilaSolicitud({
         </select>
       </td>
       <td className="px-3 py-2">
-        <input
-          defaultValue={row.subestado ?? ""}
-          onBlur={(e) => onUpdate(row.id, { subestado: e.target.value || null })}
-          className="input w-32"
-        />
+        <select
+          value={row.subestado ?? ""}
+          disabled={row.estado !== "Cerrado"}
+          onChange={(e) => onUpdate(row.id, { subestado: e.target.value || null })}
+          className="input w-36 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <option value="">—</option>
+          {SUBESTADOS_CERRADO.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
       </td>
       <td className="px-3 py-2">
         <input
