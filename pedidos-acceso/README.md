@@ -27,22 +27,45 @@ URL del proyecto: `https://uywxcspzavewdyvuvcot.supabase.co`
 5. En **Authentication → URL Configuration**, agregá la URL de producción
    de Vercel (paso 4) a **Redirect URLs** cuando la tengas.
 
-## 2. Google Sheets
+## 2. Google Sheets (autenticación OAuth — sin service account)
+
+Tu organización de Google Cloud bloquea la creación de claves de service
+account (`iam.disableServiceAccountKeyCreation`), así que en vez de eso
+la app se autentica como tu propia cuenta de Google vía OAuth. No hace
+falta compartir la hoja con nadie — actúa como si fueras vos.
 
 1. Creá (o reusá) una hoja de cálculo para el registro. Copiá su ID (la
    parte de la URL entre `/d/` y `/edit`) → `GOOGLE_SHEET_ID`.
-2. En [Google Cloud Console](https://console.cloud.google.com/), creá una
-   **Service Account**, habilitá la **Google Sheets API**, y generá una
-   clave JSON.
-3. Del JSON descargado:
-   - `client_email` → `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-   - `private_key` → `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` (pegar tal cual,
-     con los `\n` — Vercel lo maneja bien como string multilínea)
-4. Compartí la hoja de cálculo con el email de la service account, dándole
-   permiso de **Editor**.
-5. Definí `SYNC_WEBHOOK_SECRET` con cualquier string largo y aleatorio
+2. En [Google Cloud Console](https://console.cloud.google.com/) → **APIs
+   & Services → Library** → buscá "Google Sheets API" → **Enable** (si no
+   lo hiciste ya).
+3. **APIs & Services → OAuth consent screen**: si no está configurada,
+   armala como **Internal** (si tu org lo permite) o **External** con tu
+   propio email como test user. No hace falta publicarla.
+4. **APIs & Services → Credentials → Create Credentials → OAuth client
+   ID** → tipo de aplicación **Desktop app** (este tipo no choca con la
+   política que bloquea las service accounts). Al crearlo te muestra:
+   - `Client ID` → `GOOGLE_OAUTH_CLIENT_ID`
+   - `Client secret` → `GOOGLE_OAUTH_CLIENT_SECRET`
+5. Conseguí un **refresh token** una sola vez, usando esas credenciales,
+   con el scope de Sheets. La forma más simple es con el [OAuth
+   Playground de Google](https://developers.google.com/oauthplayground):
+   - Click en el ícono de engranaje (arriba a la derecha) → tildá **"Use
+     your own OAuth credentials"** → pegá tu `Client ID` y `Client
+     secret`.
+   - En el panel izquierdo, en el campo de scope manual, pegá
+     `https://www.googleapis.com/auth/spreadsheets` → **Authorize APIs**.
+   - Iniciá sesión con la cuenta de Google que sea dueña o editora de la
+     hoja de cálculo.
+   - En el paso 2, click **"Exchange authorization code for tokens"**.
+   - Copiá el **Refresh token** que aparece → `GOOGLE_OAUTH_REFRESH_TOKEN`.
+6. Definí `SYNC_WEBHOOK_SECRET` con cualquier string largo y aleatorio
    (por ejemplo `openssl rand -hex 32`) — valida que las llamadas a
    `/api/sync-sheets` vengan realmente de tu webhook de Supabase.
+
+Si más adelante tu org habilita las service accounts, o preferís no
+depender de tu cuenta personal, se puede volver a ese esquema — avisame
+y actualizo `getSheetsClient()` en `app/api/sync-sheets/route.ts`.
 
 ## 3. Vercel
 
@@ -94,6 +117,9 @@ supabase/
 - La `anon key` de Supabase es pública por diseño; la protección real la
   da RLS (solo usuarios autenticados leen/escriben) — no cambiar eso sin
   entender el impacto.
-- La `private_key` de la service account de Google y `SYNC_WEBHOOK_SECRET`
-  son secretos: viven solo como env vars de Vercel, nunca en código ni en
-  el cliente.
+- `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_OAUTH_REFRESH_TOKEN` y
+  `SYNC_WEBHOOK_SECRET` son secretos: viven solo como env vars de Vercel
+  (tipo **Secret**), nunca en código ni en el cliente. El refresh token
+  no expira solo, pero se puede revocar en cualquier momento desde
+  [myaccount.google.com/permissions](https://myaccount.google.com/permissions)
+  si hace falta.
