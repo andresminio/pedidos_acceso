@@ -42,6 +42,8 @@ export default function SolicitudForm({
 }) {
   const [form, setForm] = useState<FormState>(empty);
   const [open, setOpen] = useState(false);
+  const [temas, setTemas] = useState<string[]>(TEMAS);
+  const [nuevoTema, setNuevoTema] = useState(false);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -68,7 +70,28 @@ export default function SolicitudForm({
       observaciones: null,
     });
     setForm(empty);
+    setNuevoTema(false);
     setOpen(false);
+  }
+
+  function handleTemaChange(value: string) {
+    if (value === AGREGAR_NUEVO) {
+      setNuevoTema(true);
+      update("categoria", "");
+      return;
+    }
+    setNuevoTema(false);
+    update("categoria", value);
+  }
+
+  function confirmarNuevoTema(nombre: string) {
+    const limpio = nombre.trim();
+    if (!limpio) return;
+    if (!temas.includes(limpio)) {
+      setTemas((t) => [...t, limpio].sort((a, b) => a.localeCompare(b, "es")));
+    }
+    update("categoria", limpio);
+    setNuevoTema(false);
   }
 
   return (
