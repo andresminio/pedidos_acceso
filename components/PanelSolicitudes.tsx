@@ -196,7 +196,15 @@ function FilaSolicitud({
       <td className="max-w-xs px-3 py-2">{row.solicitud}</td>
       <td className="px-3 py-2">{row.categoria}</td>
       <td className="px-3 py-2">{row.subcategoria}</td>
-      <td className="px-3 py-2">{row.nombre_archivo}</td>
+      <td className="px-3 py-2">
+        <input
+          defaultValue={row.nombre_archivo ?? ""}
+          onBlur={(e) =>
+            onUpdate(row.id, { nombre_archivo: e.target.value || null })
+          }
+          className="input w-36"
+        />
+      </td>
       <td className="px-3 py-2">
         <select
           value={row.estado}
