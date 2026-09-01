@@ -1,4 +1,3 @@
-import AuthGate from "@/components/AuthGate";
 import PanelSolicitudes from "@/components/PanelSolicitudes";
 
 export default function Home() {
@@ -13,9 +12,7 @@ export default function Home() {
           automáticamente con la hoja de cálculo de control.
         </p>
       </header>
-      <AuthGate>
-        <PanelSolicitudes />
-      </AuthGate>
+      <PanelSolicitudes />
     </main>
   );
 }
