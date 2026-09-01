@@ -1,10 +1,43 @@
-export type Estado = "Pendiente" | "En trámite" | "Respondido" | "Cerrado";
+export type Estado = "Pendiente" | "Cerrado";
 
-export const ESTADOS: Estado[] = [
-  "Pendiente",
-  "En trámite",
-  "Respondido",
-  "Cerrado",
+export const ESTADOS: Estado[] = ["Pendiente", "Cerrado"];
+
+export type SubestadoCerrado = "Completo" | "Parcial" | "Rechazado";
+
+export const SUBESTADOS_CERRADO: SubestadoCerrado[] = [
+  "Completo",
+  "Parcial",
+  "Rechazado",
+];
+
+// Lista de temas (categoría) de la oficina. Se puede sumar uno nuevo desde
+// el propio formulario de carga ("+ Agregar nuevo tema").
+export const TEMAS: string[] = [
+  "Resultados electorales",
+  "Padrón electoral",
+  "Agrupaciones políticas",
+  "Voto Joven",
+  "Participación y ausentismo electoral",
+  "Información general",
+  "Candidaturas",
+  "Electores Residentes en el exterior",
+  "Geografía Electoral",
+  "Jurisprudencia",
+  "Datos Históricos",
+  "Ciudadanía",
+  "Boletas de votación",
+  "Electores Privados de Libertad",
+  "Accesibilidad Electoral",
+  "Extranjeros",
+  "Autoridades de mesa",
+  "Normas electorales",
+  "Acompañamiento Cívico",
+  "Biometría",
+  "Contrataciones CNE",
+  "Manejo y seguridad de datos informáticos",
+  "Reclamos y Denuncias",
+  "Redes sociales",
+  "Registro de Empresas de Encuestas y Sondeos de Opinión",
 ];
 
 export interface Solicitud {

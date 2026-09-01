@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { TEMAS } from "@/lib/types";
 import type { SolicitudInput } from "@/lib/types";
+
+const AGREGAR_NUEVO = "__agregar_nuevo__";
 
 // Formulario simplificado de carga: solo lo esencial. Año y cuatrimestre
 // se calculan solos a partir de la fecha; estado arranca en "Pendiente"
