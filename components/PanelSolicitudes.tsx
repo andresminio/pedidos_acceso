@@ -161,7 +161,7 @@ export default function PanelSolicitudes() {
   return (
     <div>
       {error && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mb-4 rounded-md border border-red-900/50 bg-red-950/50 px-3 py-2 text-sm text-red-300">
           {error}
         </div>
       )}
@@ -225,14 +225,14 @@ export default function PanelSolicitudes() {
         <BotonColumnas colsVisibles={colsVisibles} onToggle={toggleCol} />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50">
+      <div className="overflow-x-auto rounded-lg border border-slate-800 bg-[#12161f] shadow-sm">
+        <table className="min-w-full divide-y divide-slate-800 text-sm">
+          <thead className="bg-[#0e1219]">
             <tr>
               {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
                 <th
                   key={c.key}
-                  className="whitespace-nowrap px-3 py-2 text-left font-medium text-slate-500"
+                  className="whitespace-nowrap px-3 py-2 text-left font-medium text-slate-400"
                 >
                   {c.label}
                 </th>
@@ -240,7 +240,7 @@ export default function PanelSolicitudes() {
               <th className="px-3 py-2" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-800">
             {loading && (
               <tr>
                 <td
@@ -295,7 +295,9 @@ function FilaSolicitud({
     anio: row.anio,
     cuatrimestre: row.cuatrimestre,
     fecha: <span className="whitespace-nowrap">{row.fecha}</span>,
-    solicitante: row.nombre_solicitante,
+    solicitante: (
+      <span className="font-medium text-white">{row.nombre_solicitante}</span>
+    ),
     solicitud: (
       <span className="block max-w-xs truncate" title={row.solicitud}>
         {row.solicitud}
@@ -318,7 +320,11 @@ function FilaSolicitud({
 
   return (
     <>
-      <tr className={`align-top ${destacada ? "bg-amber-50" : ""}`}>
+      <tr
+        className={`align-top text-slate-300 ${
+          destacada ? "bg-blue-500/10" : "hover:bg-white/[0.02]"
+        }`}
+      >
         {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
           <td key={c.key} className="px-3 py-2">
             {celdas[c.key]}
@@ -329,7 +335,7 @@ function FilaSolicitud({
             <button
               type="button"
               onClick={() => setEditando(true)}
-              className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+              className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800"
             >
               Editar
             </button>
@@ -380,10 +386,10 @@ function FilaSolicitudEdicion({
   }
 
   return (
-    <tr className="bg-slate-50">
+    <tr className="bg-[#0e1219]">
       <td colSpan={colSpan} className="px-3 py-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <label className="flex flex-col gap-1 text-xs text-slate-500">
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
             Archivo/Respuesta
             <input
               className="input"
@@ -391,7 +397,7 @@ function FilaSolicitudEdicion({
               onChange={(e) => setNombreArchivo(e.target.value)}
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-500">
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
             Estado
             <select
               className="input"
@@ -405,7 +411,7 @@ function FilaSolicitudEdicion({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-500">
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
             Sub-estado
             <select
               className="input disabled:cursor-not-allowed disabled:opacity-40"
@@ -421,7 +427,7 @@ function FilaSolicitudEdicion({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-500">
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
             F. respuesta
             <input
               type="date"
@@ -430,7 +436,7 @@ function FilaSolicitudEdicion({
               onChange={(e) => setFechaRespuesta(e.target.value)}
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-500 sm:col-span-2 lg:col-span-1">
+          <label className="flex flex-col gap-1 text-xs text-slate-400 sm:col-span-2 lg:col-span-1">
             Observaciones
             <input
               className="input"
@@ -444,7 +450,7 @@ function FilaSolicitudEdicion({
             type="button"
             disabled={guardando}
             onClick={onCerrar}
-            className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -452,7 +458,7 @@ function FilaSolicitudEdicion({
             type="button"
             disabled={guardando}
             onClick={handleGuardar}
-            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700 disabled:opacity-50"
+            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50"
           >
             Guardar
           </button>
@@ -476,7 +482,7 @@ function BotonColumnas({
       <button
         type="button"
         onClick={() => setAbierto((a) => !a)}
-        className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 shadow-sm hover:bg-slate-50"
+        className="flex items-center gap-1.5 rounded-md border border-slate-700 bg-[#12161f] px-3 py-1.5 text-sm text-slate-300 shadow-sm hover:bg-slate-800"
       >
         <svg
           viewBox="0 0 24 24"
@@ -493,11 +499,11 @@ function BotonColumnas({
       {abierto && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setAbierto(false)} />
-          <div className="absolute right-0 z-20 mt-1 w-56 rounded-md border border-slate-200 bg-white p-2 shadow-lg">
+          <div className="absolute right-0 z-20 mt-1 w-56 rounded-md border border-slate-700 bg-[#12161f] p-2 shadow-lg">
             {COLUMNAS.map((c) => (
               <label
                 key={c.key}
-                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-300 hover:bg-slate-800"
               >
                 <input
                   type="checkbox"

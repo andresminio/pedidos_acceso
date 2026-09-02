@@ -26,12 +26,12 @@ export default function PanelTabs({ activa }: { activa: "registro" | "revision" 
   }, []);
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-[#12161f] p-1">
       <Tab href="/" activo={activa === "registro"} label="Registro" contador={totalRegistro} />
       <Tab
         href="/revision"
         activo={activa === "revision"}
-        label="Revisión de correo"
+        label="En revisión"
         contador={totalRevision}
       />
     </div>
@@ -52,17 +52,17 @@ function Tab({
   return (
     <Link
       href={href}
-      className={`flex items-center gap-1.5 border-b-2 pb-1 text-sm font-medium transition-colors ${
+      className={`flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
         activo
-          ? "border-slate-900 text-slate-900"
-          : "border-transparent text-slate-400 hover:text-slate-600"
+          ? "bg-slate-800 text-white shadow-sm"
+          : "text-slate-400 hover:text-slate-200"
       }`}
     >
       {label}
       {contador !== null && (
         <span
-          className={`rounded-full px-1.5 py-0.5 text-xs ${
-            activo ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500"
+          className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
+            activo ? "bg-blue-500/20 text-blue-300" : "bg-slate-700 text-slate-400"
           }`}
         >
           {contador}

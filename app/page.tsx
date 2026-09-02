@@ -5,10 +5,10 @@ import SyncStatus from "@/components/SyncStatus";
 export default function Home() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-6 border-b border-slate-200 pb-3">
+      <header className="mb-6 border-b border-slate-800 pb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500">
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -29,10 +29,10 @@ export default function Home() {
               </svg>
             </span>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                Acceso a la información pública · Registro interno
+              <p className="text-sm text-slate-400">
+                Acceso a la información pública
               </p>
-              <h1 className="text-2xl font-semibold text-slate-900">
+              <h1 className="text-2xl font-semibold text-white">
                 Pedidos de Acceso
               </h1>
             </div>

@@ -41,10 +41,10 @@ export default function SyncStatus() {
   }, []);
 
   return (
-    <p className="flex items-center gap-1.5 text-xs text-slate-500">
+    <p className="flex items-center gap-1.5 text-xs text-slate-400">
       <span
         className={`h-1.5 w-1.5 rounded-full ${
-          ultimaSync ? "bg-emerald-500" : "bg-slate-300"
+          ultimaSync ? "bg-emerald-500" : "bg-slate-600"
         }`}
       />
       Sincronizado con la{" "}
@@ -52,7 +52,7 @@ export default function SyncStatus() {
         href={GOOGLE_SHEET_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
+        className="text-slate-300 underline decoration-slate-600 underline-offset-2 hover:text-white"
       >
         hoja de cálculo de control
       </a>
