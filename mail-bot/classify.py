@@ -1,0 +1,145 @@
+"""
+Clasificación de mails con Gemini Flash: determina si es un pedido de
+acceso a la información no registrado, y propone los campos para cargarlo
+en pedidos_solicitudes.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+from google import genai
+
+CONTEXTO_PATH = Path(__file__).parent / "contexto_clasificacion.md"
+
+# Mismo listado que lib/types.ts (TEMAS) del panel Next.js. Si agregan un
+# tema nuevo ahí, conviene reflejarlo acá también.
+CATEGORIAS = [
+    "Resultados electorales",
+    "Padrón electoral",
+    "Agrupaciones políticas",
+    "Voto Joven",
+    "Participación y ausentismo electoral",
+    "Información general",
+    "Candidaturas",
+    "Electores Residentes en el exterior",
+    "Geografía Electoral",
+    "Jurisprudencia",
+    "Datos Históricos",
+    "Ciudadanía",
+    "Boletas de votación",
+    "Electores Privados de Libertad",
+    "Accesibilidad Electoral",
+    "Extranjeros",
+    "Autoridades de mesa",
+    "Normas electorales",
+    "Acompañamiento Cívico",
+    "Biometría",
+    "Contrataciones CNE",
+    "Manejo y seguridad de datos informáticos",
+    "Reclamos y Denuncias",
+    "Redes sociales",
+    "Registro de Empresas de Encuestas y Sondeos de Opinión",
+]
+
+DEFAULT_MODEL = "gemini-flash-latest"  # alias: siempre apunta al Flash vigente
+
+PROMPT_TEMPLATE = """Sos un asistente que ayuda a una oficina pública (Cámara Nacional \
+Electoral) a triar su correo entrante para detectar pedidos de acceso a la \
+información pública que todavía no fueron cargados en su sistema de registro.
+
+Te paso un mail. Respondé ÚNICAMENTE con un JSON válido (sin markdown, sin \
+texto extra) con este formato exacto:
+
+{{
+  "es_pedido_acceso": true o false,
+  "urgencia": "alta" | "media" | "baja",
+  "confianza_ia": "una frase corta explicando por qué lo clasificaste así",
+  "nombre_solicitante": "nombre de quien pide, o null si no se puede inferir",
+  "solicitud_propuesta": "resumen breve (1-2 oraciones) de qué se solicita, o null",
+  "categoria_propuesta": "una de estas categorías EXACTAS, o null si ninguna aplica: {categorias}",
+  "subcategoria_propuesta": "subtema más específico si aplica, o null"
+}}
+
+Consideraciones:
+- "es_pedido_acceso" es true SOLO si el mail es un pedido de acceso a la \
+información pública (alguien externo pidiendo datos, estadísticas, \
+documentos, información electoral, etc.), NO para spam, newsletters, \
+notificaciones automáticas, mails internos administrativos, o \
+conversaciones que no son un pedido nuevo.
+- Si no estás seguro, marcá "es_pedido_acceso": false y explicá por qué en \
+"confianza_ia".
+
+Además de lo anterior, seguí estas reglas de contexto específicas de esta \
+oficina (definidas por el equipo, tienen prioridad sobre tu criterio general \
+si hay conflicto):
+
+{contexto}
+
+Remitente: {remitente}
+Asunto: {asunto}
+Cuerpo:
+{cuerpo}
+"""
+
+
+@dataclass
+class Clasificacion:
+    es_pedido_acceso: bool
+    urgencia: str | None
+    confianza_ia: str | None
+    nombre_solicitante: str | None
+    solicitud_propuesta: str | None
+    categoria_propuesta: str | None
+    subcategoria_propuesta: str | None
+
+
+def _client() -> genai.Client:
+    api_key = os.environ["GEMINI_API_KEY"]
+    return genai.Client(api_key=api_key)
+
+
+def _leer_contexto() -> str:
+    if CONTEXTO_PATH.exists():
+        texto = CONTEXTO_PATH.read_text(encoding="utf-8").strip()
+        if texto:
+            return texto
+    return "(sin reglas adicionales definidas todavía)"
+
+
+def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
+    model = os.environ.get("GEMINI_MODEL", DEFAULT_MODEL)
+    prompt = PROMPT_TEMPLATE.format(
+        categorias=", ".join(CATEGORIAS),
+        contexto=_leer_contexto(),
+        remitente=remitente,
+        asunto=asunto,
+        cuerpo=cuerpo[:4000],
+    )
+
+    client = _client()
+    response = client.models.generate_content(
+        model=model,
+        contents=prompt,
+        config={"response_mime_type": "application/json"},
+    )
+
+    raw = (response.text or "").strip()
+    data = json.loads(raw)
+
+    categoria = data.get("categoria_propuesta")
+    if categoria not in CATEGORIAS:
+        categoria = None
+
+    return Clasificacion(
+        es_pedido_acceso=bool(data.get("es_pedido_acceso", False)),
+        urgencia=data.get("urgencia"),
+        confianza_ia=data.get("confianza_ia"),
+        nombre_solicitante=data.get("nombre_solicitante"),
+        solicitud_propuesta=data.get("solicitud_propuesta"),
+        categoria_propuesta=categoria,
+        subcategoria_propuesta=data.get("subcategoria_propuesta"),
+    )

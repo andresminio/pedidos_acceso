@@ -1,0 +1,33 @@
+# Dependencias
+node_modules/
+mail-bot/venv/
+mail-bot/__pycache__/
+**/__pycache__/
+*.pyc
+
+# Next.js
+.next/
+out/
+build/
+
+# Variables de entorno / credenciales — nunca versionar
+.env
+.env.local
+.env.*.local
+mail-bot/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

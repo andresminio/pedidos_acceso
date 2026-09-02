@@ -99,18 +99,133 @@ npm run dev
 
 ```
 app/
-  page.tsx                 → página principal (protegida por login)
+  page.tsx                 → página principal
+  revision/page.tsx        → cola de candidatos detectados en el correo
   api/sync-sheets/route.ts → recibe el webhook y escribe en Google Sheets
 components/
   AuthGate.tsx              → login por magic link (Supabase Auth)
   PanelSolicitudes.tsx       → tabla + filtros + edición inline
   SolicitudForm.tsx         → alta de nuevo pedido
+  PanelCandidatos.tsx        → cola de revisión de candidatos de correo
 lib/
   supabase.ts               → cliente de Supabase (anon key, solo cliente)
   types.ts                  → tipos y estados posibles
 supabase/
-  schema.sql                → tabla, índices, trigger, RLS
+  schema.sql                        → tabla pedidos_solicitudes, índices, trigger, RLS
+  schema_candidatos_correo.sql      → tablas candidatos_correo + mail_sync_state
+mail-bot/
+  ingest.py                  → conexión IMAP, trae mails nuevos
+  classify.py                → clasificación con Gemini Flash
+  supabase_client.py         → estado de sync, dedupe, upsert
+  main.py                    → orquestador (lo corre el workflow)
+  contexto_clasificacion.md  → reglas editables de qué incluir/excluir
+  test_imap_connection.py    → script de test manual, sin dependencias
+.github/workflows/
+  check_mail.yml            → cron cada 30 min
 ```
+
+## 6. Bot de correo → candidatos a pedido (mail-bot/)
+
+Segunda ventana del proyecto: un bot que lee el correo institucional
+(Zimbra vía IMAP), usa Gemini Flash para detectar pedidos de acceso no
+registrados, y los deja como "candidatos" en `/revision` dentro del
+panel para que los cargues con un click (o los descartes). Corre solo
+vía GitHub Actions — no hay servidor propio que mantener.
+
+### 6.1 Supabase
+
+1. En el mismo proyecto (`uywxcspzavewdyvuvcot`), SQL Editor → pegá
+   `supabase/schema_candidatos_correo.sql` → **Run**. Crea las tablas
+   `candidatos_correo` y `mail_sync_state`, con la misma política de RLS
+   "pública" que ya tiene `pedidos_solicitudes`.
+
+### 6.2 Probar la conexión IMAP antes de todo
+
+Si la cuenta tiene verificación en dos pasos activada, la contraseña
+normal de la cuenta NO va a andar por IMAP — hace falta generar un
+**código de acceso para aplicaciones** (a veces llamado "contraseña de
+aplicación") desde la configuración de seguridad de la cuenta, y usar
+ese código como contraseña acá (y después como `IMAP_PASS`). La
+contraseña habitual de login sigue intacta, esto es un código aparte
+solo para este uso.
+
+Antes de cargar nada en GitHub, confirmá que el host/puerto/usuario
+andan:
+
+```bash
+cd mail-bot
+python3 test_imap_connection.py
+```
+
+Te pide usuario y contraseña de forma interactiva (no se guardan en
+ningún lado). Si falla, probá otro puerto/host:
+
+```bash
+IMAP_HOST=webmail.pjn.gov.ar IMAP_PORT=993 python3 test_imap_connection.py
+```
+
+### 6.3 Gemini API key
+
+Conseguí una API key en [Google AI Studio](https://aistudio.google.com/apikey).
+El bot usa el alias `gemini-flash-latest`, así que siempre pega contra el
+modelo Flash vigente sin que haga falta actualizar código cuando Google
+saca una versión nueva (se puede fijar una versión específica con la
+variable `GEMINI_MODEL` si en algún momento se prefiere).
+
+### 6.4 Ajustar qué clasifica como pedido: `mail-bot/contexto_clasificacion.md`
+
+Este archivo se manda tal cual dentro del prompt de Gemini en cada
+corrida. Ahí podés ir anotando, con el tiempo:
+
+- Remitentes/dominios que **nunca** son pedidos de acceso (spam,
+  notificaciones automáticas, listas internas).
+- Remitentes/dominios que **siempre** son pedidos, aunque el texto sea
+  ambiguo.
+- Cualquier otra aclaración de criterio.
+
+Editalo y hacé commit — no requiere redeploy, el próximo run del
+workflow ya lo lee.
+
+### 6.5 GitHub Secrets
+
+En **Settings → Secrets and variables → Actions** del repo, cargá:
+
+| Secret | Valor |
+| --- | --- |
+| `IMAP_HOST` | confirmado en el paso 6.2 (ej. `webmail.pjn.gov.ar`) |
+| `IMAP_PORT` | confirmado en el paso 6.2 (ej. `993`) |
+| `IMAP_USER` | mail institucional completo |
+| `IMAP_PASS` | contraseña de esa cuenta, o el código de acceso para aplicaciones si tiene verificación en dos pasos (ver paso 6.2) |
+| `GEMINI_API_KEY` | de Google AI Studio |
+| `SUPABASE_URL` | la misma `NEXT_PUBLIC_SUPABASE_URL` del panel |
+| `SUPABASE_KEY` | la misma `NEXT_PUBLIC_SUPABASE_ANON_KEY` del panel (RLS es pública, no hace falta la service role key) |
+
+El workflow (`.github/workflows/check_mail.yml`) corre cada 30 minutos
+(`cron: "*/30 * * * *"`) y también se puede disparar a mano desde la
+pestaña **Actions → Check mail → Run workflow**.
+
+### 6.6 Cómo revisar los candidatos
+
+Entrá a `/revision` en el panel (link "Revisión de correo →" desde la
+home). Cada candidato pendiente muestra los campos que propuso la IA,
+editables. **Cargar como pedido** lo inserta en `pedidos_solicitudes`
+(aparece inmediatamente en el panel principal y se sincroniza a Sheets
+como cualquier alta manual). **Descartar** lo saca de la cola sin crear
+nada.
+
+Los mails que la IA no considera pedidos, o que matchean por
+nombre+fecha con un pedido ya cargado (dedupe simple), ni siquiera
+aparecen en la cola — quedan guardados igual en `candidatos_correo` por
+las dudas, pero no generan trabajo de revisión.
+
+### 6.7 Notas de comportamiento
+
+- Nunca marca mails como leídos en el servidor.
+- Si falla la conexión IMAP o la clasificación, el workflow no avanza
+  el último UID procesado — el próximo run reintenta esos mails, no se
+  pierden silenciosamente.
+- Correr el workflow dos veces sobre el mismo estado no duplica
+  candidatos (upsert por `email_uid`).
 
 ## Notas de seguridad
 

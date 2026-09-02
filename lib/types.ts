@@ -63,3 +63,33 @@ export type SolicitudInput = Omit<
   Solicitud,
   "id" | "synced_at" | "created_at" | "updated_at"
 >;
+
+// Candidatos detectados por el bot de correo (mail-bot/), pendientes de
+// revisión manual antes de convertirse en un pedido real.
+export type EstadoRevision =
+  | "pendiente"
+  | "aprobado"
+  | "descartado"
+  | "ya_cargado";
+
+export interface CandidatoCorreo {
+  id: string;
+  email_uid: string;
+  fecha_correo: string; // timestamptz ISO
+  remitente: string;
+  asunto: string | null;
+  cuerpo_resumen: string | null;
+  es_pedido_acceso: boolean;
+  urgencia: string | null;
+  confianza_ia: string | null;
+  nombre_solicitante: string | null;
+  fecha_propuesta: string | null; // date ISO
+  solicitud_propuesta: string | null;
+  categoria_propuesta: string | null;
+  subcategoria_propuesta: string | null;
+  estado_revision: EstadoRevision;
+  pedido_id: string | null;
+  revisado_en: string | null;
+  procesado_en: string;
+  created_at: string;
+}
