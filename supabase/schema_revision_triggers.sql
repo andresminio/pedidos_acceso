@@ -1,3 +1,7 @@
+-- NO EN USO — se optó por Programador de tareas de Windows (cada 2hs)
+-- en vez del botón + watcher. No hace falta correr este SQL. Se deja
+-- por si se quiere volver a este modelo más adelante. Ver README, 6.
+
 -- Señal para el botón "Revisar correo ahora" del panel. El panel corre
 -- en la nube y no puede llegar al webmail interno, así que en vez de
 -- disparar el IMAP directo, deja un pedido acá — y el watcher que corre

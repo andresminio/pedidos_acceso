@@ -1,5 +1,10 @@
 "use client";
 
+// NO EN USO — no está importado desde ningún lado. Se optó por correr
+// mail-bot/main.py programado cada 2hs (Programador de tareas de
+// Windows) en vez de este botón + watcher. Se deja por si se quiere
+// volver a este modelo más adelante. Ver README, sección 6.
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { RevisionTrigger } from "@/lib/types";

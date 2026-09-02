@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { TEMAS } from "@/lib/types";
 import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
-import BotonRevisarCorreo from "@/components/BotonRevisarCorreo";
+// El botón "Revisar correo ahora" (BotonRevisarCorreo) quedó descartado:
+// se optó por que mail-bot/main.py corra solo, programado cada 2hs con
+// el Programador de tareas de Windows, en vez de un watcher escuchando
+// todo el tiempo. Ver README, sección 6.
 
 function anioCuatrimestre(fechaISO: string): { anio: number; cuatrimestre: 1 | 2 | 3 } {
   const d = new Date(fechaISO);
@@ -99,7 +102,6 @@ export default function PanelCandidatos() {
             descartá.
           </p>
         </div>
-        <BotonRevisarCorreo onCompleted={load} />
       </div>
 
       {error && (

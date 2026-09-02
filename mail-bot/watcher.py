@@ -1,4 +1,9 @@
 """
+NO EN USO — se optó por correr mail-bot/main.py programado cada 2hs con
+el Programador de tareas de Windows en vez de este watcher continuo. Ver
+README, sección 6. Se deja el código por si en algún momento se prefiere
+volver a un modelo "reacciona al toque" en vez de por horario fijo.
+
 Escucha continua del botón "Revisar correo ahora" del panel.
 
 El panel corre en la nube y no tiene acceso a la red interna del

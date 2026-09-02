@@ -137,14 +137,16 @@ Segunda ventana del proyecto: un bot que lee el correo institucional
 registrados, y los deja como "candidatos" en `/revision` dentro del
 panel para que los cargues con un click (o los descartes).
 
-**Importante — por qué es "a demanda" y no un cron automático:**
+**Importante — por qué no es un cron en la nube:**
 `webmail.pjn.gov.ar` solo es accesible desde la red interna del
-organismo (VPN), y los runners de GitHub Actions corren en la nube
-pública de GitHub — no pueden llegar a esa red. Por eso el bot se corre
-manualmente, con un doble-click, desde una máquina que sí esté
-conectada (tu PC, con la VPN activa). `.github/workflows/check_mail.yml`
-queda en el repo pero desactivado (documentado ahí mismo), por si en el
-futuro se consigue un runner self-hosted dentro de la red interna.
+organismo (VPN), y tanto los runners de GitHub Actions como el panel en
+Vercel corren en la nube pública — ninguno de los dos puede llegar a
+esa red. Por eso quien procesa el correo tiene que ser una máquina dentro
+de esa red: tu PC, programada con el Programador de tareas de Windows
+(ver 6.4) para que corra sola cada 2 horas mientras esté prendida y
+conectada a la VPN. `.github/workflows/check_mail.yml` queda en el repo
+pero desactivado (documentado ahí mismo), por si en el futuro se
+consigue un runner self-hosted dentro de la red interna.
 
 ### 6.1 Supabase
 
@@ -183,30 +185,44 @@ el modelo Flash vigente sin que haga falta tocar código cuando Google
 saca una versión nueva (se puede fijar una versión específica con
 `GEMINI_MODEL` en el `.env` si en algún momento se prefiere).
 
-### 6.4 Revisar correo ahora
+### 6.4 Automatizarlo: Programador de tareas de Windows (cada 2hs)
 
-Hay dos formas de dispararlo, según quién esté conectado a la red en
-ese momento:
+Se evaluó un botón "Revisar correo ahora" en el panel + un watcher
+escuchando todo el tiempo (el código quedó en el repo, marcado como "NO
+EN USO", por si se quiere retomar), pero se optó por algo más simple:
+que `mail-bot\revisar_correo.bat` se ejecute solo cada 2 horas con el
+Programador de tareas de Windows. Corre unos segundos, guarda lo que
+encontró en Supabase, y se cierra — no hace falta dejar nada abierto ni
+a la vista. El panel siempre muestra lo último que hay en la tabla, sin
+ningún paso adicional.
 
-**a) Directo, desde la PC que va a procesar** — con la VPN conectada,
-doble-click en `mail-bot\revisar_correo.bat` (o `python main.py` a
-mano). Corre una vez y termina.
+**Cómo configurarlo:**
 
-**b) Desde el botón "Revisar correo ahora" del panel** (`/revision`) —
-pensado para cuando quien aprieta el botón no es necesariamente quien
-tiene la VPN activa en ese momento (vos o un compañero). El panel corre
-en la nube y no llega al webmail interno, así que el botón no dispara
-el IMAP directo: deja un pedido en Supabase, y **alguien conectado a la
-red interna tiene que tener corriendo** `mail-bot\watcher.py` — doble-
-click en `mail-bot\iniciar_escucha.bat` y dejar esa ventana abierta
-(se puede minimizar). Apenas detecta un pedido pendiente, corre la
-revisión y el botón del panel se actualiza solo con el resultado.
+1. Abrí el **Programador de tareas** de Windows (buscalo en el menú
+   inicio: "Task Scheduler" / "Programador de tareas").
+2. **Crear tarea básica** → nombre: "Revisar correo pedidos de acceso".
+3. Desencadenador: **Diariamente**, y en las opciones avanzadas tildá
+   "Repetir la tarea cada" → **2 horas**, durante "1 día" (para que se
+   repita indefinidamente).
+4. Acción: **Iniciar un programa**. En "Programa o script" poné la ruta
+   a `revisar_correo.bat` (por ejemplo
+   `D:\wfolder\pedidos_acceso\mail-bot\revisar_correo.bat`), y en
+   "Iniciar en" poné la carpeta `D:\wfolder\pedidos_acceso\mail-bot`
+   (importante: si no, no encuentra el `.env` ni el resto de los
+   archivos).
+5. Terminá el asistente. Podés probarla ya mismo: clic derecho sobre la
+   tarea creada → **Ejecutar**.
 
-Antes de usar el botón del panel, corré una vez en Supabase el SQL de
-`supabase/schema_revision_triggers.sql` (crea la tabla que conecta el
-botón con el watcher).
+Esto solo funciona en los ratos en que tu PC está prendida y conectada
+a la VPN — si está apagada a las 14hs, esa corrida de las 14hs
+simplemente no pasa, y la próxima vez que la prendas (conectada a la
+VPN) retoma desde donde quedó (no se pierde nada, ver 6.7).
 
-Para probar la conexión IMAP suelta, sin clasificar nada:
+Para correrlo a mano en cualquier momento (sin esperar la próxima
+corrida programada): doble-click en `mail-bot\revisar_correo.bat`, o
+`python main.py` desde la carpeta `mail-bot`.
+
+Para probar solo la conexión IMAP, sin clasificar nada:
 
 ```bash
 cd mail-bot
