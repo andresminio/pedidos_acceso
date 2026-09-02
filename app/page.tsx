@@ -1,6 +1,11 @@
 import Link from "next/link";
 import PanelSolicitudes from "@/components/PanelSolicitudes";
 
+// Misma hoja que apunta GOOGLE_SHEET_ID (ver .env / README) — si algún
+// día cambian de hoja de cálculo, actualizar acá también.
+const GOOGLE_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1vAujFNfWhVsPYkTdxJs6qpKN5x9mUy1BS12Ng7-Hgxc/edit?gid=0#gid=0";
+
 export default function Home() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -45,7 +50,16 @@ export default function Home() {
         </div>
         <p className="mt-1 text-sm text-slate-500 sm:ml-[52px]">
           Registro y seguimiento de solicitudes. Los cambios se sincronizan
-          automáticamente con la hoja de cálculo de control.
+          automáticamente con la{" "}
+          <a
+            href={GOOGLE_SHEET_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
+          >
+            hoja de cálculo de control
+          </a>
+          .
         </p>
       </header>
       <PanelSolicitudes />
