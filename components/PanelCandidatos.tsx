@@ -279,6 +279,7 @@ function FilaCandidato({
   const [solicitud, setSolicitud] = useState(row.solicitud_propuesta ?? "");
   const [categoria, setCategoria] = useState(row.categoria_propuesta ?? "");
   const [subcategoria, setSubcategoria] = useState(row.subcategoria_propuesta ?? "");
+  const [verCompleto, setVerCompleto] = useState(false);
 
   function submitCargar() {
     const { anio, cuatrimestre } = anioCuatrimestre(fecha);
@@ -384,10 +385,25 @@ function FilaCandidato({
       </label>
 
       {row.cuerpo_resumen && (
-        <blockquote className="rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
-          "{row.cuerpo_resumen.trim().slice(0, 240)}
-          {row.cuerpo_resumen.length > 240 ? "…" : ""}"
-        </blockquote>
+        <div>
+          <blockquote className="whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
+            "
+            {verCompleto
+              ? row.cuerpo_resumen.trim()
+              : row.cuerpo_resumen.trim().slice(0, 240) +
+                (row.cuerpo_resumen.trim().length > 240 ? "…" : "")}
+            "
+          </blockquote>
+          {row.cuerpo_resumen.trim().length > 240 && (
+            <button
+              type="button"
+              onClick={() => setVerCompleto((v) => !v)}
+              className="mt-1 text-xs font-medium text-blue-400 hover:text-blue-300"
+            >
+              {verCompleto ? "Ver menos" : "Ver completo"}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
