@@ -9,6 +9,8 @@ import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
 // el Programador de tareas de Windows, en vez de un watcher escuchando
 // todo el tiempo. Ver README, sección 6.
 
+const DESCARTADOS_DIAS = 7;
+
 function anioCuatrimestre(fechaISO: string): { anio: number; cuatrimestre: 1 | 2 | 3 } {
   const d = new Date(fechaISO);
   const mes = d.getMonth() + 1; // 1-12
@@ -16,11 +18,32 @@ function anioCuatrimestre(fechaISO: string): { anio: number; cuatrimestre: 1 | 2
   return { anio: d.getFullYear(), cuatrimestre };
 }
 
+function fechaCortaHora(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function PanelCandidatos() {
   const [rows, setRows] = useState<CandidatoCorreo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [ultimaCorrida, setUltimaCorrida] = useState<string | null>(null);
+
+  const [descartadosSemana, setDescartadosSemana] = useState<number | null>(null);
+  const [verDescartados, setVerDescartados] = useState(false);
+  const [descartados, setDescartados] = useState<CandidatoCorreo[]>([]);
+  const [cargandoDescartados, setCargandoDescartados] = useState(false);
+
+  const desdeIso = useCallback(
+    () => new Date(Date.now() - DESCARTADOS_DIAS * 24 * 3_600_000).toISOString(),
+    []
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -37,11 +60,43 @@ export default function PanelCandidatos() {
       setError(null);
     }
     setLoading(false);
-  }, []);
+
+    // Estado general: última vez que corrió el bot (independiente de si
+    // encontró pedidos o no) — se guarda en mail_sync_state.
+    const { data: estado } = await supabase
+      .from("mail_sync_state")
+      .select("ultima_corrida_en")
+      .eq("id", 1)
+      .maybeSingle();
+    setUltimaCorrida(estado?.ultima_corrida_en ?? null);
+
+    const { count } = await supabase
+      .from("candidatos_correo")
+      .select("id", { count: "exact", head: true })
+      .eq("estado_revision", "descartado")
+      .gte("procesado_en", desdeIso());
+    setDescartadosSemana(count ?? 0);
+  }, [desdeIso]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  async function toggleVerDescartados() {
+    const abrir = !verDescartados;
+    setVerDescartados(abrir);
+    if (abrir && descartados.length === 0) {
+      setCargandoDescartados(true);
+      const { data, error } = await supabase
+        .from("candidatos_correo")
+        .select("*")
+        .eq("estado_revision", "descartado")
+        .gte("procesado_en", desdeIso())
+        .order("fecha_correo", { ascending: false });
+      if (!error) setDescartados((data as CandidatoCorreo[]) ?? []);
+      setCargandoDescartados(false);
+    }
+  }
 
   async function handleDescartar(row: CandidatoCorreo) {
     setBusyId(row.id);
@@ -93,26 +148,34 @@ export default function PanelCandidatos() {
     <div>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">
-            Candidatos a pedido de acceso
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Mails clasificados por IA como posibles pedidos de acceso nuevos.
-            Revisá los campos propuestos, corregí lo que haga falta y cargá o
-            descartá.
+          <h2 className="text-lg font-semibold text-white">Revisión de correo</h2>
+          <p className="mt-1 max-w-2xl text-sm text-slate-400">
+            El bot lee el correo institucional cada 2 horas y usa Gemini para
+            detectar pedidos de acceso no registrados. Revisá cada candidato y
+            cargalo, o descartalo si no corresponde.
           </p>
         </div>
+        <p className="whitespace-nowrap text-xs text-slate-500">
+          {ultimaCorrida ? (
+            <>última corrida: {fechaCortaHora(ultimaCorrida)}</>
+          ) : (
+            "todavía no corrió"
+          )}
+          {" · "}
+          {rows.length} mail{rows.length === 1 ? "" : "s"} nuevo
+          {rows.length === 1 ? "" : "s"}
+        </p>
       </div>
 
       {error && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mb-4 rounded-md border border-red-900/50 bg-red-950/50 px-3 py-2 text-sm text-red-300">
           {error}
         </div>
       )}
 
-      {loading && <p className="text-sm text-slate-400">Cargando…</p>}
+      {loading && <p className="text-sm text-slate-500">Cargando…</p>}
       {!loading && rows.length === 0 && (
-        <p className="rounded-lg border border-slate-200 bg-white px-4 py-6 text-center text-sm text-slate-400 shadow-sm">
+        <p className="rounded-lg border border-slate-800 bg-[#12161f] px-4 py-6 text-center text-sm text-slate-500 shadow-sm">
           No hay candidatos pendientes de revisión.
         </p>
       )}
@@ -128,7 +191,73 @@ export default function PanelCandidatos() {
           />
         ))}
       </div>
+
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-4 text-sm">
+        <p className="text-slate-500">
+          {descartadosSemana ?? "…"} mails descartados automáticamente esta
+          semana (spam, notificaciones, listas internas) — no requieren
+          revisión.
+        </p>
+        <button
+          type="button"
+          onClick={toggleVerDescartados}
+          className="whitespace-nowrap font-medium text-blue-400 hover:text-blue-300"
+        >
+          {verDescartados ? "Ocultar descartados" : "Ver descartados"}
+        </button>
+      </div>
+
+      {verDescartados && (
+        <div className="mt-3 space-y-2">
+          {cargandoDescartados && (
+            <p className="text-sm text-slate-500">Cargando…</p>
+          )}
+          {!cargandoDescartados && descartados.length === 0 && (
+            <p className="text-sm text-slate-500">
+              No hay descartados en los últimos {DESCARTADOS_DIAS} días.
+            </p>
+          )}
+          {descartados.map((d) => (
+            <div
+              key={d.id}
+              className="rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-xs text-slate-500"
+            >
+              <span className="text-slate-400">{fechaCortaHora(d.fecha_correo)}</span>{" "}
+              · de {d.remitente} — <span className="text-slate-300">{d.asunto}</span>
+              {d.confianza_ia && (
+                <div className="mt-1 italic text-slate-600">IA: {d.confianza_ia}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+function PillConfianza({ urgencia }: { urgencia: string | null }) {
+  if (!urgencia) return null;
+  const estilos: Record<string, string> = {
+    alta: "text-emerald-400",
+    media: "text-amber-400",
+    baja: "text-slate-500",
+  };
+  const puntos: Record<string, string> = {
+    alta: "bg-emerald-400",
+    media: "bg-amber-400",
+    baja: "bg-slate-500",
+  };
+  const etiqueta: Record<string, string> = {
+    alta: "alta confianza",
+    media: "confianza media",
+    baja: "baja confianza",
+  };
+  const key = urgencia in etiqueta ? urgencia : "baja";
+  return (
+    <span className={`flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${estilos[key]}`}>
+      <span className={`h-1.5 w-4 rounded-full ${puntos[key]}`} />
+      {etiqueta[key]}
+    </span>
   );
 }
 
@@ -143,8 +272,6 @@ function FilaCandidato({
   onDescartar: () => void;
   onCargar: (campos: SolicitudInput) => void;
 }) {
-  const sugerida = anioCuatrimestre(row.fecha_propuesta ?? row.fecha_correo);
-
   const [nombre, setNombre] = useState(row.nombre_solicitante ?? "");
   const [fecha, setFecha] = useState(
     row.fecha_propuesta ?? row.fecha_correo.slice(0, 10)
@@ -172,46 +299,45 @@ function FilaCandidato({
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 pb-3">
-        <div>
-          <p className="text-sm font-medium text-slate-900">{row.remitente}</p>
-          <p className="text-sm text-slate-500">{row.asunto}</p>
-        </div>
-        <div className="flex items-center gap-2 text-xs">
-          {row.urgencia && (
-            <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-600">
-              Urgencia: {row.urgencia}
-            </span>
-          )}
-          <span className="whitespace-nowrap text-slate-400">
-            {new Date(row.fecha_correo).toLocaleString("es-AR")}
-          </span>
+    <div className="rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-sm">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-slate-500">
+          correo · {fechaCortaHora(row.fecha_correo)} · de {row.remitente}
+        </p>
+        <div className="flex items-center gap-3">
+          <PillConfianza urgencia={row.urgencia} />
+          <button
+            type="button"
+            disabled={busy || !nombre || !solicitud}
+            onClick={submitCargar}
+            className="whitespace-nowrap rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+          >
+            Cargar como pedido
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onDescartar}
+            className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+          >
+            Descartar
+          </button>
         </div>
       </div>
 
+      <h3 className="mb-1 font-semibold text-white">{row.asunto}</h3>
+
       {row.confianza_ia && (
-        <p className="mb-3 text-xs italic text-slate-400">
-          IA: {row.confianza_ia}
-        </p>
+        <p className="mb-3 text-xs italic text-slate-500">IA: {row.confianza_ia}</p>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <label className="flex flex-col gap-1 text-xs text-slate-500">
           Solicitante
           <input
             className="input"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500">
-          Fecha
-          <input
-            type="date"
-            className="input"
-            value={fecha}
-            onChange={(e) => setFecha(e.target.value)}
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-slate-500">
@@ -229,7 +355,7 @@ function FilaCandidato({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500 sm:col-span-2 lg:col-span-1">
+        <label className="flex flex-col gap-1 text-xs text-slate-500">
           Subcategoría
           <input
             className="input"
@@ -237,34 +363,32 @@ function FilaCandidato({
             onChange={(e) => setSubcategoria(e.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500 sm:col-span-2 lg:col-span-3">
-          Solicitud
-          <textarea
-            className="input min-h-16"
-            value={solicitud}
-            onChange={(e) => setSolicitud(e.target.value)}
+        <label className="flex flex-col gap-1 text-xs text-slate-500">
+          Fecha del mail
+          <input
+            type="date"
+            className="input"
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
           />
         </label>
       </div>
 
-      <div className="mt-3 flex justify-end gap-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onDescartar}
-          className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-        >
-          Descartar
-        </button>
-        <button
-          type="button"
-          disabled={busy || !nombre || !solicitud}
-          onClick={submitCargar}
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700 disabled:opacity-50"
-        >
-          Cargar como pedido
-        </button>
-      </div>
+      <label className="mb-3 flex flex-col gap-1 text-xs text-slate-500">
+        Solicitud (se carga tal cual al pedido — corregí si hace falta)
+        <textarea
+          className="input min-h-16"
+          value={solicitud}
+          onChange={(e) => setSolicitud(e.target.value)}
+        />
+      </label>
+
+      {row.cuerpo_resumen && (
+        <blockquote className="rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
+          "{row.cuerpo_resumen.trim().slice(0, 240)}
+          {row.cuerpo_resumen.length > 240 ? "…" : ""}"
+        </blockquote>
+      )}
     </div>
   );
 }

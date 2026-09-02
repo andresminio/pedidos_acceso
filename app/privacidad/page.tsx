@@ -5,7 +5,7 @@ export const metadata = {
 export default function Privacidad() {
   return (
     <main className="mx-auto max-w-2xl px-4 py-10 text-sm leading-relaxed text-slate-700">
-      <h1 className="mb-4 text-xl font-semibold text-slate-900">
+      <h1 className="mb-4 text-xl font-semibold text-white">
         Política de privacidad
       </h1>
       <p className="mb-4">
@@ -14,7 +14,7 @@ export default function Privacidad() {
         información pública. No está dirigida al público general.
       </p>
 
-      <h2 className="mb-2 mt-6 font-semibold text-slate-900">
+      <h2 className="mb-2 mt-6 font-semibold text-white">
         Qué datos se manejan
       </h2>
       <p className="mb-2">
@@ -29,7 +29,7 @@ export default function Privacidad() {
         interno, para mantener un registro de control.
       </p>
 
-      <h2 className="mb-2 mt-6 font-semibold text-slate-900">
+      <h2 className="mb-2 mt-6 font-semibold text-white">
         Acceso a Google Sheets
       </h2>
       <p className="mb-4">
@@ -38,7 +38,7 @@ export default function Privacidad() {
         comparte ni usa esos datos para ningún otro fin.
       </p>
 
-      <h2 className="mb-2 mt-6 font-semibold text-slate-900">
+      <h2 className="mb-2 mt-6 font-semibold text-white">
         Con quién se comparte
       </h2>
       <p className="mb-4">
@@ -46,7 +46,7 @@ export default function Privacidad() {
         autorizado de la oficina.
       </p>
 
-      <h2 className="mb-2 mt-6 font-semibold text-slate-900">Contacto</h2>
+      <h2 className="mb-2 mt-6 font-semibold text-white">Contacto</h2>
       <p>
         <a href="mailto:andresminio@gmail.com" className="text-blue-700 hover:underline">
           andresminio@gmail.com
