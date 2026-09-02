@@ -15,6 +15,7 @@ export default function PanelSolicitudes() {
   const [filtroAnio, setFiltroAnio] = useState<string>("");
   const [filtroCuatrimestre, setFiltroCuatrimestre] = useState<string>("");
   const [filtroEstado, setFiltroEstado] = useState<string>("");
+  const [busqueda, setBusqueda] = useState<string>("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,14 +68,27 @@ export default function PanelSolicitudes() {
   }
 
   const filtered = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
     return rows.filter((r) => {
       if (filtroAnio && String(r.anio) !== filtroAnio) return false;
       if (filtroCuatrimestre && String(r.cuatrimestre) !== filtroCuatrimestre)
         return false;
       if (filtroEstado && r.estado !== filtroEstado) return false;
+      if (q) {
+        const campos = [
+          r.nombre_solicitante,
+          r.solicitud,
+          r.categoria,
+          r.subcategoria,
+          r.observaciones,
+          r.nombre_archivo,
+        ];
+        const matchea = campos.some((c) => (c ?? "").toLowerCase().includes(q));
+        if (!matchea) return false;
+      }
       return true;
     });
-  }, [rows, filtroAnio, filtroCuatrimestre, filtroEstado]);
+  }, [rows, filtroAnio, filtroCuatrimestre, filtroEstado, busqueda]);
 
   const anios = useMemo(
     () => Array.from(new Set(rows.map((r) => r.anio))).sort((a, b) => b - a),
@@ -92,6 +106,13 @@ export default function PanelSolicitudes() {
       <SolicitudForm onSubmit={handleCreate} submitting={saving} />
 
       <div className="mb-3 flex flex-wrap gap-3">
+        <input
+          type="text"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar por solicitante, texto de la solicitud, categoría…"
+          className="input min-w-[280px] flex-1"
+        />
         <select
           value={filtroAnio}
           onChange={(e) => setFiltroAnio(e.target.value)}
