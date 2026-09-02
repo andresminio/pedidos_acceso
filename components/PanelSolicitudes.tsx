@@ -197,7 +197,9 @@ function FilaSolicitud({
         <td className="px-3 py-2">{row.cuatrimestre}</td>
         <td className="px-3 py-2 whitespace-nowrap">{row.fecha}</td>
         <td className="px-3 py-2">{row.nombre_solicitante}</td>
-        <td className="max-w-xs px-3 py-2">{row.solicitud}</td>
+        <td className="max-w-xs truncate px-3 py-2" title={row.solicitud}>
+          {row.solicitud}
+        </td>
         <td className="px-3 py-2">{row.categoria}</td>
         <td className="px-3 py-2">{row.subcategoria}</td>
         <td className="px-3 py-2">{row.nombre_archivo}</td>
@@ -206,7 +208,9 @@ function FilaSolicitud({
         <td className="px-3 py-2 whitespace-nowrap">
           {row.fecha_respuesta ?? "—"}
         </td>
-        <td className="max-w-xs px-3 py-2">{row.observaciones}</td>
+        <td className="max-w-xs truncate px-3 py-2" title={row.observaciones ?? ""}>
+          {row.observaciones}
+        </td>
         <td className="px-3 py-2">
           {!editando && (
             <button
