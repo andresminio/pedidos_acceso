@@ -243,6 +243,12 @@ corrida. Ahí podés ir anotando, con el tiempo:
 Editalo cuando quieras — se lee en cada corrida, no requiere reinstalar
 nada.
 
+**Ahorro de costos:** la sección "Remitentes a excluir siempre" es la
+única que se procesa antes de llamar a Gemini — si un mail matchea
+alguna de esas líneas, el bot ni siquiera gasta la llamada a la IA, lo
+descarta directo. Las otras dos secciones son solo contexto que se le
+pasa a Gemini como texto, no filtran nada por su cuenta.
+
 ### 6.6 Cómo revisar los candidatos
 
 Entrá a `/revision` en el panel (link "Revisión de correo →" desde la

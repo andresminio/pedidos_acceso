@@ -145,6 +145,7 @@ export default function PanelSolicitudes() {
                 "Sub-estado",
                 "F. respuesta",
                 "Observaciones",
+                "",
               ].map((h) => (
                 <th
                   key={h}
@@ -158,14 +159,14 @@ export default function PanelSolicitudes() {
           <tbody className="divide-y divide-slate-100">
             {loading && (
               <tr>
-                <td colSpan={12} className="px-3 py-6 text-center text-slate-400">
+                <td colSpan={13} className="px-3 py-6 text-center text-slate-400">
                   Cargando…
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={12} className="px-3 py-6 text-center text-slate-400">
+                <td colSpan={13} className="px-3 py-6 text-center text-slate-400">
                   No hay pedidos registrados con estos filtros.
                 </td>
               </tr>
@@ -187,78 +188,155 @@ function FilaSolicitud({
   row: Solicitud;
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
 }) {
+  const [editando, setEditando] = useState(false);
+
   return (
-    <tr className="align-top">
-      <td className="px-3 py-2">{row.anio}</td>
-      <td className="px-3 py-2">{row.cuatrimestre}</td>
-      <td className="px-3 py-2 whitespace-nowrap">{row.fecha}</td>
-      <td className="px-3 py-2">{row.nombre_solicitante}</td>
-      <td className="max-w-xs px-3 py-2">{row.solicitud}</td>
-      <td className="px-3 py-2">{row.categoria}</td>
-      <td className="px-3 py-2">{row.subcategoria}</td>
-      <td className="px-3 py-2">
-        <input
-          defaultValue={row.nombre_archivo ?? ""}
-          onBlur={(e) =>
-            onUpdate(row.id, { nombre_archivo: e.target.value || null })
-          }
-          className="input w-36"
+    <>
+      <tr className="align-top">
+        <td className="px-3 py-2">{row.anio}</td>
+        <td className="px-3 py-2">{row.cuatrimestre}</td>
+        <td className="px-3 py-2 whitespace-nowrap">{row.fecha}</td>
+        <td className="px-3 py-2">{row.nombre_solicitante}</td>
+        <td className="max-w-xs px-3 py-2">{row.solicitud}</td>
+        <td className="px-3 py-2">{row.categoria}</td>
+        <td className="px-3 py-2">{row.subcategoria}</td>
+        <td className="px-3 py-2">{row.nombre_archivo}</td>
+        <td className="px-3 py-2">{row.estado}</td>
+        <td className="px-3 py-2">{row.subestado ?? "—"}</td>
+        <td className="px-3 py-2 whitespace-nowrap">
+          {row.fecha_respuesta ?? "—"}
+        </td>
+        <td className="max-w-xs px-3 py-2">{row.observaciones}</td>
+        <td className="px-3 py-2">
+          {!editando && (
+            <button
+              type="button"
+              onClick={() => setEditando(true)}
+              className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+            >
+              Editar
+            </button>
+          )}
+        </td>
+      </tr>
+      {editando && (
+        <FilaSolicitudEdicion
+          row={row}
+          onUpdate={onUpdate}
+          onCerrar={() => setEditando(false)}
         />
-      </td>
-      <td className="px-3 py-2">
-        <select
-          value={row.estado}
-          onChange={(e) => {
-            const nuevoEstado = e.target.value;
-            onUpdate(row.id, {
-              estado: nuevoEstado,
-              // Al volver a Pendiente no tiene sentido dejar un sub-estado
-              // de "cerrado" colgado.
-              ...(nuevoEstado === "Pendiente" ? { subestado: null } : {}),
-            });
-          }}
-          className="input"
-        >
-          {ESTADOS.map((e) => (
-            <option key={e} value={e}>
-              {e}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="px-3 py-2">
-        <select
-          value={row.subestado ?? ""}
-          disabled={row.estado !== "Cerrado"}
-          onChange={(e) => onUpdate(row.id, { subestado: e.target.value || null })}
-          className="input w-36 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <option value="">—</option>
-          {SUBESTADOS_CERRADO.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-      </td>
-      <td className="px-3 py-2">
-        <input
-          type="date"
-          defaultValue={row.fecha_respuesta ?? ""}
-          onBlur={(e) =>
-            onUpdate(row.id, { fecha_respuesta: e.target.value || null })
-          }
-          className="input"
-        />
-      </td>
-      <td className="max-w-xs px-3 py-2">
-        <input
-          defaultValue={row.observaciones ?? ""}
-          onBlur={(e) =>
-            onUpdate(row.id, { observaciones: e.target.value || null })
-          }
-          className="input w-40"
-        />
+      )}
+    </>
+  );
+}
+
+function FilaSolicitudEdicion({
+  row,
+  onUpdate,
+  onCerrar,
+}: {
+  row: Solicitud;
+  onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
+  onCerrar: () => void;
+}) {
+  const [nombreArchivo, setNombreArchivo] = useState(row.nombre_archivo ?? "");
+  const [estado, setEstado] = useState(row.estado);
+  const [subestado, setSubestado] = useState(row.subestado ?? "");
+  const [fechaRespuesta, setFechaRespuesta] = useState(row.fecha_respuesta ?? "");
+  const [observaciones, setObservaciones] = useState(row.observaciones ?? "");
+  const [guardando, setGuardando] = useState(false);
+
+  async function handleGuardar() {
+    setGuardando(true);
+    await onUpdate(row.id, {
+      nombre_archivo: nombreArchivo || null,
+      estado,
+      subestado: estado === "Cerrado" ? subestado || null : null,
+      fecha_respuesta: fechaRespuesta || null,
+      observaciones: observaciones || null,
+    });
+    setGuardando(false);
+    onCerrar();
+  }
+
+  return (
+    <tr className="bg-slate-50">
+      <td colSpan={13} className="px-3 py-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <label className="flex flex-col gap-1 text-xs text-slate-500">
+            Archivo/Respuesta
+            <input
+              className="input"
+              value={nombreArchivo}
+              onChange={(e) => setNombreArchivo(e.target.value)}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-slate-500">
+            Estado
+            <select
+              className="input"
+              value={estado}
+              onChange={(e) => setEstado(e.target.value)}
+            >
+              {ESTADOS.map((e) => (
+                <option key={e} value={e}>
+                  {e}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-slate-500">
+            Sub-estado
+            <select
+              className="input disabled:cursor-not-allowed disabled:opacity-40"
+              value={subestado}
+              disabled={estado !== "Cerrado"}
+              onChange={(e) => setSubestado(e.target.value)}
+            >
+              <option value="">—</option>
+              {SUBESTADOS_CERRADO.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-slate-500">
+            F. respuesta
+            <input
+              type="date"
+              className="input"
+              value={fechaRespuesta}
+              onChange={(e) => setFechaRespuesta(e.target.value)}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-slate-500 sm:col-span-2 lg:col-span-1">
+            Observaciones
+            <input
+              className="input"
+              value={observaciones}
+              onChange={(e) => setObservaciones(e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="mt-3 flex justify-end gap-2">
+          <button
+            type="button"
+            disabled={guardando}
+            onClick={onCerrar}
+            className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={guardando}
+            onClick={handleGuardar}
+            className="rounded-md bg-slate-900 px-3 py-1.5 text-sm text-white hover:bg-slate-700 disabled:opacity-50"
+          >
+            Guardar
+          </button>
+        </div>
       </td>
     </tr>
   );

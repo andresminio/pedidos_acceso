@@ -10,6 +10,14 @@ incluir siempre aunque el texto sea ambiguo, o cualquier aclaración de
 criterio ("los mails de tal juzgado casi siempre son pedidos", "estos
 son notificaciones automáticas, no pedidos", etc.).
 
+**La sección "Remitentes a excluir siempre" es especial**: esas líneas
+NO solo se le pasan a Gemini como pista — el bot las lee directo y, si
+el remitente de un mail matchea, ni siquiera llama a la IA (ahorra
+tokens). Formato: un bullet por línea, con el mail completo o
+`*@dominio.com` para todo un dominio, seguido opcionalmente de "→
+comentario". Las otras dos secciones son solo texto libre para Gemini,
+no se parsean.
+
 ## Remitentes / dominios a excluir siempre (NO son pedidos de acceso)
 
 <!-- Ejemplo:

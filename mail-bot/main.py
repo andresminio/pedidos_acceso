@@ -29,7 +29,7 @@ from dotenv import load_dotenv
 # y load_dotenv() simplemente no encuentra archivo y no hace nada.
 load_dotenv(Path(__file__).parent / ".env")
 
-from classify import classify_mail
+from classify import Clasificacion, classify_mail, remitente_excluido
 from ingest import fetch_new_messages
 from supabase_client import (
     get_client,
@@ -77,7 +77,22 @@ def main() -> int:
                 procesados_ok += 1
                 continue
 
-            clasif = classify_mail(msg.remitente, msg.asunto, msg.cuerpo)
+            patron_excluido = remitente_excluido(msg.remitente)
+            if patron_excluido:
+                # Filtro barato por remitente/dominio (contexto_clasificacion.md):
+                # ni siquiera llamamos a Gemini, ahorra tokens en ruido conocido.
+                print(f"UID {msg.uid}: remitente excluido por regla '{patron_excluido}', salteo Gemini.")
+                clasif = Clasificacion(
+                    es_pedido_acceso=False,
+                    urgencia=None,
+                    confianza_ia=f"Excluido sin llamar a Gemini: remitente coincide con la regla '{patron_excluido}' de contexto_clasificacion.md.",
+                    nombre_solicitante=None,
+                    solicitud_propuesta=None,
+                    categoria_propuesta=None,
+                    subcategoria_propuesta=None,
+                )
+            else:
+                clasif = classify_mail(msg.remitente, msg.asunto, msg.cuerpo)
 
             estado_revision = "pendiente"
             if clasif.es_pedido_acceso and ya_esta_cargado(

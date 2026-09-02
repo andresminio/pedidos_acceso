@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -113,6 +114,59 @@ def _leer_contexto() -> str:
         if texto:
             return texto
     return "(sin reglas adicionales definidas todavía)"
+
+
+def _sin_comentarios_html(texto: str) -> str:
+    # Saca los bloques <!-- ... --> (ahí viven los ejemplos de la plantilla,
+    # no queremos que se interpreten como reglas reales).
+    return re.sub(r"<!--.*?-->", "", texto, flags=re.DOTALL)
+
+
+def _patrones_exclusion() -> list[str]:
+    """
+    Lee la sección "Remitentes / dominios a excluir siempre" de
+    contexto_clasificacion.md y devuelve una lista de substrings en
+    minúscula para matchear contra el remitente (ej. "@spamdominio.com",
+    "noreply@algo.gov.ar").
+    """
+    if not CONTEXTO_PATH.exists():
+        return []
+    texto = _sin_comentarios_html(CONTEXTO_PATH.read_text(encoding="utf-8"))
+    m = re.search(
+        r"##\s*Remitentes.*?excluir siempre.*?\n(.*?)(?=\n##\s|\Z)",
+        texto,
+        re.IGNORECASE | re.DOTALL,
+    )
+    if not m:
+        return []
+
+    patrones = []
+    for linea in m.group(1).splitlines():
+        linea = linea.strip()
+        if not linea.startswith("-"):
+            continue
+        linea = linea.lstrip("-").strip()
+        if not linea:
+            continue
+        token = re.split(r"[\s→]", linea, maxsplit=1)[0].strip()
+        token = token.lstrip("*")  # "*@dominio.com" -> "@dominio.com"
+        if token:
+            patrones.append(token.lower())
+    return patrones
+
+
+def remitente_excluido(remitente: str) -> str | None:
+    """
+    Si el remitente matchea alguna regla de exclusión del contexto,
+    devuelve el patrón que matcheó (para loguear). Si no, None.
+    Filtro barato que corre ANTES de llamar a Gemini, para no gastar
+    tokens en mails que ya sabemos que no son pedidos.
+    """
+    remitente_lower = remitente.lower()
+    for patron in _patrones_exclusion():
+        if patron in remitente_lower:
+            return patron
+    return None
 
 
 def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
