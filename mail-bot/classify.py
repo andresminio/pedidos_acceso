@@ -8,12 +8,17 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
 from google import genai
+from google.genai import errors as genai_errors
 
 CONTEXTO_PATH = Path(__file__).parent / "contexto_clasificacion.md"
+
+MAX_INTENTOS = 3
+ESPERA_BASE_SEGUNDOS = 10  # backoff: 10s, 20s entre reintentos
 
 # Mismo listado que lib/types.ts (TEMAS) del panel Next.js. Si agregan un
 # tema nuevo ahí, conviene reflejarlo acá también.
@@ -121,12 +126,28 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
     )
 
     client = _client()
-    response = client.models.generate_content(
-        model=model,
-        contents=prompt,
-        config={"response_mime_type": "application/json"},
-    )
+    response = None
+    for intento in range(1, MAX_INTENTOS + 1):
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config={"response_mime_type": "application/json"},
+            )
+            break
+        except genai_errors.ServerError as e:
+            # 503 / modelo saturado — transitorio, no un error de nuestro
+            # lado. Reintentamos con espera creciente antes de rendirnos.
+            if intento == MAX_INTENTOS:
+                raise
+            espera = ESPERA_BASE_SEGUNDOS * intento
+            print(
+                f"Gemini no disponible (intento {intento}/{MAX_INTENTOS}), "
+                f"reintento en {espera}s: {e}"
+            )
+            time.sleep(espera)
 
+    assert response is not None  # inalcanzable: o rompe el loop o levanta arriba
     raw = (response.text or "").strip()
     data = json.loads(raw)
 

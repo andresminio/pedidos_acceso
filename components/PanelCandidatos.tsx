@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { TEMAS } from "@/lib/types";
 import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
+import BotonRevisarCorreo from "@/components/BotonRevisarCorreo";
 
 function anioCuatrimestre(fechaISO: string): { anio: number; cuatrimestre: 1 | 2 | 3 } {
   const d = new Date(fechaISO);
@@ -87,15 +88,18 @@ export default function PanelCandidatos() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">
-          Candidatos a pedido de acceso
-        </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Mails clasificados por IA como posibles pedidos de acceso nuevos.
-          Revisá los campos propuestos, corregí lo que haga falta y cargá o
-          descartá.
-        </p>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Candidatos a pedido de acceso
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Mails clasificados por IA como posibles pedidos de acceso nuevos.
+            Revisá los campos propuestos, corregí lo que haga falta y cargá o
+            descartá.
+          </p>
+        </div>
+        <BotonRevisarCorreo onCompleted={load} />
       </div>
 
       {error && (

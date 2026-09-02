@@ -11,11 +11,8 @@ if not exist ".env" (
     exit /b 1
 )
 
-python -m pip show python-dotenv >nul 2>&1
-if errorlevel 1 (
-    echo Instalando dependencias por primera vez...
-    python -m pip install -r requirements.txt
-)
+echo Verificando dependencias...
+python -m pip install -q -r requirements.txt
 
 python main.py
 

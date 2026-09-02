@@ -107,12 +107,14 @@ components/
   PanelSolicitudes.tsx       → tabla + filtros + edición inline
   SolicitudForm.tsx         → alta de nuevo pedido
   PanelCandidatos.tsx        → cola de revisión de candidatos de correo
+  BotonRevisarCorreo.tsx     → botón "Revisar correo ahora" (dispara el watcher)
 lib/
   supabase.ts               → cliente de Supabase (anon key, solo cliente)
   types.ts                  → tipos y estados posibles
 supabase/
   schema.sql                        → tabla pedidos_solicitudes, índices, trigger, RLS
   schema_candidatos_correo.sql      → tablas candidatos_correo + mail_sync_state
+  schema_revision_triggers.sql      → tabla revision_triggers (botón ↔ watcher)
 mail-bot/
   ingest.py                  → conexión IMAP, trae mails nuevos
   classify.py                → clasificación con Gemini Flash
@@ -120,7 +122,9 @@ mail-bot/
   main.py                    → orquestador (carga mail-bot/.env y corre todo)
   contexto_clasificacion.md  → reglas editables de qué incluir/excluir
   test_imap_connection.py    → script de test manual, sin dependencias
-  revisar_correo.bat         → doble-click para correr el bot ahora
+  revisar_correo.bat         → doble-click para correr el bot una vez
+  watcher.py                 → escucha el botón del panel y dispara el bot
+  iniciar_escucha.bat        → doble-click para dejar el watcher corriendo
   .env.example               → plantilla de credenciales locales
 .github/workflows/
   check_mail.yml            → desactivado, ver nota abajo
@@ -181,15 +185,32 @@ saca una versión nueva (se puede fijar una versión específica con
 
 ### 6.4 Revisar correo ahora
 
-Con la VPN/red interna conectada, doble-click en
-`mail-bot\revisar_correo.bat`. La primera vez instala las dependencias
-de Python; después solo corre el bot y te avisa cuándo terminó. También
-se puede correr a mano:
+Hay dos formas de dispararlo, según quién esté conectado a la red en
+ese momento:
+
+**a) Directo, desde la PC que va a procesar** — con la VPN conectada,
+doble-click en `mail-bot\revisar_correo.bat` (o `python main.py` a
+mano). Corre una vez y termina.
+
+**b) Desde el botón "Revisar correo ahora" del panel** (`/revision`) —
+pensado para cuando quien aprieta el botón no es necesariamente quien
+tiene la VPN activa en ese momento (vos o un compañero). El panel corre
+en la nube y no llega al webmail interno, así que el botón no dispara
+el IMAP directo: deja un pedido en Supabase, y **alguien conectado a la
+red interna tiene que tener corriendo** `mail-bot\watcher.py` — doble-
+click en `mail-bot\iniciar_escucha.bat` y dejar esa ventana abierta
+(se puede minimizar). Apenas detecta un pedido pendiente, corre la
+revisión y el botón del panel se actualiza solo con el resultado.
+
+Antes de usar el botón del panel, corré una vez en Supabase el SQL de
+`supabase/schema_revision_triggers.sql` (crea la tabla que conecta el
+botón con el watcher).
+
+Para probar la conexión IMAP suelta, sin clasificar nada:
 
 ```bash
 cd mail-bot
-python test_imap_connection.py   # para confirmar conexión suelta
-python main.py                    # corrida real: clasifica y guarda candidatos
+python test_imap_connection.py
 ```
 
 ### 6.5 Ajustar qué clasifica como pedido: `mail-bot/contexto_clasificacion.md`
