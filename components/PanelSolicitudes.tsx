@@ -1,10 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
+
+interface Columna {
+  key: string;
+  label: string;
+}
+
+const COLUMNAS: Columna[] = [
+  { key: "anio", label: "Año" },
+  { key: "cuatrimestre", label: "Cuat." },
+  { key: "fecha", label: "Fecha" },
+  { key: "solicitante", label: "Solicitante" },
+  { key: "solicitud", label: "Solicitud" },
+  { key: "categoria", label: "Categoría" },
+  { key: "subcategoria", label: "Subcategoría" },
+  { key: "archivo", label: "Archivo/Respuesta" },
+  { key: "estado", label: "Estado" },
+  { key: "subestado", label: "Sub-estado" },
+  { key: "fecha_respuesta", label: "F. respuesta" },
+  { key: "observaciones", label: "Observaciones" },
+];
+
+const COLUMNAS_STORAGE_KEY = "pedidos_columnas_visibles";
 
 export default function PanelSolicitudes() {
   const [rows, setRows] = useState<Solicitud[]>([]);
@@ -16,6 +39,34 @@ export default function PanelSolicitudes() {
   const [filtroCuatrimestre, setFiltroCuatrimestre] = useState<string>("");
   const [filtroEstado, setFiltroEstado] = useState<string>("");
   const [busqueda, setBusqueda] = useState<string>("");
+
+  const [colsVisibles, setColsVisibles] = useState<Set<string>>(
+    () => new Set(COLUMNAS.map((c) => c.key))
+  );
+  useEffect(() => {
+    try {
+      const guardado = window.localStorage.getItem(COLUMNAS_STORAGE_KEY);
+      if (guardado) setColsVisibles(new Set(JSON.parse(guardado)));
+    } catch {
+      // localStorage no disponible o corrupto — seguimos con todas visibles.
+    }
+  }, []);
+  function toggleCol(key: string) {
+    setColsVisibles((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      try {
+        window.localStorage.setItem(
+          COLUMNAS_STORAGE_KEY,
+          JSON.stringify(Array.from(next))
+        );
+      } catch {
+        // no pasa nada si no se puede persistir
+      }
+      return next;
+    });
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -95,6 +146,18 @@ export default function PanelSolicitudes() {
     [rows]
   );
 
+  // Resalta el pedido cargado más recientemente (últimas 24hs) para que
+  // se note de un vistazo qué es nuevo.
+  const idMasReciente = useMemo(() => {
+    if (rows.length === 0) return null;
+    const masNuevo = rows.reduce((a, b) =>
+      new Date(a.created_at) > new Date(b.created_at) ? a : b
+    );
+    const antiguedadHoras =
+      (Date.now() - new Date(masNuevo.created_at).getTime()) / 3_600_000;
+    return antiguedadHoras <= 24 ? masNuevo.id : null;
+  }, [rows]);
+
   return (
     <div>
       {error && (
@@ -105,14 +168,26 @@ export default function PanelSolicitudes() {
 
       <SolicitudForm onSubmit={handleCreate} submitting={saving} />
 
-      <div className="mb-3 flex flex-wrap gap-3">
-        <input
-          type="text"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar por solicitante, texto de la solicitud, categoría…"
-          className="input min-w-[280px] flex-1"
-        />
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <div className="relative min-w-[280px] flex-1">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+          </svg>
+          <input
+            type="text"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            placeholder="Buscar por solicitante, tema o expediente…"
+            className="input w-full pl-8"
+          />
+        </div>
         <select
           value={filtroAnio}
           onChange={(e) => setFiltroAnio(e.target.value)}
@@ -147,53 +222,53 @@ export default function PanelSolicitudes() {
             </option>
           ))}
         </select>
+        <BotonColumnas colsVisibles={colsVisibles} onToggle={toggleCol} />
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50">
             <tr>
-              {[
-                "Año",
-                "Cuat.",
-                "Fecha",
-                "Solicitante",
-                "Solicitud",
-                "Categoría",
-                "Subcategoría",
-                "Archivo/Respuesta",
-                "Estado",
-                "Sub-estado",
-                "F. respuesta",
-                "Observaciones",
-                "",
-              ].map((h) => (
+              {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
                 <th
-                  key={h}
+                  key={c.key}
                   className="whitespace-nowrap px-3 py-2 text-left font-medium text-slate-500"
                 >
-                  {h}
+                  {c.label}
                 </th>
               ))}
+              <th className="px-3 py-2" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading && (
               <tr>
-                <td colSpan={13} className="px-3 py-6 text-center text-slate-400">
+                <td
+                  colSpan={colsVisibles.size + 1}
+                  className="px-3 py-6 text-center text-slate-400"
+                >
                   Cargando…
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={13} className="px-3 py-6 text-center text-slate-400">
+                <td
+                  colSpan={colsVisibles.size + 1}
+                  className="px-3 py-6 text-center text-slate-400"
+                >
                   No hay pedidos registrados con estos filtros.
                 </td>
               </tr>
             )}
             {filtered.map((row) => (
-              <FilaSolicitud key={row.id} row={row} onUpdate={handleUpdate} />
+              <FilaSolicitud
+                key={row.id}
+                row={row}
+                onUpdate={handleUpdate}
+                colsVisibles={colsVisibles}
+                destacada={row.id === idMasReciente}
+              />
             ))}
           </tbody>
         </table>
@@ -205,33 +280,50 @@ export default function PanelSolicitudes() {
 function FilaSolicitud({
   row,
   onUpdate,
+  colsVisibles,
+  destacada,
 }: {
   row: Solicitud;
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
+  colsVisibles: Set<string>;
+  destacada: boolean;
 }) {
   const [editando, setEditando] = useState(false);
+  const colSpanTotal = colsVisibles.size + 1;
+
+  const celdas: Record<string, ReactNode> = {
+    anio: row.anio,
+    cuatrimestre: row.cuatrimestre,
+    fecha: <span className="whitespace-nowrap">{row.fecha}</span>,
+    solicitante: row.nombre_solicitante,
+    solicitud: (
+      <span className="block max-w-xs truncate" title={row.solicitud}>
+        {row.solicitud}
+      </span>
+    ),
+    categoria: row.categoria,
+    subcategoria: row.subcategoria,
+    archivo: row.nombre_archivo,
+    estado: row.estado,
+    subestado: row.subestado ?? "—",
+    fecha_respuesta: (
+      <span className="whitespace-nowrap">{row.fecha_respuesta ?? "—"}</span>
+    ),
+    observaciones: (
+      <span className="block max-w-xs truncate" title={row.observaciones ?? ""}>
+        {row.observaciones}
+      </span>
+    ),
+  };
 
   return (
     <>
-      <tr className="align-top">
-        <td className="px-3 py-2">{row.anio}</td>
-        <td className="px-3 py-2">{row.cuatrimestre}</td>
-        <td className="px-3 py-2 whitespace-nowrap">{row.fecha}</td>
-        <td className="px-3 py-2">{row.nombre_solicitante}</td>
-        <td className="max-w-xs truncate px-3 py-2" title={row.solicitud}>
-          {row.solicitud}
-        </td>
-        <td className="px-3 py-2">{row.categoria}</td>
-        <td className="px-3 py-2">{row.subcategoria}</td>
-        <td className="px-3 py-2">{row.nombre_archivo}</td>
-        <td className="px-3 py-2">{row.estado}</td>
-        <td className="px-3 py-2">{row.subestado ?? "—"}</td>
-        <td className="px-3 py-2 whitespace-nowrap">
-          {row.fecha_respuesta ?? "—"}
-        </td>
-        <td className="max-w-xs truncate px-3 py-2" title={row.observaciones ?? ""}>
-          {row.observaciones}
-        </td>
+      <tr className={`align-top ${destacada ? "bg-amber-50" : ""}`}>
+        {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
+          <td key={c.key} className="px-3 py-2">
+            {celdas[c.key]}
+          </td>
+        ))}
         <td className="px-3 py-2">
           {!editando && (
             <button
@@ -249,6 +341,7 @@ function FilaSolicitud({
           row={row}
           onUpdate={onUpdate}
           onCerrar={() => setEditando(false)}
+          colSpan={colSpanTotal}
         />
       )}
     </>
@@ -259,10 +352,12 @@ function FilaSolicitudEdicion({
   row,
   onUpdate,
   onCerrar,
+  colSpan,
 }: {
   row: Solicitud;
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
   onCerrar: () => void;
+  colSpan: number;
 }) {
   const [nombreArchivo, setNombreArchivo] = useState(row.nombre_archivo ?? "");
   const [estado, setEstado] = useState(row.estado);
@@ -286,7 +381,7 @@ function FilaSolicitudEdicion({
 
   return (
     <tr className="bg-slate-50">
-      <td colSpan={13} className="px-3 py-4">
+      <td colSpan={colSpan} className="px-3 py-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="flex flex-col gap-1 text-xs text-slate-500">
             Archivo/Respuesta
@@ -364,5 +459,57 @@ function FilaSolicitudEdicion({
         </div>
       </td>
     </tr>
+  );
+}
+
+function BotonColumnas({
+  colsVisibles,
+  onToggle,
+}: {
+  colsVisibles: Set<string>;
+  onToggle: (key: string) => void;
+}) {
+  const [abierto, setAbierto] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setAbierto((a) => !a)}
+        className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 shadow-sm hover:bg-slate-50"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          className="h-4 w-4"
+        >
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M9 4v16M15 4v16" />
+        </svg>
+        Columnas
+      </button>
+      {abierto && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setAbierto(false)} />
+          <div className="absolute right-0 z-20 mt-1 w-56 rounded-md border border-slate-200 bg-white p-2 shadow-lg">
+            {COLUMNAS.map((c) => (
+              <label
+                key={c.key}
+                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+              >
+                <input
+                  type="checkbox"
+                  checked={colsVisibles.has(c.key)}
+                  onChange={() => onToggle(c.key)}
+                />
+                {c.label}
+              </label>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
