@@ -19,6 +19,13 @@ Si querés probar otro host/puerto, pasalos como variables de entorno:
 
     IMAP_HOST=webmail.pjn.gov.ar IMAP_PORT=993 python3 test_imap_connection.py
 
+Si el servidor usa un certificado autofirmado (típico en webmail interno
+de organismos), vas a ver "CERTIFICATE_VERIFY_FAILED". Para confirmar
+que el resto de la conexión funciona, podés saltear la verificación del
+certificado SOLO para esta prueba:
+
+    IMAP_INSECURE=1 python3 test_imap_connection.py
+
 Qué hace:
     1. Conecta por SSL al host/puerto indicado.
     2. Hace login.
@@ -41,13 +48,20 @@ def main() -> int:
     host = os.environ.get("IMAP_HOST", DEFAULT_HOST)
     port = int(os.environ.get("IMAP_PORT", DEFAULT_PORT))
 
+    insecure = os.environ.get("IMAP_INSECURE") == "1"
+
     print(f"Probando conexión IMAP a {host}:{port} (SSL)...")
+    if insecure:
+        print("⚠ IMAP_INSECURE=1: NO se va a verificar el certificado del servidor.")
 
     user = os.environ.get("IMAP_USER") or input("Usuario (mail completo): ").strip()
     password = os.environ.get("IMAP_PASS") or getpass.getpass("Contraseña: ")
 
     try:
-        context = ssl.create_default_context()
+        if insecure:
+            context = ssl._create_unverified_context()
+        else:
+            context = ssl.create_default_context()
         with imaplib.IMAP4_SSL(host, port, ssl_context=context) as imap:
             print("✓ Conexión SSL establecida.")
 

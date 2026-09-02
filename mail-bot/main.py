@@ -20,6 +20,14 @@ from __future__ import annotations
 import os
 import sys
 import traceback
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Carga mail-bot/.env si existe (uso local / "revisar correo ahora").
+# En GitHub Actions no hay .env — las env vars ya vienen de los Secrets,
+# y load_dotenv() simplemente no encuentra archivo y no hace nada.
+load_dotenv(Path(__file__).parent / ".env")
 
 from classify import classify_mail
 from ingest import fetch_new_messages

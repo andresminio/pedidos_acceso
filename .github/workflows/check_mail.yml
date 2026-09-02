@@ -1,13 +1,28 @@
-name: Check mail
+name: Check mail (NO USAR — ver nota)
+
+# Este workflow queda DESACTIVADO por diseño: los runners de GitHub
+# Actions corren en la nube pública de GitHub y NO pueden llegar a
+# webmail.pjn.gov.ar, que solo es accesible desde la red interna /
+# VPN del organismo.
+#
+# En su lugar, el bot se corre a demanda desde una máquina que sí esté
+# conectada a esa red — ver mail-bot/revisar_correo.bat y la sección
+# "Revisar correo ahora" del README.
+#
+# Si en algún momento se consigue un runner self-hosted DENTRO de la
+# red interna (o la VPN se puede automatizar), este archivo es la base
+# para volver a un cron real: cambiar `runs-on` a `self-hosted` y
+# descomentar el trigger `schedule`.
 
 on:
-  schedule:
-    - cron: "*/30 * * * *" # cada 30 minutos
-  workflow_dispatch: {} # permite correrlo manualmente desde la pestaña Actions
+  workflow_dispatch: {}
+  # schedule:
+  #   - cron: "*/30 * * * *"
 
 jobs:
   check-mail:
-    runs-on: ubuntu-latest
+    # runs-on: ubuntu-latest  # NO sirve: sin acceso a la red interna
+    runs-on: self-hosted # requiere un runner registrado dentro de la red del organismo
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4

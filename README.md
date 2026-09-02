@@ -117,11 +117,13 @@ mail-bot/
   ingest.py                  → conexión IMAP, trae mails nuevos
   classify.py                → clasificación con Gemini Flash
   supabase_client.py         → estado de sync, dedupe, upsert
-  main.py                    → orquestador (lo corre el workflow)
+  main.py                    → orquestador (carga mail-bot/.env y corre todo)
   contexto_clasificacion.md  → reglas editables de qué incluir/excluir
   test_imap_connection.py    → script de test manual, sin dependencias
+  revisar_correo.bat         → doble-click para correr el bot ahora
+  .env.example               → plantilla de credenciales locales
 .github/workflows/
-  check_mail.yml            → cron cada 30 min
+  check_mail.yml            → desactivado, ver nota abajo
 ```
 
 ## 6. Bot de correo → candidatos a pedido (mail-bot/)
@@ -129,8 +131,16 @@ mail-bot/
 Segunda ventana del proyecto: un bot que lee el correo institucional
 (Zimbra vía IMAP), usa Gemini Flash para detectar pedidos de acceso no
 registrados, y los deja como "candidatos" en `/revision` dentro del
-panel para que los cargues con un click (o los descartes). Corre solo
-vía GitHub Actions — no hay servidor propio que mantener.
+panel para que los cargues con un click (o los descartes).
+
+**Importante — por qué es "a demanda" y no un cron automático:**
+`webmail.pjn.gov.ar` solo es accesible desde la red interna del
+organismo (VPN), y los runners de GitHub Actions corren en la nube
+pública de GitHub — no pueden llegar a esa red. Por eso el bot se corre
+manualmente, con un doble-click, desde una máquina que sí esté
+conectada (tu PC, con la VPN activa). `.github/workflows/check_mail.yml`
+queda en el repo pero desactivado (documentado ahí mismo), por si en el
+futuro se consigue un runner self-hosted dentro de la red interna.
 
 ### 6.1 Supabase
 
@@ -139,40 +149,50 @@ vía GitHub Actions — no hay servidor propio que mantener.
    `candidatos_correo` y `mail_sync_state`, con la misma política de RLS
    "pública" que ya tiene `pedidos_solicitudes`.
 
-### 6.2 Probar la conexión IMAP antes de todo
+### 6.2 Certificado SSL del servidor
 
-Si la cuenta tiene verificación en dos pasos activada, la contraseña
-normal de la cuenta NO va a andar por IMAP — hace falta generar un
-**código de acceso para aplicaciones** (a veces llamado "contraseña de
-aplicación") desde la configuración de seguridad de la cuenta, y usar
-ese código como contraseña acá (y después como `IMAP_PASS`). La
-contraseña habitual de login sigue intacta, esto es un código aparte
-solo para este uso.
+`webmail.pjn.gov.ar` usa un certificado autofirmado (típico en
+infraestructura interna). Decisión tomada: el bot **no verifica** ese
+certificado, en vez de pinnear uno — la conexión ya viaja por una red
+controlada (VPN/intranet del organismo), no por internet abierto. Si en
+algún momento el organismo pone un certificado válido, se puede volver
+a exigir verificación seteando `IMAP_VERIFY_SSL=1` en `mail-bot/.env`.
 
-Antes de cargar nada en GitHub, confirmá que el host/puerto/usuario
-andan:
+### 6.3 Configurar credenciales (una sola vez)
 
 ```bash
 cd mail-bot
-python3 test_imap_connection.py
+copy .env.example .env    # (en PowerShell: cp .env.example .env)
 ```
 
-Te pide usuario y contraseña de forma interactiva (no se guardan en
-ningún lado). Si falla, probá otro puerto/host:
+Completá `mail-bot/.env` con: host/puerto IMAP (ya confirmados:
+`webmail.pjn.gov.ar` / `993`), tu usuario, y la contraseña — o el
+**código de acceso para aplicaciones** si la cuenta tiene verificación
+en dos pasos (la contraseña normal no funciona por IMAP en ese caso),
+más la API key de Gemini ([Google AI Studio](https://aistudio.google.com/apikey))
+y la misma `SUPABASE_URL` / `SUPABASE_KEY` (anon key) que usa el panel.
+
+`mail-bot/.env` está en `.gitignore` — nunca se sube al repo.
+
+El bot usa el alias `gemini-flash-latest`, así que siempre pega contra
+el modelo Flash vigente sin que haga falta tocar código cuando Google
+saca una versión nueva (se puede fijar una versión específica con
+`GEMINI_MODEL` en el `.env` si en algún momento se prefiere).
+
+### 6.4 Revisar correo ahora
+
+Con la VPN/red interna conectada, doble-click en
+`mail-bot\revisar_correo.bat`. La primera vez instala las dependencias
+de Python; después solo corre el bot y te avisa cuándo terminó. También
+se puede correr a mano:
 
 ```bash
-IMAP_HOST=webmail.pjn.gov.ar IMAP_PORT=993 python3 test_imap_connection.py
+cd mail-bot
+python test_imap_connection.py   # para confirmar conexión suelta
+python main.py                    # corrida real: clasifica y guarda candidatos
 ```
 
-### 6.3 Gemini API key
-
-Conseguí una API key en [Google AI Studio](https://aistudio.google.com/apikey).
-El bot usa el alias `gemini-flash-latest`, así que siempre pega contra el
-modelo Flash vigente sin que haga falta actualizar código cuando Google
-saca una versión nueva (se puede fijar una versión específica con la
-variable `GEMINI_MODEL` si en algún momento se prefiere).
-
-### 6.4 Ajustar qué clasifica como pedido: `mail-bot/contexto_clasificacion.md`
+### 6.5 Ajustar qué clasifica como pedido: `mail-bot/contexto_clasificacion.md`
 
 Este archivo se manda tal cual dentro del prompt de Gemini en cada
 corrida. Ahí podés ir anotando, con el tiempo:
@@ -183,26 +203,8 @@ corrida. Ahí podés ir anotando, con el tiempo:
   ambiguo.
 - Cualquier otra aclaración de criterio.
 
-Editalo y hacé commit — no requiere redeploy, el próximo run del
-workflow ya lo lee.
-
-### 6.5 GitHub Secrets
-
-En **Settings → Secrets and variables → Actions** del repo, cargá:
-
-| Secret | Valor |
-| --- | --- |
-| `IMAP_HOST` | confirmado en el paso 6.2 (ej. `webmail.pjn.gov.ar`) |
-| `IMAP_PORT` | confirmado en el paso 6.2 (ej. `993`) |
-| `IMAP_USER` | mail institucional completo |
-| `IMAP_PASS` | contraseña de esa cuenta, o el código de acceso para aplicaciones si tiene verificación en dos pasos (ver paso 6.2) |
-| `GEMINI_API_KEY` | de Google AI Studio |
-| `SUPABASE_URL` | la misma `NEXT_PUBLIC_SUPABASE_URL` del panel |
-| `SUPABASE_KEY` | la misma `NEXT_PUBLIC_SUPABASE_ANON_KEY` del panel (RLS es pública, no hace falta la service role key) |
-
-El workflow (`.github/workflows/check_mail.yml`) corre cada 30 minutos
-(`cron: "*/30 * * * *"`) y también se puede disparar a mano desde la
-pestaña **Actions → Check mail → Run workflow**.
+Editalo cuando quieras — se lee en cada corrida, no requiere reinstalar
+nada.
 
 ### 6.6 Cómo revisar los candidatos
 
@@ -221,11 +223,14 @@ las dudas, pero no generan trabajo de revisión.
 ### 6.7 Notas de comportamiento
 
 - Nunca marca mails como leídos en el servidor.
-- Si falla la conexión IMAP o la clasificación, el workflow no avanza
-  el último UID procesado — el próximo run reintenta esos mails, no se
-  pierden silenciosamente.
-- Correr el workflow dos veces sobre el mismo estado no duplica
+- Si falla la conexión IMAP o la clasificación, no avanza el último UID
+  procesado — la próxima corrida reintenta esos mails, no se pierden
+  silenciosamente.
+- Correr `revisar_correo.bat` dos veces sobre el mismo estado no duplica
   candidatos (upsert por `email_uid`).
+- No verifica el certificado SSL del servidor (ver 6.2) — asumido
+  aceptable porque la conexión viaja por la red interna/VPN, no por
+  internet abierto.
 
 ## Notas de seguridad
 

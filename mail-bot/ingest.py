@@ -81,7 +81,16 @@ def fetch_new_messages(
     ascendente. Si `last_uid` es None, trae solo los últimos 20 (primera
     corrida, para no volcar años de correo histórico de una).
     """
-    context = ssl.create_default_context()
+    # El servidor (red interna del organismo) usa un certificado
+    # autofirmado. Decisión tomada con el usuario: no verificar el
+    # certificado en vez de pinnear uno, porque la conexión ya viaja
+    # por una red controlada (VPN/intranet), no por internet abierto.
+    # Para volver a exigir verificación (si en algún momento el
+    # certificado es válido), setear IMAP_VERIFY_SSL=1.
+    if os.environ.get("IMAP_VERIFY_SSL") == "1":
+        context = ssl.create_default_context()
+    else:
+        context = ssl._create_unverified_context()
     messages: list[MailMessage] = []
 
     with imaplib.IMAP4_SSL(host, port, ssl_context=context) as imap:
