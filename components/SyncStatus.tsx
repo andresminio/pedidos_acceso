@@ -17,19 +17,34 @@ function tiempoRelativo(fecha: Date): string {
 
 export default function SyncStatus() {
   const [ultimaSync, setUltimaSync] = useState<Date | null>(null);
+  const [alDia, setAlDia] = useState(false);
   const [cargado, setCargado] = useState(false);
   const [, forceTick] = useState(0);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("pedidos_solicitudes")
-        .select("synced_at")
-        .not("synced_at", "is", null)
-        .order("synced_at", { ascending: false })
-        .limit(1);
-      const valor = data?.[0]?.synced_at;
-      setUltimaSync(valor ? new Date(valor) : null);
+      const [syncRes, cambioRes] = await Promise.all([
+        supabase
+          .from("pedidos_solicitudes")
+          .select("synced_at")
+          .not("synced_at", "is", null)
+          .order("synced_at", { ascending: false })
+          .limit(1),
+        supabase
+          .from("pedidos_solicitudes")
+          .select("updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(1),
+      ]);
+      const valorSync = syncRes.data?.[0]?.synced_at;
+      const ultimoCambio = cambioRes.data?.[0]?.updated_at;
+      const sync = valorSync ? new Date(valorSync) : null;
+      setUltimaSync(sync);
+      // "Al día" = la hoja refleja el último cambio: o no hay ningún pedido
+      // todavía, o el último sync es igual o posterior al último cambio en
+      // pedidos_solicitudes. Si hay un cambio más nuevo que el último sync,
+      // la hoja está desactualizada (todavía no le llegó esa novedad).
+      setAlDia(!ultimoCambio || (sync !== null && sync >= new Date(ultimoCambio)));
       setCargado(true);
     })();
   }, []);
@@ -40,9 +55,11 @@ export default function SyncStatus() {
     return () => clearInterval(id);
   }, []);
 
+  const verde = cargado && alDia;
+
   return (
     <p className="flex items-center gap-1.5 text-xs text-slate-400">
-      {ultimaSync ? (
+      {verde ? (
         <svg
           viewBox="0 0 20 20"
           fill="none"
@@ -60,7 +77,7 @@ export default function SyncStatus() {
       ) : (
         <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />
       )}
-      Sincronizado con{" "}
+      {verde ? "Sincronizado con" : "Pendiente de sincronizar con"}{" "}
       <a
         href={GOOGLE_SHEET_URL}
         target="_blank"
