@@ -9,6 +9,7 @@ import {
   cargarSubcategorias,
 } from "@/lib/categorias";
 import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
+import { textoCompacto } from "@/lib/texto";
 
 const AGREGAR_CATEGORIA = "__agregar_categoria__";
 // El botón "Revisar correo ahora" (BotonRevisarCorreo) quedó descartado:
@@ -33,11 +34,6 @@ const MAX_CHARS_PREVIEW = 240;
 // Normalizamos \r\n / \r sueltos a \n primero: muchos mails vienen con
 // saltos de línea estilo Windows, y con \r de por medio el patrón de
 // líneas en blanco no matcheaba.
-function textoCompacto(texto: string): string {
-  const normalizado = texto.replace(/\r\n?/g, "\n").trim();
-  return normalizado.replace(/\n[ \t]*\n(?:[ \t]*\n)+/g, "\n\n");
-}
-
 function vistaPreview(texto: string): { texto: string; truncado: boolean } {
   const compacto = textoCompacto(texto);
   const lineas = compacto.split("\n");

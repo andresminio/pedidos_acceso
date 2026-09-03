@@ -10,6 +10,7 @@ import {
   cargarSubcategorias,
 } from "@/lib/categorias";
 import { anioCuatrimestreDeFecha, fechaCorta } from "@/lib/fechas";
+import { textoCompacto } from "@/lib/texto";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
@@ -732,33 +733,44 @@ function FilaSolicitudEdicion({
         </div>
 
         {mailOrigen && (
-          <div className="mt-3 flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">Modelo de respuesta</span>
-              <button
-                type="button"
-                disabled={generandoRespuesta}
-                onClick={handleGenerarRespuesta}
-                className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-              >
-                <IconoIA />
-                {generandoRespuesta
-                  ? "Generando…"
-                  : respuestaIA
-                    ? "Volver a generar con IA"
-                    : "Generar modelo de respuesta con IA"}
-              </button>
-              {errorRespuestaIA && (
-                <span className="text-xs text-red-400">{errorRespuestaIA}</span>
+          <div className="mt-3 flex flex-col gap-3">
+            {mailOrigen.cuerpo_resumen && (
+              <div className="flex flex-col gap-1 text-xs text-slate-400">
+                Correo recibido
+                <blockquote className="max-h-48 overflow-y-auto whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
+                  {textoCompacto(mailOrigen.cuerpo_resumen)}
+                </blockquote>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Modelo de respuesta</span>
+                <button
+                  type="button"
+                  disabled={generandoRespuesta}
+                  onClick={handleGenerarRespuesta}
+                  className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                >
+                  <IconoIA />
+                  {generandoRespuesta
+                    ? "Generando…"
+                    : respuestaIA
+                      ? "Volver a generar con IA"
+                      : "Generar modelo de respuesta con IA"}
+                </button>
+                {errorRespuestaIA && (
+                  <span className="text-xs text-red-400">{errorRespuestaIA}</span>
+                )}
+              </div>
+              {respuestaIA && (
+                <textarea
+                  className="input min-h-48"
+                  value={respuestaIA}
+                  onChange={(e) => setRespuestaIA(e.target.value)}
+                />
               )}
             </div>
-            {respuestaIA && (
-              <textarea
-                className="input min-h-24"
-                value={respuestaIA}
-                onChange={(e) => setRespuestaIA(e.target.value)}
-              />
-            )}
           </div>
         )}
 
