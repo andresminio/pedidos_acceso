@@ -1,6 +1,29 @@
 import { supabase } from "./supabase";
 import { SUBCATEGORIAS, TEMAS } from "./types";
 
+// Temas de uso más frecuente — van primero y en este orden fijo en los
+// selects de categoría, antes del resto (que va alfabético).
+export const CATEGORIAS_PRINCIPALES = [
+  "Resultados Electorales",
+  "Padrón Electoral",
+  "Agrupaciones Políticas",
+  "Candidaturas",
+];
+
+// Separa una lista de categorías en { principales, otras } listas para
+// renderizar como dos <optgroup>: "Principales" (orden fijo de arriba) y
+// el resto alfabético.
+export function agruparCategorias(
+  categorias: string[]
+): { principales: string[]; otras: string[] } {
+  const set = new Set(categorias);
+  const principales = CATEGORIAS_PRINCIPALES.filter((c) => set.has(c));
+  const otras = categorias
+    .filter((c) => !CATEGORIAS_PRINCIPALES.includes(c))
+    .sort((a, b) => a.localeCompare(b, "es"));
+  return { principales, otras };
+}
+
 // Categorías = las fijas de TEMAS + las que se hayan agregado a mano
 // (guardadas en categorias_custom, compartidas por todos los que usan el
 // panel, no solo en el navegador de quien las agregó).

@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { agregarCategoria, cargarCategorias, cargarSubcategorias } from "@/lib/categorias";
+import {
+  agregarCategoria,
+  agruparCategorias,
+  cargarCategorias,
+  cargarSubcategorias,
+} from "@/lib/categorias";
 import { anioCuatrimestreDeFecha } from "@/lib/fechas";
 import type { SolicitudInput } from "@/lib/types";
 
