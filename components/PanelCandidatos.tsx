@@ -48,6 +48,17 @@ function vistaPreview(texto: string): { texto: string; truncado: boolean } {
   return { texto: truncado ? recorte + "…" : recorte, truncado };
 }
 
+// Cuando Gemini no pudo inferir nombre_solicitante (típicamente porque
+// clasificó el mail como que no es un pedido, y ese campo queda null), al
+// menos precargamos el nombre del remitente como punto de partida editable
+// — por ejemplo si el candidato se pasa a revisión "a mano" después de
+// haber sido descartado.
+function nombreDeRemitente(remitente: string): string {
+  const match = remitente.match(/^"?([^"<]+?)"?\s*<[^>]*>\s*$/);
+  if (match && match[1].trim()) return match[1].trim();
+  return remitente.replace(/[<>]/g, "").trim();
+}
+
 function fechaCortaHora(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleString("es-AR", {
@@ -298,7 +309,9 @@ function FilaCandidato({
   onDescartar: () => void;
   onCargar: (campos: SolicitudInput) => void;
 }) {
-  const [nombre, setNombre] = useState(row.nombre_solicitante ?? "");
+  const [nombre, setNombre] = useState(
+    row.nombre_solicitante ?? nombreDeRemitente(row.remitente)
+  );
   const [fecha, setFecha] = useState(
     row.fecha_propuesta ?? row.fecha_correo.slice(0, 10)
   );
