@@ -28,11 +28,30 @@ create index if not exists pedidos_solicitudes_anio_cuatrimestre_idx
 create index if not exists pedidos_solicitudes_estado_idx
   on public.pedidos_solicitudes (estado);
 
--- Mantiene updated_at al día en cada UPDATE
+-- Mantiene updated_at al día, pero solo cuando cambia algo de negocio real.
+-- Si no, cada vez que /api/sync-sheets marca synced_at (que también es un
+-- UPDATE) este trigger bumpearía updated_at a un instante posterior, y el
+-- indicador "al día" del panel (que compara synced_at >= updated_at) daría
+-- siempre desactualizado justo después de sincronizar.
 create or replace function public.pedidos_set_updated_at()
 returns trigger as $$
 begin
-  new.updated_at = now();
+  if (
+    NEW.anio is distinct from OLD.anio
+    or NEW.cuatrimestre is distinct from OLD.cuatrimestre
+    or NEW.fecha is distinct from OLD.fecha
+    or NEW.nombre_solicitante is distinct from OLD.nombre_solicitante
+    or NEW.solicitud is distinct from OLD.solicitud
+    or NEW.categoria is distinct from OLD.categoria
+    or NEW.subcategoria is distinct from OLD.subcategoria
+    or NEW.nombre_archivo is distinct from OLD.nombre_archivo
+    or NEW.estado is distinct from OLD.estado
+    or NEW.subestado is distinct from OLD.subestado
+    or NEW.fecha_respuesta is distinct from OLD.fecha_respuesta
+    or NEW.observaciones is distinct from OLD.observaciones
+  ) then
+    new.updated_at = now();
+  end if;
   return new;
 end;
 $$ language plpgsql;
