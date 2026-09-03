@@ -171,9 +171,8 @@ export default function PanelCandidatos() {
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
             El bot revisa automáticamente el correo institucional cada 1 hora
             y detecta posibles pedidos de acceso que aún no fueron
-            registrados.
-            <br />
-            Revisá los pedidos detectados y decidí qué hacer con cada uno.
+            registrados. Revisá los pedidos detectados y decidí qué hacer con
+            cada uno.
           </p>
         </div>
         <p className="whitespace-nowrap text-xs text-slate-500">
@@ -215,8 +214,8 @@ export default function PanelCandidatos() {
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-4 text-sm">
         <p className="text-slate-500">
-          {descartadosSemana ?? "…"} mails descartados automáticamente en los
-          últimos {DESCARTADOS_DIAS} días.
+          {descartadosSemana ?? "…"} mails descartados en los últimos{" "}
+          {DESCARTADOS_DIAS} días.
         </p>
         <button
           type="button"
@@ -402,16 +401,16 @@ function FilaCandidato({
 
       {row.cuerpo_resumen && (
         <div ref={citaRef}>
-          {row.cuerpo_resumen.trim().length > 240 && (
-            <button
-              type="button"
-              onClick={() => setVerCompleto((v) => !v)}
-              className="mb-1 text-xs font-medium text-blue-400 hover:text-blue-300"
-            >
-              {verCompleto ? "Ver menos" : "Ver completo"}
-            </button>
-          )}
-          <blockquote className="whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
+          <blockquote
+            onClick={() => {
+              if (row.cuerpo_resumen!.trim().length > 240) {
+                setVerCompleto((v) => !v);
+              }
+            }}
+            className={`whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400 ${
+              row.cuerpo_resumen.trim().length > 240 ? "cursor-pointer" : ""
+            }`}
+          >
             "
             {verCompleto
               ? row.cuerpo_resumen.trim()
