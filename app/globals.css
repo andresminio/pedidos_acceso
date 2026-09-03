@@ -35,4 +35,12 @@ body {
     outline: none;
     border-color: var(--accent);
   }
+
+  /* Oculta la flechita nativa que Chrome/Edge agregan a los inputs con
+     un <datalist> asociado (list="..."). No estándar, pero funciona en
+     todos los navegadores basados en Chromium. */
+  .input::-webkit-calendar-picker-indicator[type="list"],
+  .input::-webkit-list-button {
+    display: none !important;
+  }
 }
