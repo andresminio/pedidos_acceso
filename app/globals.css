@@ -43,4 +43,24 @@ body {
   .input::-webkit-list-button {
     display: none !important;
   }
+
+  /* Encabezados de <optgroup> (ej. "Principales" / "Otros temas") sin
+     negrita, separados con una línea en vez de peso de fuente para que
+     no se vean tan "duros". Soporte de estilo de optgroup es limitado
+     entre navegadores (funciona bien en Chromium), pero no rompe nada
+     donde no aplique. */
+  .input optgroup {
+    font-weight: 400;
+    font-style: normal;
+    color: #94a3b8;
+    border-top: 1px solid var(--border);
+    padding-top: 4px;
+    margin-top: 4px;
+  }
+
+  .input optgroup:first-of-type {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+  }
 }
