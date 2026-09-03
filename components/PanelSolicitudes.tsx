@@ -29,6 +29,23 @@ const COLUMNAS: Columna[] = [
 
 const COLUMNAS_STORAGE_KEY = "pedidos_columnas_visibles";
 
+// Comparación case-insensitive porque hay datos viejos cargados con
+// "CERRADO"/"PENDIENTE" en mayúscula, además de "Cerrado"/"Pendiente".
+function PillEstado({ estado }: { estado: string }) {
+  const esCerrado = estado.toLowerCase() === "cerrado";
+  const esPendiente = estado.toLowerCase() === "pendiente";
+  const clase = esCerrado
+    ? "bg-emerald-500/15 text-emerald-400"
+    : esPendiente
+      ? "bg-amber-500/15 text-amber-400"
+      : "bg-slate-700/40 text-slate-300";
+  return (
+    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${clase}`}>
+      {estado}
+    </span>
+  );
+}
+
 export default function PanelSolicitudes() {
   const [rows, setRows] = useState<Solicitud[]>([]);
   const [loading, setLoading] = useState(true);
@@ -333,7 +350,7 @@ function FilaSolicitud({
     categoria: row.categoria,
     subcategoria: row.subcategoria,
     archivo: row.nombre_archivo,
-    estado: row.estado,
+    estado: <PillEstado estado={row.estado} />,
     subestado: row.subestado ?? "—",
     fecha_respuesta: (
       <span className="whitespace-nowrap">{row.fecha_respuesta ?? "—"}</span>
