@@ -118,6 +118,18 @@ export default function PanelSolicitudes() {
     await load();
   }
 
+  async function handleDelete(id: string) {
+    const { error } = await supabase
+      .from("pedidos_solicitudes")
+      .delete()
+      .eq("id", id);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    await load();
+  }
+
   const filtered = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return rows.filter((r) => {
@@ -265,6 +277,7 @@ export default function PanelSolicitudes() {
                 key={row.id}
                 row={row}
                 onUpdate={handleUpdate}
+                onDelete={handleDelete}
                 colsVisibles={colsVisibles}
                 destacada={row.id === idMasReciente}
               />
@@ -279,11 +292,13 @@ export default function PanelSolicitudes() {
 function FilaSolicitud({
   row,
   onUpdate,
+  onDelete,
   colsVisibles,
   destacada,
 }: {
   row: Solicitud;
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   colsVisibles: Set<string>;
   destacada: boolean;
 }) {
@@ -336,6 +351,7 @@ function FilaSolicitud({
         <FilaSolicitudEdicion
           row={row}
           onUpdate={onUpdate}
+          onDelete={onDelete}
           onCerrar={() => setEditando(false)}
           colSpan={colSpanTotal}
         />
@@ -347,11 +363,13 @@ function FilaSolicitud({
 function FilaSolicitudEdicion({
   row,
   onUpdate,
+  onDelete,
   onCerrar,
   colSpan,
 }: {
   row: Solicitud;
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   onCerrar: () => void;
   colSpan: number;
 }) {
@@ -361,6 +379,7 @@ function FilaSolicitudEdicion({
   const [fechaRespuesta, setFechaRespuesta] = useState(row.fecha_respuesta ?? "");
   const [observaciones, setObservaciones] = useState(row.observaciones ?? "");
   const [guardando, setGuardando] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
 
   async function handleGuardar() {
     setGuardando(true);
@@ -373,6 +392,16 @@ function FilaSolicitudEdicion({
     });
     setGuardando(false);
     onCerrar();
+  }
+
+  async function handleEliminar() {
+    const confirmado = window.confirm(
+      `¿Eliminar el pedido de "${row.nombre_solicitante}" (${row.solicitud})? Esta acción no se puede deshacer.`
+    );
+    if (!confirmado) return;
+    setEliminando(true);
+    await onDelete(row.id);
+    setEliminando(false);
   }
 
   return (
@@ -435,23 +464,33 @@ function FilaSolicitudEdicion({
             />
           </label>
         </div>
-        <div className="mt-3 flex justify-end gap-2">
+        <div className="mt-3 flex items-center justify-between gap-2">
           <button
             type="button"
-            disabled={guardando}
-            onClick={onCerrar}
-            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            disabled={guardando || eliminando}
+            onClick={handleEliminar}
+            className="rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400 hover:bg-red-950/50 disabled:opacity-50"
           >
-            Cancelar
+            {eliminando ? "Eliminando…" : "Eliminar"}
           </button>
-          <button
-            type="button"
-            disabled={guardando}
-            onClick={handleGuardar}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50"
-          >
-            Guardar
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={guardando || eliminando}
+              onClick={onCerrar}
+              className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              disabled={guardando || eliminando}
+              onClick={handleGuardar}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50"
+            >
+              Guardar
+            </button>
+          </div>
         </div>
       </td>
     </tr>

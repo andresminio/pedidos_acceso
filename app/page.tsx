@@ -33,7 +33,7 @@ export default function Home() {
               <p className="text-sm text-slate-400">
                 Unidad de Estadística Electoral y Datos Abiertos
               </p>
-              <h1 className="text-2xl font-semibold text-white">
+              <h1 className="text-3xl font-semibold text-white">
                 Pedidos de Acceso
               </h1>
             </div>
