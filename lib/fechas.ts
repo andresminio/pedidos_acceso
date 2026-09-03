@@ -11,3 +11,13 @@ export function anioCuatrimestreDeFecha(
   const [anioStr, mesStr] = fechaISO.split("-");
   return { anio: Number(anioStr), cuatrimestre: cuatrimestreDe(Number(mesStr)) };
 }
+
+// Muestra una fecha guardada como "AAAA-MM-DD" en formato DD/MM/AAAA
+// (convención local). El valor guardado y el <input type="date"> siguen
+// en ISO — esto es solo para mostrar.
+export function fechaCorta(fechaISO: string | null | undefined): string {
+  if (!fechaISO) return "—";
+  const [anio, mes, dia] = fechaISO.split("-");
+  if (!anio || !mes || !dia) return fechaISO;
+  return `${dia}/${mes}/${anio}`;
+}

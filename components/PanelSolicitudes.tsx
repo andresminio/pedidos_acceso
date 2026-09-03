@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { agregarCategoria, cargarCategorias, cargarSubcategorias } from "@/lib/categorias";
-import { anioCuatrimestreDeFecha } from "@/lib/fechas";
+import { anioCuatrimestreDeFecha, fechaCorta } from "@/lib/fechas";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
@@ -359,7 +359,7 @@ function FilaSolicitud({
   const celdas: Record<string, ReactNode> = {
     anio: row.anio,
     cuatrimestre: row.cuatrimestre,
-    fecha: <span className="whitespace-nowrap">{row.fecha}</span>,
+    fecha: <span className="whitespace-nowrap">{fechaCorta(row.fecha)}</span>,
     solicitante: (
       <span className="font-medium text-white">{row.nombre_solicitante}</span>
     ),
@@ -373,7 +373,7 @@ function FilaSolicitud({
     estado: <PillEstado estado={row.estado} />,
     subestado: row.subestado ?? "—",
     fecha_respuesta: (
-      <span className="whitespace-nowrap">{row.fecha_respuesta ?? "—"}</span>
+      <span className="whitespace-nowrap">{fechaCorta(row.fecha_respuesta)}</span>
     ),
     observaciones: (
       <span className="block max-w-xs truncate" title={row.observaciones ?? ""}>
