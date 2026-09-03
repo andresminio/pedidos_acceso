@@ -18,6 +18,32 @@ function anioCuatrimestre(fechaISO: string): { anio: number; cuatrimestre: 1 | 2
   return { anio: d.getFullYear(), cuatrimestre };
 }
 
+const MAX_LINEAS_PREVIEW = 4;
+const MAX_CHARS_PREVIEW = 240;
+
+// Colapsa 2+ renglones en blanco seguidos a uno solo, para que la firma o
+// los espaciados de cada mail no inflen el alto del box sin aportar info.
+function textoCompacto(texto: string): string {
+  return texto.trim().replace(/\n[ \t]*\n(?:[ \t]*\n)+/g, "\n\n");
+}
+
+function vistaPreview(texto: string): { texto: string; truncado: boolean } {
+  const compacto = textoCompacto(texto);
+  const lineas = compacto.split("\n");
+  let recorte = compacto;
+  let truncado = false;
+
+  if (lineas.length > MAX_LINEAS_PREVIEW) {
+    recorte = lineas.slice(0, MAX_LINEAS_PREVIEW).join("\n");
+    truncado = true;
+  }
+  if (recorte.length > MAX_CHARS_PREVIEW) {
+    recorte = recorte.slice(0, MAX_CHARS_PREVIEW);
+    truncado = true;
+  }
+  return { texto: truncado ? recorte + "…" : recorte, truncado };
+}
+
 function fechaCortaHora(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleString("es-AR", {
@@ -384,27 +410,26 @@ function FilaCandidato({
         />
       </label>
 
-      {row.cuerpo_resumen && (
-        <div ref={citaRef} className="flex flex-col gap-1 text-xs text-slate-500">
-          Correo recibido
-          <blockquote
-            onClick={() => {
-              if (window.getSelection()?.toString()) return;
-              if (row.cuerpo_resumen!.trim().length > 240) {
-                setVerCompleto((v) => !v);
-              }
-            }}
-            className={`whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400 ${
-              row.cuerpo_resumen.trim().length > 240 ? "cursor-pointer" : ""
-            }`}
-          >
-            {verCompleto
-              ? row.cuerpo_resumen.trim()
-              : row.cuerpo_resumen.trim().slice(0, 240) +
-                (row.cuerpo_resumen.trim().length > 240 ? "…" : "")}
-          </blockquote>
-        </div>
-      )}
+      {row.cuerpo_resumen &&
+        (() => {
+          const preview = vistaPreview(row.cuerpo_resumen);
+          return (
+            <div ref={citaRef} className="flex flex-col gap-1 text-xs text-slate-500">
+              Correo recibido
+              <blockquote
+                onClick={() => {
+                  if (window.getSelection()?.toString()) return;
+                  if (preview.truncado) setVerCompleto((v) => !v);
+                }}
+                className={`whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400 ${
+                  preview.truncado ? "cursor-pointer" : ""
+                }`}
+              >
+                {verCompleto ? textoCompacto(row.cuerpo_resumen) : preview.texto}
+              </blockquote>
+            </div>
+          );
+        })()}
     </div>
   );
 }
@@ -466,7 +491,7 @@ function FilaDescartado({
         <>
           <p className="mt-2 text-xs text-slate-500">Correo recibido</p>
           <blockquote className="mt-1 whitespace-pre-line rounded-md border border-slate-800 bg-black/20 px-3 py-2 text-sm italic text-slate-400">
-            {row.cuerpo_resumen!.trim()}
+            {textoCompacto(row.cuerpo_resumen!)}
           </blockquote>
         </>
       )}
