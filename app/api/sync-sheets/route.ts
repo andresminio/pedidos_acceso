@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
+import { supabase } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 
@@ -155,6 +156,20 @@ export async function POST(req: NextRequest) {
         insertDataOption: "INSERT_ROWS",
         requestBody: { values: [row] },
       });
+    }
+
+    // Marca la fila como sincronizada. Esto también dispara un UPDATE en
+    // pedidos_solicitudes, pero el trigger de Postgres (webhook_trigger.sql)
+    // tiene un WHEN que ignora cambios donde lo único que varió es
+    // synced_at, así que no vuelve a llamar a este endpoint en loop.
+    const { error: errSync } = await supabase
+      .from("pedidos_solicitudes")
+      .update({ synced_at: new Date().toISOString() })
+      .eq("id", record.id);
+    if (errSync) {
+      // La hoja ya se actualizó bien; esto solo afecta el indicador visual
+      // de "al día", no es motivo para reportar la sync como fallida.
+      console.error("No se pudo marcar synced_at:", errSync.message);
     }
 
     return NextResponse.json({ ok: true, id: record.id, updated: !!rowIndex });
