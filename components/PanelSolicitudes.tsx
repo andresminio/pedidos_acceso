@@ -379,21 +379,19 @@ function FilaSolicitud({
     cuatrimestre: row.cuatrimestre,
     fecha: <span className="whitespace-nowrap">{fechaCorta(row.fecha)}</span>,
     solicitante: (
-      <span className="inline-flex items-center gap-1.5">
-        <span className="font-medium text-white">{row.nombre_solicitante}</span>
+      <span className="font-medium text-white">{row.nombre_solicitante}</span>
+    ),
+    solicitud: (
+      <span className="inline-flex max-w-xs items-center gap-1.5" title={row.solicitud}>
         {tieneCorreo && (
           <span
             title="Correo importado vinculado — se puede generar respuesta con IA"
-            className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/15 text-blue-400"
+            className="shrink-0 text-slate-400"
           >
             <IconoIA />
           </span>
         )}
-      </span>
-    ),
-    solicitud: (
-      <span className="block max-w-xs truncate" title={row.solicitud}>
-        {row.solicitud}
+        <span className="truncate">{row.solicitud}</span>
       </span>
     ),
     categoria: row.categoria,
@@ -779,7 +777,7 @@ function FilaSolicitudEdicion({
                     ? "Generando…"
                     : respuestaIA
                       ? "Volver a generar con IA"
-                      : "Generar modelo de respuesta con IA"}
+                      : "Generar respuesta con IA"}
                 </button>
                 {errorRespuestaIA && (
                   <span className="text-xs text-red-400">{errorRespuestaIA}</span>
