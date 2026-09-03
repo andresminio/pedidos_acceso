@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { TEMAS } from "@/lib/types";
+import { useEffect, useState } from "react";
+import { agregarCategoria, cargarCategorias } from "@/lib/categorias";
 import type { SolicitudInput } from "@/lib/types";
 
 const AGREGAR_NUEVO = "__agregar_nuevo__";
@@ -42,8 +42,12 @@ export default function SolicitudForm({
 }) {
   const [form, setForm] = useState<FormState>(empty);
   const [open, setOpen] = useState(false);
-  const [temas, setTemas] = useState<string[]>(TEMAS);
+  const [temas, setTemas] = useState<string[]>([]);
   const [nuevoTema, setNuevoTema] = useState(false);
+
+  useEffect(() => {
+    cargarCategorias().then(setTemas);
+  }, []);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -84,14 +88,19 @@ export default function SolicitudForm({
     update("categoria", value);
   }
 
-  function confirmarNuevoTema(nombre: string) {
+  async function confirmarNuevoTema(nombre: string) {
     const limpio = nombre.trim();
-    if (!limpio) return;
+    if (!limpio) {
+      setNuevoTema(false);
+      return;
+    }
     if (!temas.includes(limpio)) {
       setTemas((t) => [...t, limpio].sort((a, b) => a.localeCompare(b, "es")));
     }
     update("categoria", limpio);
     setNuevoTema(false);
+    const { error } = await agregarCategoria(limpio);
+    if (error) console.error("No se pudo guardar la categoría nueva:", error);
   }
 
   return (

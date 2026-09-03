@@ -24,32 +24,106 @@ ESPERA_BASE_SEGUNDOS = 10  # backoff: 10s, 20s entre reintentos
 # Mismo listado que lib/types.ts (TEMAS) del panel Next.js. Si agregan un
 # tema nuevo ahí, conviene reflejarlo acá también.
 CATEGORIAS = [
-    "Resultados electorales",
-    "Padrón electoral",
-    "Agrupaciones políticas",
-    "Voto Joven",
-    "Participación y ausentismo electoral",
-    "Información general",
-    "Candidaturas",
-    "Electores Residentes en el exterior",
-    "Geografía Electoral",
-    "Jurisprudencia",
-    "Datos Históricos",
-    "Ciudadanía",
-    "Boletas de votación",
-    "Electores Privados de Libertad",
     "Accesibilidad Electoral",
-    "Extranjeros",
-    "Autoridades de mesa",
-    "Normas electorales",
     "Acompañamiento Cívico",
+    "Agrupaciones Políticas",
+    "Autoridades de Mesa",
     "Biometría",
+    "Boletas de Votación",
+    "Candidaturas",
+    "Ciudadanía",
     "Contrataciones CNE",
-    "Manejo y seguridad de datos informáticos",
+    "Datos Históricos",
+    "Electores Privados de Libertad",
+    "Electores Residentes en el Exterior",
+    "Extranjeros",
+    "Geografía Electoral",
+    "Información General",
+    "Jurisprudencia",
+    "Manejo y Seguridad de Datos Informáticos",
+    "Normas Electorales",
+    "Padrón Electoral",
+    "Participación y Ausentismo Electoral",
     "Reclamos y Denuncias",
-    "Redes sociales",
+    "Redes Sociales",
     "Registro de Empresas de Encuestas y Sondeos de Opinión",
+    "Resultados Electorales",
+    "Voto Joven",
 ]
+
+# Subcategorías de referencia por categoría — mismo listado que
+# lib/types.ts (SUBCATEGORIAS). Se le pasan a Gemini como sugerencia, no
+# como restricción dura: si el mail no encaja en ninguna, puede proponer
+# otra o dejarlo en null.
+SUBCATEGORIAS: dict[str, list[str]] = {
+    "Agrupaciones Políticas": [
+        "Afiliados",
+        "Financiamiento",
+        "Agrupaciones políticas y alianzas",
+        "Documentación",
+        "Candidaturas",
+        "Plataformas electorales",
+    ],
+    "Candidaturas": [
+        "Elecciones nacionales",
+        "Elecciones provinciales",
+        "Elecciones municipales",
+        "Candidatos",
+    ],
+    "Datos Históricos": ["Padrones"],
+    "Electores Privados de Libertad": [
+        "Participación",
+        "Información",
+        "Composición y/o participación",
+    ],
+    "Electores Residentes en el Exterior": [
+        "Composición",
+        "Participación",
+        "Composición y/o participación",
+    ],
+    "Información General": [
+        "Elecciones",
+        "Elecciones provinciales",
+        "Elecciones municipales",
+        "CNE",
+        "Accesibilidad electoral",
+    ],
+    "Jurisprudencia": ["Secretaría Penal"],
+    "Normas Electorales": ["Obligatoriedad del voto"],
+    "Padrón Electoral": [
+        "Composición",
+        "Datos personales",
+        "Establecimientos de votación",
+        "Padrón electoral histórico",
+        "Establecimientos",
+    ],
+    "Participación y Ausentismo Electoral": ["Participación"],
+    "Redes Sociales": ["Auditorías - Control de información"],
+    "Resultados Electorales": [
+        "Elecciones provinciales",
+        "Elecciones nacionales",
+        "Elecciones nacionales, provinciales y municipales",
+        "Elecciones municipales",
+        "Electores residentes en el exterior",
+        "Elecciones nacionales y provinciales",
+        "Electores privados de libertad",
+        "Resultados elecciones provinciales",
+        "Elecciones",
+        "Resultados",
+    ],
+    "Voto Joven": ["Participación"],
+}
+
+
+def _lista_subcategorias() -> str:
+    lineas = []
+    for cat in CATEGORIAS:
+        subs = SUBCATEGORIAS.get(cat)
+        if subs:
+            lineas.append(f"- {cat}: {', '.join(subs)}")
+        else:
+            lineas.append(f"- {cat}: (sin subcategorías típicas)")
+    return "\n".join(lineas)
 
 DEFAULT_MODEL = "gemini-flash-latest"  # alias: siempre apunta al Flash vigente
 
@@ -69,6 +143,14 @@ texto extra) con este formato exacto:
   "subcategoria_propuesta": "subtema más específico si aplica, o null"
 }}
 
+Referencia de subcategorías típicas por categoría (no es una lista cerrada: \
+si el mail encaja en la categoría pero no en ninguna de estas subcategorías, \
+proponé la que te parezca más adecuada o dejá "subcategoria_propuesta" en \
+null; si sí encaja en alguna de esta lista, preferí usar exactamente ese \
+texto):
+
+{subcategorias}
+
 Consideraciones:
 - "es_pedido_acceso" es true SOLO si el mail es un pedido de acceso a la \
 información pública (alguien externo pidiendo datos, estadísticas, \
@@ -77,6 +159,11 @@ notificaciones automáticas, mails internos administrativos, o \
 conversaciones que no son un pedido nuevo.
 - Si no estás seguro, marcá "es_pedido_acceso": false y explicá por qué en \
 "confianza_ia".
+- "Datos Históricos" es SOLO para pedidos sobre elecciones o información \
+electoral ANTERIOR a 1983 (retorno de la democracia). Un pedido sobre \
+elecciones de 1983 en adelante — aunque sean "viejas" o de hace décadas — \
+no es "Datos Históricos": clasificalo en la categoría que corresponda al \
+tema (por ejemplo "Resultados Electorales" o "Padrón Electoral").
 - Para "solicitud_propuesta": andá directo al grano, sin frases de relleno. \
 NUNCA arranques con "Se solicita información sobre", "El remitente pide", \
 "Solicita acceso a" ni nada equivalente — esa parte ya se sabe (es un \
@@ -179,6 +266,7 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
     model = os.environ.get("GEMINI_MODEL", DEFAULT_MODEL)
     prompt = PROMPT_TEMPLATE.format(
         categorias=", ".join(CATEGORIAS),
+        subcategorias=_lista_subcategorias(),
         contexto=_leer_contexto(),
         remitente=remitente,
         asunto=asunto,

@@ -13,32 +13,96 @@ export const SUBESTADOS_CERRADO: SubestadoCerrado[] = [
 // Lista de temas (categoría) de la oficina. Se puede sumar uno nuevo desde
 // el propio formulario de carga ("+ Agregar nuevo tema").
 export const TEMAS: string[] = [
-  "Resultados electorales",
-  "Padrón electoral",
-  "Agrupaciones políticas",
-  "Voto Joven",
-  "Participación y ausentismo electoral",
-  "Información general",
-  "Candidaturas",
-  "Electores Residentes en el exterior",
-  "Geografía Electoral",
-  "Jurisprudencia",
-  "Datos Históricos",
-  "Ciudadanía",
-  "Boletas de votación",
-  "Electores Privados de Libertad",
   "Accesibilidad Electoral",
-  "Extranjeros",
-  "Autoridades de mesa",
-  "Normas electorales",
   "Acompañamiento Cívico",
+  "Agrupaciones Políticas",
+  "Autoridades de Mesa",
   "Biometría",
+  "Boletas de Votación",
+  "Candidaturas",
+  "Ciudadanía",
   "Contrataciones CNE",
-  "Manejo y seguridad de datos informáticos",
+  "Datos Históricos",
+  "Electores Privados de Libertad",
+  "Electores Residentes en el Exterior",
+  "Extranjeros",
+  "Geografía Electoral",
+  "Información General",
+  "Jurisprudencia",
+  "Manejo y Seguridad de Datos Informáticos",
+  "Normas Electorales",
+  "Padrón Electoral",
+  "Participación y Ausentismo Electoral",
   "Reclamos y Denuncias",
-  "Redes sociales",
+  "Redes Sociales",
   "Registro de Empresas de Encuestas y Sondeos de Opinión",
+  "Resultados Electorales",
+  "Voto Joven",
 ];
+
+// Subcategorías de referencia por categoría — se usan para guiar al
+// clasificador de Gemini (mail-bot/classify.py), no como restricción en la
+// UI: el campo Subcategoría sigue siendo texto libre en el panel. Una
+// categoría sin entrada acá (o con lista vacía) no tiene subcategorías
+// típicas definidas todavía.
+export const SUBCATEGORIAS: Record<string, string[]> = {
+  "Agrupaciones Políticas": [
+    "Afiliados",
+    "Financiamiento",
+    "Agrupaciones políticas y alianzas",
+    "Documentación",
+    "Candidaturas",
+    "Plataformas electorales",
+  ],
+  Candidaturas: [
+    "Elecciones nacionales",
+    "Elecciones provinciales",
+    "Elecciones municipales",
+    "Candidatos",
+  ],
+  "Datos Históricos": ["Padrones"],
+  "Electores Privados de Libertad": [
+    "Participación",
+    "Información",
+    "Composición y/o participación",
+  ],
+  "Electores Residentes en el Exterior": [
+    "Composición",
+    "Participación",
+    "Composición y/o participación",
+  ],
+  "Información General": [
+    "Elecciones",
+    "Elecciones provinciales",
+    "Elecciones municipales",
+    "CNE",
+    "Accesibilidad electoral",
+  ],
+  Jurisprudencia: ["Secretaría Penal"],
+  "Normas Electorales": ["Obligatoriedad del voto"],
+  "Padrón Electoral": [
+    "Composición",
+    "Datos personales",
+    "Establecimientos de votación",
+    "Padrón electoral histórico",
+    "Establecimientos",
+  ],
+  "Participación y Ausentismo Electoral": ["Participación"],
+  "Redes Sociales": ["Auditorías - Control de información"],
+  "Resultados Electorales": [
+    "Elecciones provinciales",
+    "Elecciones nacionales",
+    "Elecciones nacionales, provinciales y municipales",
+    "Elecciones municipales",
+    "Electores residentes en el exterior",
+    "Elecciones nacionales y provinciales",
+    "Electores privados de libertad",
+    "Resultados elecciones provinciales",
+    "Elecciones",
+    "Resultados",
+  ],
+  "Voto Joven": ["Participación"],
+};
 
 export interface Solicitud {
   id: string;

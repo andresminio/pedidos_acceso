@@ -201,7 +201,7 @@ export default function PanelSolicitudes() {
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por solicitante, tema o expediente…"
+            placeholder="Buscar por solicitantes o tema"
             className="input w-full pl-8"
           />
         </div>

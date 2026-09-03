@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { TEMAS } from "@/lib/types";
+import { agregarCategoria, cargarCategorias } from "@/lib/categorias";
 import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
+
+const AGREGAR_CATEGORIA = "__agregar_categoria__";
 // El botón "Revisar correo ahora" (BotonRevisarCorreo) quedó descartado:
 // se optó por que mail-bot/main.py corra solo, programado cada 2hs con
 // el Programador de tareas de Windows, en vez de un watcher escuchando
@@ -80,6 +82,11 @@ export default function PanelCandidatos() {
   const [verDescartados, setVerDescartados] = useState(false);
   const [descartados, setDescartados] = useState<CandidatoCorreo[]>([]);
   const [cargandoDescartados, setCargandoDescartados] = useState(false);
+
+  const [categorias, setCategorias] = useState<string[]>([]);
+  useEffect(() => {
+    cargarCategorias().then(setCategorias);
+  }, []);
 
   const desdeIso = useCallback(
     () => new Date(Date.now() - DESCARTADOS_DIAS * 24 * 3_600_000).toISOString(),
@@ -254,6 +261,8 @@ export default function PanelCandidatos() {
             key={row.id}
             row={row}
             busy={busyId === row.id}
+            categorias={categorias}
+            onNuevaCategoria={(c) => setCategorias((prev) => [...new Set([...prev, c])].sort((a, b) => a.localeCompare(b, "es")))}
             onDescartar={() => handleDescartar(row)}
             onCargar={(campos) => handleCargar(row, campos)}
           />
@@ -301,11 +310,15 @@ export default function PanelCandidatos() {
 function FilaCandidato({
   row,
   busy,
+  categorias,
+  onNuevaCategoria,
   onDescartar,
   onCargar,
 }: {
   row: CandidatoCorreo;
   busy: boolean;
+  categorias: string[];
+  onNuevaCategoria: (categoria: string) => void;
   onDescartar: () => void;
   onCargar: (campos: SolicitudInput) => void;
 }) {
@@ -317,9 +330,33 @@ function FilaCandidato({
   );
   const [solicitud, setSolicitud] = useState(row.solicitud_propuesta ?? "");
   const [categoria, setCategoria] = useState(row.categoria_propuesta ?? "");
+  const [nuevaCategoria, setNuevaCategoria] = useState(false);
   const [subcategoria, setSubcategoria] = useState(row.subcategoria_propuesta ?? "");
   const [verCompleto, setVerCompleto] = useState(false);
   const citaRef = useRef<HTMLDivElement>(null);
+
+  function handleCategoriaChange(value: string) {
+    if (value === AGREGAR_CATEGORIA) {
+      setNuevaCategoria(true);
+      setCategoria("");
+      return;
+    }
+    setNuevaCategoria(false);
+    setCategoria(value);
+  }
+
+  async function confirmarNuevaCategoria(valor: string) {
+    const limpio = valor.trim();
+    if (!limpio) {
+      setNuevaCategoria(false);
+      return;
+    }
+    setCategoria(limpio);
+    setNuevaCategoria(false);
+    onNuevaCategoria(limpio);
+    const { error } = await agregarCategoria(limpio);
+    if (error) console.error("No se pudo guardar la categoría nueva:", error);
+  }
 
   useEffect(() => {
     if (!verCompleto) return;
@@ -346,7 +383,7 @@ function FilaCandidato({
       estado: "Pendiente",
       subestado: null,
       fecha_respuesta: null,
-      observaciones: `Cargado automáticamente desde correo (asunto: "${row.asunto ?? ""}").`,
+      observaciones: "Cargado automáticamente desde correo",
     });
   }
 
@@ -359,7 +396,7 @@ function FilaCandidato({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            disabled={busy || !nombre || !solicitud}
+            disabled={busy || !nombre || !solicitud || !categoria}
             onClick={submitCargar}
             className="whitespace-nowrap rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
           >
@@ -393,18 +430,36 @@ function FilaCandidato({
         </label>
         <label className="flex flex-col gap-1 text-xs text-slate-500">
           Categoría
-          <select
-            className="input"
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
-          >
-            <option value="">—</option>
-            {TEMAS.map((t) => (
-              <option key={t} value={t}>
-                {t}
+          {nuevaCategoria ? (
+            <input
+              autoFocus
+              placeholder="Nombre de la categoría"
+              className="input"
+              onBlur={(e) => confirmarNuevaCategoria(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  confirmarNuevaCategoria(e.currentTarget.value);
+                }
+              }}
+            />
+          ) : (
+            <select
+              className="input"
+              value={categoria}
+              onChange={(e) => handleCategoriaChange(e.target.value)}
+            >
+              <option value="" disabled>
+                Elegir categoría…
               </option>
-            ))}
-          </select>
+              {categorias.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+              <option value={AGREGAR_CATEGORIA}>+ Agregar categoría</option>
+            </select>
+          )}
         </label>
         <label className="flex flex-col gap-1 text-xs text-slate-500">
           Subcategoría
