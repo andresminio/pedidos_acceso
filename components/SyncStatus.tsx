@@ -21,20 +21,22 @@ export default function SyncStatus() {
   const [cargado, setCargado] = useState(false);
 
   const chequear = useCallback(async () => {
+    // ultima_sincronizacion_en vive en una tabla aparte (sheet_sync_state),
+    // no en una fila puntual de pedidos_solicitudes — así también se
+    // actualiza en un DELETE, donde no hay fila que marcar.
     const [syncRes, cambioRes] = await Promise.all([
       supabase
-        .from("pedidos_solicitudes")
-        .select("synced_at")
-        .not("synced_at", "is", null)
-        .order("synced_at", { ascending: false })
-        .limit(1),
+        .from("sheet_sync_state")
+        .select("ultima_sincronizacion_en")
+        .eq("id", 1)
+        .maybeSingle(),
       supabase
         .from("pedidos_solicitudes")
         .select("updated_at")
         .order("updated_at", { ascending: false })
         .limit(1),
     ]);
-    const valorSync = syncRes.data?.[0]?.synced_at;
+    const valorSync = syncRes.data?.ultima_sincronizacion_en;
     const ultimoCambio = cambioRes.data?.[0]?.updated_at;
     const sync = valorSync ? new Date(valorSync) : null;
     setUltimaSync(sync);

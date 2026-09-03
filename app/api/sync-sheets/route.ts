@@ -127,6 +127,21 @@ async function getSheetId(
   return encontrada.properties.sheetId;
 }
 
+// Marca "ahora" como la última sincronización exitosa con la hoja. A
+// diferencia de la vieja columna synced_at (por fila), esto no depende de
+// que exista una fila puntual — sirve igual para create, update y delete.
+async function marcarSincronizado() {
+  const { error } = await supabase
+    .from("sheet_sync_state")
+    .update({ ultima_sincronizacion_en: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) {
+    // La hoja ya se actualizó bien; esto solo afecta el indicador visual
+    // de "al día", no es motivo para reportar la sync como fallida.
+    console.error("No se pudo marcar sheet_sync_state:", error.message);
+  }
+}
+
 // Borra la fila entera (no solo su contenido), corriendo las de abajo
 // para arriba — igual que borrar una fila a mano en Sheets.
 async function deleteRow(
@@ -187,8 +202,7 @@ export async function POST(req: NextRequest) {
       if (rowIndex) {
         await deleteRow(sheets, spreadsheetId, tab, rowIndex);
       }
-      // No hay fila que marcar como synced_at: ya no existe en Supabase
-      // (esto vino de un trigger AFTER DELETE).
+      await marcarSincronizado();
       return NextResponse.json({ ok: true, id: record.id, deleted: !!rowIndex });
     }
 
@@ -214,19 +228,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Marca la fila como sincronizada. Esto también dispara un UPDATE en
-    // pedidos_solicitudes, pero el trigger de Postgres (webhook_trigger.sql)
-    // tiene un WHEN que ignora cambios donde lo único que varió es
-    // synced_at, así que no vuelve a llamar a este endpoint en loop.
-    const { error: errSync } = await supabase
-      .from("pedidos_solicitudes")
-      .update({ synced_at: new Date().toISOString() })
-      .eq("id", record.id);
-    if (errSync) {
-      // La hoja ya se actualizó bien; esto solo afecta el indicador visual
-      // de "al día", no es motivo para reportar la sync como fallida.
-      console.error("No se pudo marcar synced_at:", errSync.message);
-    }
+    await marcarSincronizado();
 
     return NextResponse.json({ ok: true, id: record.id, updated: !!rowIndex });
   } catch (err) {
