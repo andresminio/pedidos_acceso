@@ -7,13 +7,13 @@ export default function Revision() {
       <header className="mb-6 border-b border-slate-800 pb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth={1.6}
-                className="h-8 w-8"
+                strokeWidth={1.7}
+                className="h-6 w-6"
               >
                 <path
                   d="M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"
