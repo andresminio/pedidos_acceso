@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
@@ -393,6 +393,19 @@ function FilaSolicitudEdicion({
   const [observaciones, setObservaciones] = useState(row.observaciones ?? "");
   const [guardando, setGuardando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
+  const filaRef = useRef<HTMLTableRowElement>(null);
+
+  // Click afuera de la fila de edición (incluida la fila original de
+  // arriba) la cierra sin guardar, igual que "Cancelar".
+  useEffect(() => {
+    function handleClickFuera(e: MouseEvent) {
+      if (filaRef.current && !filaRef.current.contains(e.target as Node)) {
+        onCerrar();
+      }
+    }
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, [onCerrar]);
 
   async function handleGuardar() {
     setGuardando(true);
@@ -418,7 +431,7 @@ function FilaSolicitudEdicion({
   }
 
   return (
-    <tr className="bg-[#0e1219]">
+    <tr ref={filaRef} className="bg-[#0e1219]">
       <td colSpan={colSpan} className="px-3 py-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="flex flex-col gap-1 text-xs text-slate-400">
