@@ -340,7 +340,11 @@ function FilaCandidato({
         </div>
       </div>
 
-      <h3 className="mb-3 font-semibold text-white">{row.asunto}</h3>
+      <h3 className="mb-1 font-semibold text-white">{row.asunto}</h3>
+
+      {row.confianza_ia && (
+        <p className="mb-3 text-xs italic text-slate-500">IA: {row.confianza_ia}</p>
+      )}
 
       <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <label className="flex flex-col gap-1 text-xs text-slate-500">
@@ -385,19 +389,14 @@ function FilaCandidato({
         </label>
       </div>
 
-      <div className="mb-3 rounded-md border border-slate-800 bg-[#0e1219] p-3">
-        {row.confianza_ia && (
-          <p className="mb-2 text-xs italic text-slate-500">IA: {row.confianza_ia}</p>
-        )}
-        <label className="flex flex-col gap-1 text-xs text-slate-500">
-          Solicitud (se carga tal cual al pedido — corregí si hace falta)
-          <textarea
-            className="input min-h-16"
-            value={solicitud}
-            onChange={(e) => setSolicitud(e.target.value)}
-          />
-        </label>
-      </div>
+      <label className="mb-3 flex flex-col gap-1 text-xs text-slate-500">
+        Solicitud (se carga tal cual al pedido — corregí si hace falta)
+        <textarea
+          className="input min-h-16"
+          value={solicitud}
+          onChange={(e) => setSolicitud(e.target.value)}
+        />
+      </label>
 
       {row.cuerpo_resumen && (
         <div ref={citaRef}>

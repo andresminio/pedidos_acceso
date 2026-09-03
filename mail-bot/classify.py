@@ -64,7 +64,7 @@ texto extra) con este formato exacto:
   "es_pedido_acceso": true o false,
   "confianza_ia": "una frase corta explicando por qué lo clasificaste así",
   "nombre_solicitante": "nombre de quien pide, o null si no se puede inferir",
-  "solicitud_propuesta": "resumen breve (1-2 oraciones) de qué se solicita, o null",
+  "solicitud_propuesta": "qué se solicita, directo y breve (ver formato abajo), o null",
   "categoria_propuesta": "una de estas categorías EXACTAS, o null si ninguna aplica: {categorias}",
   "subcategoria_propuesta": "subtema más específico si aplica, o null"
 }}
@@ -77,6 +77,14 @@ notificaciones automáticas, mails internos administrativos, o \
 conversaciones que no son un pedido nuevo.
 - Si no estás seguro, marcá "es_pedido_acceso": false y explicá por qué en \
 "confianza_ia".
+- Para "solicitud_propuesta": andá directo al grano, sin frases de relleno. \
+NUNCA arranques con "Se solicita información sobre", "El remitente pide", \
+"Solicita acceso a" ni nada equivalente — esa parte ya se sabe (es un \
+pedido de acceso), no hace falta repetirla. Empezá directo por el objeto \
+concreto del pedido. Por ejemplo, en vez de "Se solicita información sobre \
+el padrón electoral de la provincia de Córdoba" escribí "Padrón electoral \
+de la provincia de Córdoba". Si son varios puntos, listalos separados por \
+comas o "y", igual de directo.
 
 Además de lo anterior, seguí estas reglas de contexto específicas de esta \
 oficina (definidas por el equipo, tienen prioridad sobre tu criterio general \
