@@ -14,6 +14,7 @@ import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
 import SyncStatus from "@/components/SyncStatus";
+import IconoIA from "@/components/IconoIA";
 
 const AGREGAR_CATEGORIA = "__agregar_categoria__";
 
@@ -164,6 +165,19 @@ export default function PanelSolicitudes() {
   }
 
   async function handleDelete(id: string) {
+    // Si este pedido vino de un correo importado, antes de borrarlo hay que
+    // desvincular ese candidato: si no, el FK deja pedido_id en null pero
+    // estado_revision sigue "aprobado" y el correo queda en un limbo (no
+    // aparece en revisión ni el bot lo vuelve a traer, porque ya existe un
+    // candidato con ese UID). Lo pasamos a "descartado".
+    const { error: errCorreo } = await supabase
+      .from("candidatos_correo")
+      .update({ estado_revision: "descartado", revisado_en: new Date().toISOString() })
+      .eq("pedido_id", id);
+    if (errCorreo) {
+      console.error("No se pudo desvincular el correo del pedido:", errCorreo.message);
+    }
+
     const { error } = await supabase
       .from("pedidos_solicitudes")
       .delete()

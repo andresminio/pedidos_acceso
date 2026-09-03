@@ -546,6 +546,21 @@ function FilaCandidato({
   );
 }
 
+// revisado_en solo se completa cuando hay una acción humana sobre el
+// candidato (descartar a mano, o el cascade al eliminar un pedido). Si el
+// bot lo descartó solo al clasificarlo, queda null.
+function PillOrigenDescarte({ revisadoEn }: { revisadoEn: string | null }) {
+  return revisadoEn ? (
+    <span className="rounded-full bg-slate-700/40 px-2 py-0.5 text-[10px] text-slate-400">
+      Descartado por el usuario
+    </span>
+  ) : (
+    <span className="rounded-full bg-slate-700/20 px-2 py-0.5 text-[10px] text-slate-500">
+      Descartado por IA
+    </span>
+  );
+}
+
 function FilaDescartado({
   row,
   busy,
@@ -585,7 +600,8 @@ function FilaDescartado({
           className={tieneCuerpo ? "cursor-pointer" : ""}
         >
           <span className="text-slate-400">{fechaCortaHora(row.fecha_correo)}</span>{" "}
-          · de {row.remitente} — <span className="text-slate-300">{row.asunto}</span>
+          · de {row.remitente} — <span className="text-slate-300">{row.asunto}</span>{" "}
+          <PillOrigenDescarte revisadoEn={row.revisado_en} />
           {row.confianza_ia && (
             <div className="mt-1 italic text-slate-600">IA: {row.confianza_ia}</div>
           )}
