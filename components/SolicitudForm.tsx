@@ -79,6 +79,7 @@ export default function SolicitudForm({
       subestado: null,
       fecha_respuesta: null,
       observaciones: null,
+      respuesta_ia_borrador: null,
     });
     setForm(empty);
     setNuevoTema(false);

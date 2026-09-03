@@ -424,12 +424,33 @@ function FilaSolicitudEdicion({
   const [subestado, setSubestado] = useState(row.subestado ?? "");
   const [fechaRespuesta, setFechaRespuesta] = useState(row.fecha_respuesta ?? "");
   const [observaciones, setObservaciones] = useState(row.observaciones ?? "");
+  const [respuestaIA, setRespuestaIA] = useState(row.respuesta_ia_borrador ?? "");
   const [guardando, setGuardando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const filaRef = useRef<HTMLTableRowElement>(null);
 
   const [categorias, setCategorias] = useState<string[]>([]);
   const [subcategorias, setSubcategorias] = useState<string[]>([]);
+
+  // "Generar modelo de respuesta con IA" solo tiene sentido si este pedido
+  // viene de un correo importado (ahí sí tenemos el mail original como
+  // contexto). Se busca por candidatos_correo.pedido_id = este pedido.
+  const [mailOrigen, setMailOrigen] = useState<{
+    cuerpo_resumen: string | null;
+    asunto: string | null;
+    remitente: string;
+  } | null>(null);
+  const [generandoRespuesta, setGenerandoRespuesta] = useState(false);
+  const [errorRespuestaIA, setErrorRespuestaIA] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("candidatos_correo")
+      .select("cuerpo_resumen, asunto, remitente")
+      .eq("pedido_id", row.id)
+      .maybeSingle()
+      .then(({ data }) => setMailOrigen(data));
+  }, [row.id]);
 
   // Si está Cerrado, la F. respuesta es obligatoria y tiene que ser
   // posterior a la fecha de ingreso (no tiene sentido responder antes de

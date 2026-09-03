@@ -112,6 +112,7 @@ export interface Solicitud {
   subestado: string | null;
   fecha_respuesta: string | null;
   observaciones: string | null;
+  respuesta_ia_borrador: string | null;
   synced_at: string | null;
   created_at: string;
   updated_at: string;

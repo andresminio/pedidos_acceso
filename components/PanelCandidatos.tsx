@@ -394,6 +394,7 @@ function FilaCandidato({
       subestado: null,
       fecha_respuesta: null,
       observaciones: "Cargado automáticamente desde correo",
+      respuesta_ia_borrador: null,
     });
   }
 
