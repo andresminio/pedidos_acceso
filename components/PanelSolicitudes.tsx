@@ -40,6 +40,11 @@ export default function PanelSolicitudes() {
   const [filtroEstado, setFiltroEstado] = useState<string>("");
   const [busqueda, setBusqueda] = useState<string>("");
 
+  // Solo una fila editable a la vez: id de la fila abierta, o null si
+  // ninguna. Vive acá (no en cada FilaSolicitud) para poder cerrar
+  // cualquier otra fila abierta cuando se abre una nueva.
+  const [editandoId, setEditandoId] = useState<string | null>(null);
+
   const [colsVisibles, setColsVisibles] = useState<Set<string>>(
     () => new Set(COLUMNAS.map((c) => c.key))
   );
@@ -280,6 +285,9 @@ export default function PanelSolicitudes() {
                 onDelete={handleDelete}
                 colsVisibles={colsVisibles}
                 destacada={row.id === idMasReciente}
+                editando={row.id === editandoId}
+                onAbrir={() => setEditandoId(row.id)}
+                onCerrarEdicion={() => setEditandoId(null)}
               />
             ))}
           </tbody>
@@ -295,14 +303,19 @@ function FilaSolicitud({
   onDelete,
   colsVisibles,
   destacada,
+  editando,
+  onAbrir,
+  onCerrarEdicion,
 }: {
   row: Solicitud;
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   colsVisibles: Set<string>;
   destacada: boolean;
+  editando: boolean;
+  onAbrir: () => void;
+  onCerrarEdicion: () => void;
 }) {
-  const [editando, setEditando] = useState(false);
   const colSpanTotal = colsVisibles.size;
 
   const celdas: Record<string, ReactNode> = {
@@ -335,7 +348,7 @@ function FilaSolicitud({
   return (
     <>
       <tr
-        onDoubleClick={() => setEditando(true)}
+        onDoubleClick={onAbrir}
         title="Doble click para editar"
         className={`cursor-pointer align-top text-slate-300 ${
           destacada ? "bg-blue-500/10" : "hover:bg-white/[0.02]"
@@ -352,7 +365,7 @@ function FilaSolicitud({
           row={row}
           onUpdate={onUpdate}
           onDelete={onDelete}
-          onCerrar={() => setEditando(false)}
+          onCerrar={onCerrarEdicion}
           colSpan={colSpanTotal}
         />
       )}
