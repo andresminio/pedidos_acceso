@@ -237,26 +237,12 @@ export default function PanelCandidatos() {
             </p>
           )}
           {descartados.map((d) => (
-            <div
+            <FilaDescartado
               key={d.id}
-              className="flex items-start justify-between gap-3 rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-xs text-slate-500"
-            >
-              <div>
-                <span className="text-slate-400">{fechaCortaHora(d.fecha_correo)}</span>{" "}
-                · de {d.remitente} — <span className="text-slate-300">{d.asunto}</span>
-                {d.confianza_ia && (
-                  <div className="mt-1 italic text-slate-600">IA: {d.confianza_ia}</div>
-                )}
-              </div>
-              <button
-                type="button"
-                disabled={busyId === d.id}
-                onClick={() => handlePasarARevision(d)}
-                className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-              >
-                Pasar a revisión
-              </button>
-            </div>
+              row={d}
+              busy={busyId === d.id}
+              onPasarARevision={() => handlePasarARevision(d)}
+            />
           ))}
         </div>
       )}
@@ -390,7 +376,7 @@ function FilaCandidato({
       </div>
 
       <label className="mb-3 flex flex-col gap-1 text-xs text-slate-500">
-        Solicitud (se carga tal cual al pedido — corregí si hace falta)
+        Solicitud
         <textarea
           className="input min-h-16"
           value={solicitud}
@@ -418,6 +404,65 @@ function FilaCandidato({
             "
           </blockquote>
         </div>
+      )}
+    </div>
+  );
+}
+
+function FilaDescartado({
+  row,
+  busy,
+  onPasarARevision,
+}: {
+  row: CandidatoCorreo;
+  busy: boolean;
+  onPasarARevision: () => void;
+}) {
+  const [expandido, setExpandido] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!expandido) return;
+    function handleClickFuera(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setExpandido(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, [expandido]);
+
+  const tieneCuerpo = !!row.cuerpo_resumen?.trim();
+
+  return (
+    <div
+      ref={ref}
+      className="rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-xs text-slate-500"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div
+          onClick={() => tieneCuerpo && setExpandido((v) => !v)}
+          className={tieneCuerpo ? "cursor-pointer" : ""}
+        >
+          <span className="text-slate-400">{fechaCortaHora(row.fecha_correo)}</span>{" "}
+          · de {row.remitente} — <span className="text-slate-300">{row.asunto}</span>
+          {row.confianza_ia && (
+            <div className="mt-1 italic text-slate-600">IA: {row.confianza_ia}</div>
+          )}
+        </div>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onPasarARevision}
+          className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+        >
+          Pasar a revisión
+        </button>
+      </div>
+      {expandido && tieneCuerpo && (
+        <blockquote className="mt-2 whitespace-pre-line rounded-md border border-slate-800 bg-black/20 px-3 py-2 text-sm italic text-slate-400">
+          "{row.cuerpo_resumen!.trim()}"
+        </blockquote>
       )}
     </div>
   );

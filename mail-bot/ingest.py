@@ -8,6 +8,7 @@ from __future__ import annotations
 import email
 import imaplib
 import os
+import re
 import ssl
 from dataclasses import dataclass
 from datetime import datetime
@@ -15,6 +16,20 @@ from email.header import decode_header
 from email.utils import parsedate_to_datetime
 
 MAX_BODY_CHARS = 4000  # tope para no mandar cuerpos gigantes a Gemini
+
+# Banner que el gateway de seguridad del organismo agrega a los mails
+# externos ("Seguridad Informática le informa que este mail... PHISHING...").
+# Es ruido institucional, no contenido real del mail — se saca antes de
+# guardar y de mandarlo a Gemini. Si en algún momento cambia la redacción
+# exacta, ajustar este patrón.
+_BANNER_SEGURIDAD_RE = re.compile(
+    r"⚠?\s*Seguridad Inform[aá]tica le informa.*?elimine el mensaje inmediatamente\.?",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def _sacar_banner_seguridad(texto: str) -> str:
+    return _BANNER_SEGURIDAD_RE.sub("", texto).strip()
 
 
 @dataclass
