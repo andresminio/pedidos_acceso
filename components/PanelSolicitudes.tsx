@@ -316,7 +316,6 @@ export default function PanelSolicitudes() {
                 onUpdate={handleUpdate}
                 onDelete={handleDelete}
                 colsVisibles={colsVisibles}
-                destacada={row.id === idMasReciente}
                 editando={row.id === editandoId}
                 onAbrir={() => setEditandoId(row.id)}
                 onCerrarEdicion={() => setEditandoId(null)}
@@ -334,7 +333,6 @@ function FilaSolicitud({
   onUpdate,
   onDelete,
   colsVisibles,
-  destacada,
   editando,
   onAbrir,
   onCerrarEdicion,
@@ -343,7 +341,6 @@ function FilaSolicitud({
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   colsVisibles: Set<string>;
-  destacada: boolean;
   editando: boolean;
   onAbrir: () => void;
   onCerrarEdicion: () => void;
@@ -382,9 +379,7 @@ function FilaSolicitud({
         <tr
           onDoubleClick={onAbrir}
           title="Doble click para editar"
-          className={`cursor-pointer align-top text-slate-300 ${
-            destacada ? "bg-blue-500/10" : "hover:bg-white/[0.02]"
-          }`}
+          className="cursor-pointer align-top text-slate-300 hover:bg-white/[0.02]"
         >
           {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
             <td key={c.key} className="px-3 py-2">
