@@ -109,6 +109,52 @@ async function findRowIndexById(
   return null;
 }
 
+// sheetId (gid) numérico de la pestaña, necesario para batchUpdate
+// (deleteDimension no acepta el nombre de la pestaña, solo su id interno).
+async function getSheetId(
+  sheets: ReturnType<typeof google.sheets>,
+  spreadsheetId: string,
+  tab: string
+): Promise<number> {
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: "sheets.properties",
+  });
+  const encontrada = meta.data.sheets?.find((s) => s.properties?.title === tab);
+  if (!encontrada || encontrada.properties?.sheetId == null) {
+    throw new Error(`No se encontró la pestaña "${tab}" en la hoja.`);
+  }
+  return encontrada.properties.sheetId;
+}
+
+// Borra la fila entera (no solo su contenido), corriendo las de abajo
+// para arriba — igual que borrar una fila a mano en Sheets.
+async function deleteRow(
+  sheets: ReturnType<typeof google.sheets>,
+  spreadsheetId: string,
+  tab: string,
+  rowIndex1Indexed: number
+) {
+  const sheetId = await getSheetId(sheets, spreadsheetId, tab);
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: "ROWS",
+              startIndex: rowIndex1Indexed - 1,
+              endIndex: rowIndex1Indexed,
+            },
+          },
+        },
+      ],
+    },
+  });
+}
+
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("x-webhook-secret");
   if (secret !== process.env.SYNC_WEBHOOK_SECRET) {
@@ -135,6 +181,16 @@ export async function POST(req: NextRequest) {
   try {
     const sheets = getSheetsClient();
     await ensureHeaders(sheets, spreadsheetId, tab);
+
+    if (body.type === "DELETE") {
+      const rowIndex = await findRowIndexById(sheets, spreadsheetId, tab, record.id);
+      if (rowIndex) {
+        await deleteRow(sheets, spreadsheetId, tab, rowIndex);
+      }
+      // No hay fila que marcar como synced_at: ya no existe en Supabase
+      // (esto vino de un trigger AFTER DELETE).
+      return NextResponse.json({ ok: true, id: record.id, deleted: !!rowIndex });
+    }
 
     const rowIndex = await findRowIndexById(sheets, spreadsheetId, tab, record.id);
     const row = toRow(record);

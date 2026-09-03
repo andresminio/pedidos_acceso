@@ -31,9 +31,35 @@ begin
 end;
 $$;
 
+-- Igual que pedidos_notify_sync() pero para DELETE: ahí no existe NEW,
+-- solo OLD (la fila tal cual estaba antes de borrarse).
+create or replace function public.pedidos_notify_sync_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform net.http_post(
+    url := 'https://pedidos-acceso.vercel.app/api/sync-sheets',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-webhook-secret', 'TU_SECRET_ACA'
+    ),
+    body := jsonb_build_object(
+      'type', TG_OP,
+      'table', TG_TABLE_NAME,
+      'record', row_to_json(OLD)
+    )
+  );
+  return OLD;
+end;
+$$;
+
 drop trigger if exists pedidos_solicitudes_sync_trigger on public.pedidos_solicitudes;
 drop trigger if exists pedidos_solicitudes_sync_insert on public.pedidos_solicitudes;
 drop trigger if exists pedidos_solicitudes_sync_update on public.pedidos_solicitudes;
+drop trigger if exists pedidos_solicitudes_sync_delete on public.pedidos_solicitudes;
 
 -- Postgres no permite referenciar OLD en el WHEN de un trigger de INSERT
 -- (aunque OLD sería NULL igual), así que van separados: INSERT siempre
@@ -64,3 +90,8 @@ create trigger pedidos_solicitudes_sync_update
     or NEW.observaciones is distinct from OLD.observaciones
   )
   execute function public.pedidos_notify_sync();
+
+create trigger pedidos_solicitudes_sync_delete
+  after delete on public.pedidos_solicitudes
+  for each row
+  execute function public.pedidos_notify_sync_delete();

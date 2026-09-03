@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { GOOGLE_SHEET_URL } from "@/lib/constants";
 
@@ -19,41 +19,44 @@ export default function SyncStatus() {
   const [ultimaSync, setUltimaSync] = useState<Date | null>(null);
   const [alDia, setAlDia] = useState(false);
   const [cargado, setCargado] = useState(false);
-  const [, forceTick] = useState(0);
 
-  useEffect(() => {
-    (async () => {
-      const [syncRes, cambioRes] = await Promise.all([
-        supabase
-          .from("pedidos_solicitudes")
-          .select("synced_at")
-          .not("synced_at", "is", null)
-          .order("synced_at", { ascending: false })
-          .limit(1),
-        supabase
-          .from("pedidos_solicitudes")
-          .select("updated_at")
-          .order("updated_at", { ascending: false })
-          .limit(1),
-      ]);
-      const valorSync = syncRes.data?.[0]?.synced_at;
-      const ultimoCambio = cambioRes.data?.[0]?.updated_at;
-      const sync = valorSync ? new Date(valorSync) : null;
-      setUltimaSync(sync);
-      // "Al día" = la hoja refleja el último cambio: o no hay ningún pedido
-      // todavía, o el último sync es igual o posterior al último cambio en
-      // pedidos_solicitudes. Si hay un cambio más nuevo que el último sync,
-      // la hoja está desactualizada (todavía no le llegó esa novedad).
-      setAlDia(!ultimoCambio || (sync !== null && sync >= new Date(ultimoCambio)));
-      setCargado(true);
-    })();
+  const chequear = useCallback(async () => {
+    const [syncRes, cambioRes] = await Promise.all([
+      supabase
+        .from("pedidos_solicitudes")
+        .select("synced_at")
+        .not("synced_at", "is", null)
+        .order("synced_at", { ascending: false })
+        .limit(1),
+      supabase
+        .from("pedidos_solicitudes")
+        .select("updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(1),
+    ]);
+    const valorSync = syncRes.data?.[0]?.synced_at;
+    const ultimoCambio = cambioRes.data?.[0]?.updated_at;
+    const sync = valorSync ? new Date(valorSync) : null;
+    setUltimaSync(sync);
+    // "Al día" = la hoja refleja el último cambio: o no hay ningún pedido
+    // todavía, o el último sync es igual o posterior al último cambio en
+    // pedidos_solicitudes. Si hay un cambio más nuevo que el último sync,
+    // la hoja está desactualizada (todavía no le llegó esa novedad).
+    setAlDia(!ultimoCambio || (sync !== null && sync >= new Date(ultimoCambio)));
+    setCargado(true);
   }, []);
 
-  // Refresca el texto "hace X min" cada 30s sin volver a pegarle a Supabase.
   useEffect(() => {
-    const id = setInterval(() => forceTick((t) => t + 1), 30_000);
+    chequear();
+  }, [chequear]);
+
+  // Vuelve a chequear cada 30s — antes solo se pedía una vez al montar, así
+  // que si sincronizabas o borrabas algo con la página abierta, el punto
+  // se quedaba con el estado viejo hasta recargar.
+  useEffect(() => {
+    const id = setInterval(chequear, 30_000);
     return () => clearInterval(id);
-  }, []);
+  }, [chequear]);
 
   const verde = cargado && alDia;
 
