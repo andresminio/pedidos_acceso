@@ -80,6 +80,7 @@ def _extract_body(msg: email.message.Message) -> tuple[str, bool]:
         except Exception:
             body = str(msg.get_payload())
 
+    body = _sacar_banner_seguridad(body)
     return body.strip()[:MAX_BODY_CHARS], tiene_adjuntos
 
 

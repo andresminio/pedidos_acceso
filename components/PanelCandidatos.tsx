@@ -385,9 +385,11 @@ function FilaCandidato({
       </label>
 
       {row.cuerpo_resumen && (
-        <div ref={citaRef}>
+        <div ref={citaRef} className="flex flex-col gap-1 text-xs text-slate-500">
+          Correo recibido
           <blockquote
             onClick={() => {
+              if (window.getSelection()?.toString()) return;
               if (row.cuerpo_resumen!.trim().length > 240) {
                 setVerCompleto((v) => !v);
               }
@@ -396,12 +398,10 @@ function FilaCandidato({
               row.cuerpo_resumen.trim().length > 240 ? "cursor-pointer" : ""
             }`}
           >
-            "
             {verCompleto
               ? row.cuerpo_resumen.trim()
               : row.cuerpo_resumen.trim().slice(0, 240) +
                 (row.cuerpo_resumen.trim().length > 240 ? "…" : "")}
-            "
           </blockquote>
         </div>
       )}
@@ -441,7 +441,10 @@ function FilaDescartado({
     >
       <div className="flex items-start justify-between gap-3">
         <div
-          onClick={() => tieneCuerpo && setExpandido((v) => !v)}
+          onClick={() => {
+            if (window.getSelection()?.toString()) return;
+            if (tieneCuerpo) setExpandido((v) => !v);
+          }}
           className={tieneCuerpo ? "cursor-pointer" : ""}
         >
           <span className="text-slate-400">{fechaCortaHora(row.fecha_correo)}</span>{" "}
@@ -460,9 +463,12 @@ function FilaDescartado({
         </button>
       </div>
       {expandido && tieneCuerpo && (
-        <blockquote className="mt-2 whitespace-pre-line rounded-md border border-slate-800 bg-black/20 px-3 py-2 text-sm italic text-slate-400">
-          "{row.cuerpo_resumen!.trim()}"
-        </blockquote>
+        <>
+          <p className="mt-2 text-xs text-slate-500">Correo recibido</p>
+          <blockquote className="mt-1 whitespace-pre-line rounded-md border border-slate-800 bg-black/20 px-3 py-2 text-sm italic text-slate-400">
+            {row.cuerpo_resumen!.trim()}
+          </blockquote>
+        </>
       )}
     </div>
   );
