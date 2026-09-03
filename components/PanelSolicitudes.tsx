@@ -384,19 +384,21 @@ function FilaSolicitud({
 
   return (
     <>
-      <tr
-        onDoubleClick={onAbrir}
-        title="Doble click para editar"
-        className={`cursor-pointer align-top text-slate-300 ${
-          destacada ? "bg-blue-500/10" : "hover:bg-white/[0.02]"
-        }`}
-      >
-        {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
-          <td key={c.key} className="px-3 py-2">
-            {celdas[c.key]}
-          </td>
-        ))}
-      </tr>
+      {!editando && (
+        <tr
+          onDoubleClick={onAbrir}
+          title="Doble click para editar"
+          className={`cursor-pointer align-top text-slate-300 ${
+            destacada ? "bg-blue-500/10" : "hover:bg-white/[0.02]"
+          }`}
+        >
+          {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
+            <td key={c.key} className="px-3 py-2">
+              {celdas[c.key]}
+            </td>
+          ))}
+        </tr>
+      )}
       {editando && (
         <FilaSolicitudEdicion
           row={row}
