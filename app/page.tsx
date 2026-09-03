@@ -1,6 +1,5 @@
 import PanelSolicitudes from "@/components/PanelSolicitudes";
 import PanelTabs from "@/components/PanelTabs";
-import SyncStatus from "@/components/SyncStatus";
 
 export default function Home() {
   return (
@@ -41,9 +40,6 @@ export default function Home() {
           <PanelTabs activa="registro" />
         </div>
       </header>
-      <div className="mb-3 flex justify-end">
-        <SyncStatus />
-      </div>
       <PanelSolicitudes />
     </main>
   );

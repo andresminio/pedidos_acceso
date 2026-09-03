@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
+import SyncStatus from "@/components/SyncStatus";
 
 interface Columna {
   key: string;
@@ -213,7 +214,10 @@ export default function PanelSolicitudes() {
         </div>
       )}
 
-      <SolicitudForm onSubmit={handleCreate} submitting={saving} />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <SyncStatus />
+        <SolicitudForm onSubmit={handleCreate} submitting={saving} />
+      </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-3">
         <div className="relative min-w-[280px] flex-1">
