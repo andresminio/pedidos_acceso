@@ -69,7 +69,7 @@ export default function SyncStatus() {
         rel="noopener noreferrer"
         className="text-slate-300 underline decoration-slate-600 underline-offset-2 hover:text-white"
       >
-        UEEDA Pedidos de acceso
+        UEEDA pedidos de acceso
       </a>
       {cargado && ultimaSync && <> · {tiempoRelativo(ultimaSync)}</>}
     </p>

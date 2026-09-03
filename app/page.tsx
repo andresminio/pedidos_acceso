@@ -17,12 +17,13 @@ export default function Home() {
                 className="h-5 w-5"
               >
                 <path
-                  d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z"
+                  d="M7 3.5h7l4 4V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
+                <path d="M14 3.5v4h4" strokeLinecap="round" strokeLinejoin="round" />
                 <path
-                  d="M9 12l2 2 4-4"
+                  d="M9 13h6M9 16h6M9 10h2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -30,7 +31,7 @@ export default function Home() {
             </span>
             <div>
               <p className="text-sm text-slate-400">
-                Acceso a la información pública
+                Unidad de Estadística Electoral y Datos Abiertos
               </p>
               <h1 className="text-2xl font-semibold text-white">
                 Pedidos de Acceso
