@@ -20,11 +20,24 @@ const COLUMNAS: Columna[] = [
   { key: "solicitud", label: "Solicitud" },
   { key: "categoria", label: "Categoría" },
   { key: "subcategoria", label: "Subcategoría" },
-  { key: "archivo", label: "Archivo/Respuesta" },
   { key: "estado", label: "Estado" },
   { key: "subestado", label: "Sub-estado" },
   { key: "fecha_respuesta", label: "F. respuesta" },
   { key: "observaciones", label: "Observaciones" },
+];
+
+// Columnas visibles por default (antes de que el usuario las personalice
+// con el botón "Columnas", guardado en localStorage). Subcategoría,
+// Sub-estado y Observaciones arrancan ocultas.
+const COLUMNAS_DEFAULT = [
+  "anio",
+  "cuatrimestre",
+  "fecha",
+  "solicitante",
+  "solicitud",
+  "categoria",
+  "estado",
+  "fecha_respuesta",
 ];
 
 const COLUMNAS_STORAGE_KEY = "pedidos_columnas_visibles";
@@ -63,7 +76,7 @@ export default function PanelSolicitudes() {
   const [editandoId, setEditandoId] = useState<string | null>(null);
 
   const [colsVisibles, setColsVisibles] = useState<Set<string>>(
-    () => new Set(COLUMNAS.map((c) => c.key))
+    () => new Set(COLUMNAS_DEFAULT)
   );
   useEffect(() => {
     try {
@@ -349,7 +362,6 @@ function FilaSolicitud({
     ),
     categoria: row.categoria,
     subcategoria: row.subcategoria,
-    archivo: row.nombre_archivo,
     estado: <PillEstado estado={row.estado} />,
     subestado: row.subestado ?? "—",
     fecha_respuesta: (
@@ -403,7 +415,6 @@ function FilaSolicitudEdicion({
   onCerrar: () => void;
   colSpan: number;
 }) {
-  const [nombreArchivo, setNombreArchivo] = useState(row.nombre_archivo ?? "");
   const [estado, setEstado] = useState(row.estado);
   const [subestado, setSubestado] = useState(row.subestado ?? "");
   const [fechaRespuesta, setFechaRespuesta] = useState(row.fecha_respuesta ?? "");
@@ -427,7 +438,6 @@ function FilaSolicitudEdicion({
   async function handleGuardar() {
     setGuardando(true);
     await onUpdate(row.id, {
-      nombre_archivo: nombreArchivo || null,
       estado,
       subestado: estado === "Cerrado" ? subestado || null : null,
       fecha_respuesta: fechaRespuesta || null,
@@ -450,15 +460,7 @@ function FilaSolicitudEdicion({
   return (
     <tr ref={filaRef} className="bg-[#0e1219]">
       <td colSpan={colSpan} className="px-3 py-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
-            Archivo/Respuesta
-            <input
-              className="input"
-              value={nombreArchivo}
-              onChange={(e) => setNombreArchivo(e.target.value)}
-            />
-          </label>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Estado
             <select
