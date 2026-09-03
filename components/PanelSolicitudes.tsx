@@ -203,17 +203,6 @@ export default function PanelSolicitudes() {
     [rows]
   );
 
-  // Resalta el pedido cargado más recientemente (últimas 24hs) para que
-  // se note de un vistazo qué es nuevo.
-  const idMasReciente = useMemo(() => {
-    if (rows.length === 0) return null;
-    const masNuevo = rows.reduce((a, b) =>
-      new Date(a.created_at) > new Date(b.created_at) ? a : b
-    );
-    const antiguedadHoras =
-      (Date.now() - new Date(masNuevo.created_at).getTime()) / 3_600_000;
-    return antiguedadHoras <= 24 ? masNuevo.id : null;
-  }, [rows]);
 
   return (
     <div>
@@ -288,7 +277,7 @@ export default function PanelSolicitudes() {
       <div className="overflow-x-auto rounded-lg border border-slate-800 bg-[#12161f] shadow-sm">
         <table className="min-w-full divide-y divide-slate-800 text-sm">
           <thead>
-            <tr className="bg-blue-500/25">
+            <tr className="bg-blue-500/10">
               {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
                 <th
                   key={c.key}
