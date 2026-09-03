@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { agregarCategoria, cargarCategorias } from "@/lib/categorias";
+import { agregarCategoria, cargarCategorias, cargarSubcategorias } from "@/lib/categorias";
 import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
 
 const AGREGAR_CATEGORIA = "__agregar_categoria__";
@@ -332,8 +332,13 @@ function FilaCandidato({
   const [categoria, setCategoria] = useState(row.categoria_propuesta ?? "");
   const [nuevaCategoria, setNuevaCategoria] = useState(false);
   const [subcategoria, setSubcategoria] = useState(row.subcategoria_propuesta ?? "");
+  const [subcategorias, setSubcategorias] = useState<string[]>([]);
   const [verCompleto, setVerCompleto] = useState(false);
   const citaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    cargarSubcategorias(categoria).then(setSubcategorias);
+  }, [categoria]);
 
   function handleCategoriaChange(value: string) {
     if (value === AGREGAR_CATEGORIA) {
@@ -464,10 +469,16 @@ function FilaCandidato({
         <label className="flex flex-col gap-1 text-xs text-slate-500">
           Subcategoría
           <input
+            list={`subcategoria-sugerencias-${row.id}`}
             className="input"
             value={subcategoria}
             onChange={(e) => setSubcategoria(e.target.value)}
           />
+          <datalist id={`subcategoria-sugerencias-${row.id}`}>
+            {subcategorias.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </label>
         <label className="flex flex-col gap-1 text-xs text-slate-500">
           Fecha del mail

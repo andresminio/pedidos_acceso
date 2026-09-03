@@ -1,21 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { agregarCategoria, cargarCategorias } from "@/lib/categorias";
+import { agregarCategoria, cargarCategorias, cargarSubcategorias } from "@/lib/categorias";
+import { anioCuatrimestreDeFecha } from "@/lib/fechas";
 import type { SolicitudInput } from "@/lib/types";
 
 const AGREGAR_NUEVO = "__agregar_nuevo__";
 
 // Formulario simplificado de carga: solo lo esencial. Año y cuatrimestre
 // se calculan solos a partir de la fecha; estado arranca en "Pendiente"
-// y el resto (sub-estado, archivo/respuesta, observaciones, f. respuesta)
-// se completa después, editando la fila en la tabla.
-
-function cuatrimestreDe(mes: number): 1 | 2 | 3 {
-  if (mes <= 4) return 1;
-  if (mes <= 8) return 2;
-  return 3;
-}
+// y el resto (sub-estado, observaciones, f. respuesta) se completa
+// después, editando la fila en la tabla.
 
 interface FormState {
   fecha: string;
@@ -44,10 +39,19 @@ export default function SolicitudForm({
   const [open, setOpen] = useState(false);
   const [temas, setTemas] = useState<string[]>([]);
   const [nuevoTema, setNuevoTema] = useState(false);
+  const [subcategorias, setSubcategorias] = useState<string[]>([]);
+  const [sintetizando, setSintetizando] = useState(false);
+  const [errorSintesis, setErrorSintesis] = useState<string | null>(null);
 
   useEffect(() => {
     cargarCategorias().then(setTemas);
   }, []);
+
+  // Sugerencias de subcategoría (datalist) según la categoría elegida:
+  // combina la lista de referencia con lo que ya se cargó de verdad.
+  useEffect(() => {
+    cargarSubcategorias(form.categoria).then(setSubcategorias);
+  }, [form.categoria]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -55,9 +59,7 @@ export default function SolicitudForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const [anioStr, mesStr] = form.fecha.split("-");
-    const anio = Number(anioStr);
-    const cuatrimestre = cuatrimestreDe(Number(mesStr));
+    const { anio, cuatrimestre } = anioCuatrimestreDeFecha(form.fecha);
 
     await onSubmit({
       anio,
@@ -86,6 +88,28 @@ export default function SolicitudForm({
     }
     setNuevoTema(false);
     update("categoria", value);
+  }
+
+  async function handleSintetizar() {
+    setErrorSintesis(null);
+    setSintetizando(true);
+    try {
+      const res = await fetch("/api/resumir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: form.solicitud }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.resumen) {
+        setErrorSintesis(data.error ?? "No se pudo sintetizar.");
+        return;
+      }
+      update("solicitud", data.resumen);
+    } catch (e) {
+      setErrorSintesis(e instanceof Error ? e.message : "Error de red.");
+    } finally {
+      setSintetizando(false);
+    }
   }
 
   async function confirmarNuevoTema(nombre: string) {
@@ -189,19 +213,38 @@ export default function SolicitudForm({
                 </Field>
                 <Field label="Subcategoría">
                   <input
+                    list="subcategoria-sugerencias"
                     value={form.subcategoria}
                     onChange={(e) => update("subcategoria", e.target.value)}
                     className="input"
                   />
+                  <datalist id="subcategoria-sugerencias">
+                    {subcategorias.map((s) => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
                 </Field>
               </div>
-              <Field label="Solicitud (pegar texto)">
+              <Field label="Solicitud">
                 <textarea
                   required
                   value={form.solicitud}
                   onChange={(e) => update("solicitud", e.target.value)}
                   className="input min-h-[140px]"
                 />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={!form.solicitud.trim() || sintetizando}
+                    onClick={handleSintetizar}
+                    className="rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    {sintetizando ? "Sintetizando…" : "✨ Sintetizar con IA"}
+                  </button>
+                  {errorSintesis && (
+                    <span className="text-xs text-red-400">{errorSintesis}</span>
+                  )}
+                </div>
               </Field>
 
               <div className="mt-2 flex gap-2">

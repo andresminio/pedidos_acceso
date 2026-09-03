@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { TEMAS } from "./types";
+import { SUBCATEGORIAS, TEMAS } from "./types";
 
 // Categorías = las fijas de TEMAS + las que se hayan agregado a mano
 // (guardadas en categorias_custom, compartidas por todos los que usan el
@@ -25,4 +25,25 @@ export async function agregarCategoria(
     .upsert({ nombre: limpio }, { onConflict: "nombre", ignoreDuplicates: true });
   if (error) return { error: error.message };
   return {};
+}
+
+// Subcategorías sugeridas para el campo de texto libre "Subcategoría":
+// las de referencia (SUBCATEGORIAS en types.ts) para esa categoría, más
+// las que ya se usaron de verdad en pedidos cargados con esa misma
+// categoría — así el <datalist> va completando con lo que la oficina
+// realmente viene usando, no solo la lista fija.
+export async function cargarSubcategorias(categoria: string): Promise<string[]> {
+  const referencia = SUBCATEGORIAS[categoria] ?? [];
+  if (!categoria) return referencia;
+  const { data } = await supabase
+    .from("pedidos_solicitudes")
+    .select("subcategoria")
+    .eq("categoria", categoria)
+    .not("subcategoria", "is", null);
+  const cargadas = (data ?? [])
+    .map((r) => (r.subcategoria as string | null)?.trim())
+    .filter((s): s is string => !!s);
+  return Array.from(new Set([...referencia, ...cargadas])).sort((a, b) =>
+    a.localeCompare(b, "es")
+  );
 }
