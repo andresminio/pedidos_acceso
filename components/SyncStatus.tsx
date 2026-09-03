@@ -42,19 +42,32 @@ export default function SyncStatus() {
 
   return (
     <p className="flex items-center gap-1.5 text-xs text-slate-400">
-      <span
-        className={`h-1.5 w-1.5 rounded-full ${
-          ultimaSync ? "bg-emerald-500" : "bg-slate-600"
-        }`}
-      />
-      Sincronizado con la{" "}
+      {ultimaSync ? (
+        <svg
+          viewBox="0 0 20 20"
+          fill="none"
+          className="h-3.5 w-3.5 shrink-0 text-emerald-500"
+        >
+          <circle cx="10" cy="10" r="9" fill="currentColor" fillOpacity="0.15" />
+          <path
+            d="M6 10.5l2.5 2.5L14 7"
+            stroke="currentColor"
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      ) : (
+        <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />
+      )}
+      Sincronizado con{" "}
       <a
         href={GOOGLE_SHEET_URL}
         target="_blank"
         rel="noopener noreferrer"
         className="text-slate-300 underline decoration-slate-600 underline-offset-2 hover:text-white"
       >
-        hoja de cálculo de control
+        UEEDA Pedidos de acceso
       </a>
       {cargado && ultimaSync && <> · {tiempoRelativo(ultimaSync)}</>}
     </p>

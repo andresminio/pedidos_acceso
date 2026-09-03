@@ -23,13 +23,22 @@ MAX_BODY_CHARS = 4000  # tope para no mandar cuerpos gigantes a Gemini
 # guardar y de mandarlo a Gemini. Si en algún momento cambia la redacción
 # exacta, ajustar este patrón.
 _BANNER_SEGURIDAD_RE = re.compile(
-    r"⚠?\s*Seguridad Inform[aá]tica le informa.*?elimine el mensaje inmediatamente\.?",
+    # [⚠️!\s]* absorbe el ícono ⚠️ (que en realidad son dos
+    # caracteres: el símbolo y un "variation selector" invisible pegado)
+    # junto con cualquier espacio/! sueltos antes del texto del banner.
+    r"[⚠️!\s]*Seguridad Inform[aá]tica le informa.*?elimine el mensaje inmediatamente\.?",
     re.IGNORECASE | re.DOTALL,
 )
 
+# Red de seguridad: si quedara algún ⚠️/⚠ suelto (por variantes de redacción
+# del banner que el regex de arriba no cubra), lo sacamos igual.
+_EMOJI_ALERTA_RE = re.compile(r"[⚠️]+")
+
 
 def _sacar_banner_seguridad(texto: str) -> str:
-    return _BANNER_SEGURIDAD_RE.sub("", texto).strip()
+    texto = _BANNER_SEGURIDAD_RE.sub("", texto)
+    texto = _EMOJI_ALERTA_RE.sub("", texto)
+    return texto.strip()
 
 
 @dataclass

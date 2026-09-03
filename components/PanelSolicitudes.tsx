@@ -237,14 +237,13 @@ export default function PanelSolicitudes() {
                   {c.label}
                 </th>
               ))}
-              <th className="px-3 py-2" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
             {loading && (
               <tr>
                 <td
-                  colSpan={colsVisibles.size + 1}
+                  colSpan={colsVisibles.size}
                   className="px-3 py-6 text-center text-slate-400"
                 >
                   Cargando…
@@ -254,7 +253,7 @@ export default function PanelSolicitudes() {
             {!loading && filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={colsVisibles.size + 1}
+                  colSpan={colsVisibles.size}
                   className="px-3 py-6 text-center text-slate-400"
                 >
                   No hay pedidos registrados con estos filtros.
@@ -289,7 +288,7 @@ function FilaSolicitud({
   destacada: boolean;
 }) {
   const [editando, setEditando] = useState(false);
-  const colSpanTotal = colsVisibles.size + 1;
+  const colSpanTotal = colsVisibles.size;
 
   const celdas: Record<string, ReactNode> = {
     anio: row.anio,
@@ -321,7 +320,9 @@ function FilaSolicitud({
   return (
     <>
       <tr
-        className={`align-top text-slate-300 ${
+        onDoubleClick={() => setEditando(true)}
+        title="Doble click para editar"
+        className={`cursor-pointer align-top text-slate-300 ${
           destacada ? "bg-blue-500/10" : "hover:bg-white/[0.02]"
         }`}
       >
@@ -330,17 +331,6 @@ function FilaSolicitud({
             {celdas[c.key]}
           </td>
         ))}
-        <td className="px-3 py-2">
-          {!editando && (
-            <button
-              type="button"
-              onClick={() => setEditando(true)}
-              className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800"
-            >
-              Editar
-            </button>
-          )}
-        </td>
       </tr>
       {editando && (
         <FilaSolicitudEdicion
