@@ -108,20 +108,26 @@ export default function PanelCandidatos() {
     load();
   }, [load]);
 
+  const loadDescartados = useCallback(async () => {
+    setCargandoDescartados(true);
+    const { data, error } = await supabase
+      .from("candidatos_correo")
+      .select("*")
+      .eq("estado_revision", "descartado")
+      .gte("procesado_en", desdeIso())
+      .order("fecha_correo", { ascending: false });
+    if (!error) setDescartados((data as CandidatoCorreo[]) ?? []);
+    setCargandoDescartados(false);
+  }, [desdeIso]);
+
   async function toggleVerDescartados() {
     const abrir = !verDescartados;
     setVerDescartados(abrir);
-    if (abrir && descartados.length === 0) {
-      setCargandoDescartados(true);
-      const { data, error } = await supabase
-        .from("candidatos_correo")
-        .select("*")
-        .eq("estado_revision", "descartado")
-        .gte("procesado_en", desdeIso())
-        .order("fecha_correo", { ascending: false });
-      if (!error) setDescartados((data as CandidatoCorreo[]) ?? []);
-      setCargandoDescartados(false);
-    }
+    // Siempre se vuelve a pedir al abrir (no cachear): si quedó abierto en
+    // una sesión previa y mientras tanto se descartó algo nuevo, la lista
+    // vieja quedaría desactualizada aunque el contador de arriba sí se
+    // actualice.
+    if (abrir) await loadDescartados();
   }
 
   async function handleDescartar(row: CandidatoCorreo) {
@@ -136,6 +142,7 @@ export default function PanelCandidatos() {
       return;
     }
     await load();
+    if (verDescartados) await loadDescartados();
   }
 
   async function handlePasarARevision(row: CandidatoCorreo) {
