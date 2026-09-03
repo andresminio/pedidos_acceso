@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
-import { agregarCategoria, cargarCategorias, cargarSubcategorias } from "@/lib/categorias";
+import {
+  agregarCategoria,
+  agruparCategorias,
+  cargarCategorias,
+  cargarSubcategorias,
+} from "@/lib/categorias";
 import { anioCuatrimestreDeFecha, fechaCorta } from "@/lib/fechas";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { Solicitud, SolicitudInput } from "@/lib/types";
@@ -563,11 +568,27 @@ function FilaSolicitudEdicion({
                 onChange={(e) => handleCategoriaChange(e.target.value)}
               >
                 <option value="">—</option>
-                {categorias.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
+                {(() => {
+                  const { principales, otras } = agruparCategorias(categorias);
+                  return (
+                    <>
+                      <optgroup label="Principales">
+                        {principales.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Otros temas">
+                        {otras.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </optgroup>
+                    </>
+                  );
+                })()}
                 <option value={AGREGAR_CATEGORIA}>+ Agregar categoría</option>
               </select>
             )}

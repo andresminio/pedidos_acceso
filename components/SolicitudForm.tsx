@@ -207,11 +207,27 @@ export default function SolicitudForm({
                       <option value="" disabled>
                         Elegir tema…
                       </option>
-                      {temas.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
+                      {(() => {
+                        const { principales, otras } = agruparCategorias(temas);
+                        return (
+                          <>
+                            <optgroup label="Principales">
+                              {principales.map((t) => (
+                                <option key={t} value={t}>
+                                  {t}
+                                </option>
+                              ))}
+                            </optgroup>
+                            <optgroup label="Otros temas">
+                              {otras.map((t) => (
+                                <option key={t} value={t}>
+                                  {t}
+                                </option>
+                              ))}
+                            </optgroup>
+                          </>
+                        );
+                      })()}
                       <option value={AGREGAR_NUEVO}>+ Agregar nuevo tema</option>
                     </select>
                   )}

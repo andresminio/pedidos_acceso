@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { agregarCategoria, cargarCategorias, cargarSubcategorias } from "@/lib/categorias";
+import {
+  agregarCategoria,
+  agruparCategorias,
+  cargarCategorias,
+  cargarSubcategorias,
+} from "@/lib/categorias";
 import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
 
 const AGREGAR_CATEGORIA = "__agregar_categoria__";
@@ -457,11 +462,27 @@ function FilaCandidato({
               <option value="" disabled>
                 Elegir categoría…
               </option>
-              {categorias.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
+              {(() => {
+                const { principales, otras } = agruparCategorias(categorias);
+                return (
+                  <>
+                    <optgroup label="Principales">
+                      {principales.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Otros temas">
+                      {otras.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </optgroup>
+                  </>
+                );
+              })()}
               <option value={AGREGAR_CATEGORIA}>+ Agregar categoría</option>
             </select>
           )}
