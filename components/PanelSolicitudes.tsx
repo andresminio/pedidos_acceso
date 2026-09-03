@@ -288,7 +288,7 @@ export default function PanelSolicitudes() {
       <div className="overflow-x-auto rounded-lg border border-slate-800 bg-[#12161f] shadow-sm">
         <table className="min-w-full divide-y divide-slate-800 text-sm">
           <thead>
-            <tr className="bg-blue-500/10">
+            <tr className="bg-blue-500/25">
               {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
                 <th
                   key={c.key}
