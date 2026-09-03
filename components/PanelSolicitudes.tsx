@@ -282,12 +282,12 @@ export default function PanelSolicitudes() {
 
       <div className="overflow-x-auto rounded-lg border border-slate-800 bg-[#12161f] shadow-sm">
         <table className="min-w-full divide-y divide-slate-800 text-sm">
-          <thead className="bg-[#0e1219]">
-            <tr>
+          <thead>
+            <tr className="bg-blue-500/10">
               {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
                 <th
                   key={c.key}
-                  className="whitespace-nowrap px-3 py-2 text-left font-medium text-slate-400"
+                  className="whitespace-nowrap px-3 py-2 text-left font-bold text-slate-300"
                 >
                   {c.label}
                 </th>
