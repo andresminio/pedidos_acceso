@@ -361,6 +361,7 @@ function FilaSolicitud({
   editando,
   onAbrir,
   onCerrarEdicion,
+  tieneCorreo,
 }: {
   row: Solicitud;
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
@@ -369,6 +370,7 @@ function FilaSolicitud({
   editando: boolean;
   onAbrir: () => void;
   onCerrarEdicion: () => void;
+  tieneCorreo: boolean;
 }) {
   const colSpanTotal = colsVisibles.size;
 
@@ -377,7 +379,17 @@ function FilaSolicitud({
     cuatrimestre: row.cuatrimestre,
     fecha: <span className="whitespace-nowrap">{fechaCorta(row.fecha)}</span>,
     solicitante: (
-      <span className="font-medium text-white">{row.nombre_solicitante}</span>
+      <span className="inline-flex items-center gap-1.5">
+        <span className="font-medium text-white">{row.nombre_solicitante}</span>
+        {tieneCorreo && (
+          <span
+            title="Correo importado vinculado — se puede generar respuesta con IA"
+            className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-blue-500/15 text-blue-400"
+          >
+            <IconoIA />
+          </span>
+        )}
+      </span>
     ),
     solicitud: (
       <span className="block max-w-xs truncate" title={row.solicitud}>
