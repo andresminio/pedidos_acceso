@@ -32,14 +32,22 @@ end;
 $$;
 
 drop trigger if exists pedidos_solicitudes_sync_trigger on public.pedidos_solicitudes;
+drop trigger if exists pedidos_solicitudes_sync_insert on public.pedidos_solicitudes;
+drop trigger if exists pedidos_solicitudes_sync_update on public.pedidos_solicitudes;
+
+-- Postgres no permite referenciar OLD en el WHEN de un trigger de INSERT
+-- (aunque OLD sería NULL igual), así que van separados: INSERT siempre
+-- disparra, UPDATE solo si cambió algo que no sea synced_at/updated_at.
+create trigger pedidos_solicitudes_sync_insert
+  after insert on public.pedidos_solicitudes
+  for each row
+  execute function public.pedidos_notify_sync();
 
 -- El WHEN evita el loop infinito: /api/sync-sheets marca synced_at después
 -- de sincronizar, eso es un UPDATE, que dispararía este mismo trigger de
--- nuevo si no lo filtráramos. En un INSERT, OLD es NULL, así que
--- "NEW.col IS DISTINCT FROM OLD.col" da true para cualquier columna con
--- valor (el WHEN se cumple igual, no hace falta tratar INSERT aparte).
-create trigger pedidos_solicitudes_sync_trigger
-  after insert or update on public.pedidos_solicitudes
+-- nuevo si no lo filtráramos.
+create trigger pedidos_solicitudes_sync_update
+  after update on public.pedidos_solicitudes
   for each row
   when (
     NEW.anio is distinct from OLD.anio
