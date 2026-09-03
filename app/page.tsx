@@ -4,7 +4,7 @@ import PanelTabs from "@/components/PanelTabs";
 export default function Home() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-6 border-b border-slate-800 pb-4">
+      <header className="mb-3 border-b border-slate-800 pb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">

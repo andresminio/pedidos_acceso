@@ -214,7 +214,7 @@ export default function PanelSolicitudes() {
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <SyncStatus />
         <SolicitudForm onSubmit={handleCreate} submitting={saving} />
       </div>
