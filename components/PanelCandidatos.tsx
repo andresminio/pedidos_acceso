@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { TEMAS } from "@/lib/types";
 import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
@@ -112,6 +112,25 @@ export default function PanelCandidatos() {
     await load();
   }
 
+  async function handlePasarARevision(row: CandidatoCorreo) {
+    setBusyId(row.id);
+    const { error } = await supabase
+      .from("candidatos_correo")
+      .update({
+        estado_revision: "pendiente",
+        es_pedido_acceso: true,
+        revisado_en: null,
+      })
+      .eq("id", row.id);
+    setBusyId(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setDescartados((prev) => prev.filter((d) => d.id !== row.id));
+    await load();
+  }
+
   async function handleCargar(row: CandidatoCorreo, campos: SolicitudInput) {
     setBusyId(row.id);
 
@@ -148,11 +167,13 @@ export default function PanelCandidatos() {
     <div>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-white">Revisión de correo</h2>
+          <h2 className="text-lg font-semibold text-white">Correos en revisión</h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
-            El bot lee el correo institucional cada 2 horas y usa Gemini para
-            detectar pedidos de acceso no registrados. Revisá cada candidato y
-            cargalo, o descartalo si no corresponde.
+            El bot revisa automáticamente el correo institucional cada 1 hora
+            y detecta posibles pedidos de acceso que aún no fueron
+            registrados.
+            <br />
+            Revisá los pedidos detectados y decidí qué hacer con cada uno.
           </p>
         </div>
         <p className="whitespace-nowrap text-xs text-slate-500">
@@ -194,9 +215,8 @@ export default function PanelCandidatos() {
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-4 text-sm">
         <p className="text-slate-500">
-          {descartadosSemana ?? "…"} mails descartados automáticamente esta
-          semana (spam, notificaciones, listas internas) — no requieren
-          revisión.
+          {descartadosSemana ?? "…"} mails descartados automáticamente en los
+          últimos {DESCARTADOS_DIAS} días.
         </p>
         <button
           type="button"
@@ -220,44 +240,28 @@ export default function PanelCandidatos() {
           {descartados.map((d) => (
             <div
               key={d.id}
-              className="rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-xs text-slate-500"
+              className="flex items-start justify-between gap-3 rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-xs text-slate-500"
             >
-              <span className="text-slate-400">{fechaCortaHora(d.fecha_correo)}</span>{" "}
-              · de {d.remitente} — <span className="text-slate-300">{d.asunto}</span>
-              {d.confianza_ia && (
-                <div className="mt-1 italic text-slate-600">IA: {d.confianza_ia}</div>
-              )}
+              <div>
+                <span className="text-slate-400">{fechaCortaHora(d.fecha_correo)}</span>{" "}
+                · de {d.remitente} — <span className="text-slate-300">{d.asunto}</span>
+                {d.confianza_ia && (
+                  <div className="mt-1 italic text-slate-600">IA: {d.confianza_ia}</div>
+                )}
+              </div>
+              <button
+                type="button"
+                disabled={busyId === d.id}
+                onClick={() => handlePasarARevision(d)}
+                className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              >
+                Pasar a revisión
+              </button>
             </div>
           ))}
         </div>
       )}
     </div>
-  );
-}
-
-function PillConfianza({ urgencia }: { urgencia: string | null }) {
-  if (!urgencia) return null;
-  const estilos: Record<string, string> = {
-    alta: "text-emerald-400",
-    media: "text-amber-400",
-    baja: "text-slate-500",
-  };
-  const puntos: Record<string, string> = {
-    alta: "bg-emerald-400",
-    media: "bg-amber-400",
-    baja: "bg-slate-500",
-  };
-  const etiqueta: Record<string, string> = {
-    alta: "alta confianza",
-    media: "confianza media",
-    baja: "baja confianza",
-  };
-  const key = urgencia in etiqueta ? urgencia : "baja";
-  return (
-    <span className={`flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${estilos[key]}`}>
-      <span className={`h-1.5 w-4 rounded-full ${puntos[key]}`} />
-      {etiqueta[key]}
-    </span>
   );
 }
 
@@ -280,6 +284,18 @@ function FilaCandidato({
   const [categoria, setCategoria] = useState(row.categoria_propuesta ?? "");
   const [subcategoria, setSubcategoria] = useState(row.subcategoria_propuesta ?? "");
   const [verCompleto, setVerCompleto] = useState(false);
+  const citaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!verCompleto) return;
+    function handleClickFuera(e: MouseEvent) {
+      if (citaRef.current && !citaRef.current.contains(e.target as Node)) {
+        setVerCompleto(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, [verCompleto]);
 
   function submitCargar() {
     const { anio, cuatrimestre } = anioCuatrimestre(fecha);
@@ -306,7 +322,6 @@ function FilaCandidato({
           correo · {fechaCortaHora(row.fecha_correo)} · de {row.remitente}
         </p>
         <div className="flex items-center gap-3">
-          <PillConfianza urgencia={row.urgencia} />
           <button
             type="button"
             disabled={busy || !nombre || !solicitud}
@@ -326,11 +341,7 @@ function FilaCandidato({
         </div>
       </div>
 
-      <h3 className="mb-1 font-semibold text-white">{row.asunto}</h3>
-
-      {row.confianza_ia && (
-        <p className="mb-3 text-xs italic text-slate-500">IA: {row.confianza_ia}</p>
-      )}
+      <h3 className="mb-3 font-semibold text-white">{row.asunto}</h3>
 
       <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <label className="flex flex-col gap-1 text-xs text-slate-500">
@@ -375,17 +386,31 @@ function FilaCandidato({
         </label>
       </div>
 
-      <label className="mb-3 flex flex-col gap-1 text-xs text-slate-500">
-        Solicitud (se carga tal cual al pedido — corregí si hace falta)
-        <textarea
-          className="input min-h-16"
-          value={solicitud}
-          onChange={(e) => setSolicitud(e.target.value)}
-        />
-      </label>
+      <div className="mb-3 rounded-md border border-slate-800 bg-[#0e1219] p-3">
+        {row.confianza_ia && (
+          <p className="mb-2 text-xs italic text-slate-500">IA: {row.confianza_ia}</p>
+        )}
+        <label className="flex flex-col gap-1 text-xs text-slate-500">
+          Solicitud (se carga tal cual al pedido — corregí si hace falta)
+          <textarea
+            className="input min-h-16"
+            value={solicitud}
+            onChange={(e) => setSolicitud(e.target.value)}
+          />
+        </label>
+      </div>
 
       {row.cuerpo_resumen && (
-        <div>
+        <div ref={citaRef}>
+          {row.cuerpo_resumen.trim().length > 240 && (
+            <button
+              type="button"
+              onClick={() => setVerCompleto((v) => !v)}
+              className="mb-1 text-xs font-medium text-blue-400 hover:text-blue-300"
+            >
+              {verCompleto ? "Ver menos" : "Ver completo"}
+            </button>
+          )}
           <blockquote className="whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
             "
             {verCompleto
@@ -394,15 +419,6 @@ function FilaCandidato({
                 (row.cuerpo_resumen.trim().length > 240 ? "…" : "")}
             "
           </blockquote>
-          {row.cuerpo_resumen.trim().length > 240 && (
-            <button
-              type="button"
-              onClick={() => setVerCompleto((v) => !v)}
-              className="mt-1 text-xs font-medium text-blue-400 hover:text-blue-300"
-            >
-              {verCompleto ? "Ver menos" : "Ver completo"}
-            </button>
-          )}
         </div>
       )}
     </div>

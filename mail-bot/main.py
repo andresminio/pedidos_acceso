@@ -84,7 +84,6 @@ def main() -> int:
                 print(f"UID {msg.uid}: remitente excluido por regla '{patron_excluido}', salteo Gemini.")
                 clasif = Clasificacion(
                     es_pedido_acceso=False,
-                    urgencia=None,
                     confianza_ia=f"Excluido sin llamar a Gemini: remitente coincide con la regla '{patron_excluido}' de contexto_clasificacion.md.",
                     nombre_solicitante=None,
                     solicitud_propuesta=None,
@@ -111,7 +110,6 @@ def main() -> int:
                 "asunto": msg.asunto,
                 "cuerpo_resumen": msg.cuerpo[:2000],
                 "es_pedido_acceso": clasif.es_pedido_acceso,
-                "urgencia": clasif.urgencia,
                 "confianza_ia": clasif.confianza_ia,
                 "nombre_solicitante": clasif.nombre_solicitante,
                 "fecha_propuesta": msg.fecha.date().isoformat(),

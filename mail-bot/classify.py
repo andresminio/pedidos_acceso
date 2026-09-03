@@ -62,7 +62,6 @@ texto extra) con este formato exacto:
 
 {{
   "es_pedido_acceso": true o false,
-  "urgencia": "alta" | "media" | "baja",
   "confianza_ia": "una frase corta explicando por qué lo clasificaste así",
   "nombre_solicitante": "nombre de quien pide, o null si no se puede inferir",
   "solicitud_propuesta": "resumen breve (1-2 oraciones) de qué se solicita, o null",
@@ -95,7 +94,6 @@ Cuerpo:
 @dataclass
 class Clasificacion:
     es_pedido_acceso: bool
-    urgencia: str | None
     confianza_ia: str | None
     nombre_solicitante: str | None
     solicitud_propuesta: str | None
@@ -211,7 +209,6 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
 
     return Clasificacion(
         es_pedido_acceso=bool(data.get("es_pedido_acceso", False)),
-        urgencia=data.get("urgencia"),
         confianza_ia=data.get("confianza_ia"),
         nombre_solicitante=data.get("nombre_solicitante"),
         solicitud_propuesta=data.get("solicitud_propuesta"),

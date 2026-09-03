@@ -27,7 +27,7 @@ export default function PanelTabs({ activa }: { activa: "registro" | "revision" 
 
   return (
     <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-[#12161f] p-1">
-      <Tab href="/" activo={activa === "registro"} label="Registro" contador={totalRegistro} />
+      <Tab href="/" activo={activa === "registro"} label="Ingresados" contador={totalRegistro} />
       <Tab
         href="/revision"
         activo={activa === "revision"}
