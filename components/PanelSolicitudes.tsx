@@ -442,6 +442,18 @@ function FilaSolicitudEdicion({
   const [categorias, setCategorias] = useState<string[]>([]);
   const [subcategorias, setSubcategorias] = useState<string[]>([]);
 
+  // Si está Cerrado, la F. respuesta es obligatoria y tiene que ser
+  // posterior a la fecha de ingreso (no tiene sentido responder antes de
+  // recibir el pedido).
+  const errorFechaRespuesta =
+    estado === "Cerrado"
+      ? !fechaRespuesta
+        ? "Un pedido Cerrado necesita F. respuesta."
+        : fechaRespuesta <= fecha
+          ? "La F. respuesta tiene que ser posterior a la fecha de ingreso."
+          : null
+      : null;
+
   useEffect(() => {
     cargarCategorias().then(setCategorias);
   }, []);
@@ -487,6 +499,7 @@ function FilaSolicitudEdicion({
   }
 
   async function handleGuardar() {
+    if (errorFechaRespuesta) return;
     setGuardando(true);
     const { anio, cuatrimestre } = anioCuatrimestreDeFecha(fecha);
     await onUpdate(row.id, {
@@ -628,10 +641,13 @@ function FilaSolicitudEdicion({
             F. respuesta
             <input
               type="date"
-              className="input"
+              className={`input ${errorFechaRespuesta ? "border-red-600" : ""}`}
               value={fechaRespuesta}
               onChange={(e) => setFechaRespuesta(e.target.value)}
             />
+            {errorFechaRespuesta && (
+              <span className="text-xs text-red-400">{errorFechaRespuesta}</span>
+            )}
           </label>
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Observaciones
@@ -644,14 +660,6 @@ function FilaSolicitudEdicion({
         </div>
 
         <div className="mt-3 flex items-center justify-between gap-2">
-          <button
-            type="button"
-            disabled={guardando || eliminando}
-            onClick={handleEliminar}
-            className="rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400 hover:bg-red-950/50 disabled:opacity-50"
-          >
-            {eliminando ? "Eliminando…" : "Eliminar"}
-          </button>
           <div className="flex gap-2">
             <button
               type="button"
@@ -663,13 +671,27 @@ function FilaSolicitudEdicion({
             </button>
             <button
               type="button"
-              disabled={guardando || eliminando || !nombreSolicitante || !solicitud}
+              disabled={
+                guardando ||
+                eliminando ||
+                !nombreSolicitante ||
+                !solicitud ||
+                !!errorFechaRespuesta
+              }
               onClick={handleGuardar}
               className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50"
             >
               Guardar
             </button>
           </div>
+          <button
+            type="button"
+            disabled={guardando || eliminando}
+            onClick={handleEliminar}
+            className="rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400 hover:bg-red-950/50 disabled:opacity-50"
+          >
+            {eliminando ? "Eliminando…" : "Eliminar"}
+          </button>
         </div>
       </td>
     </tr>
