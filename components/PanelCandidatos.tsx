@@ -233,7 +233,7 @@ export default function PanelCandidatos() {
       {loading && <p className="text-sm text-slate-500">Cargando…</p>}
       {!loading && rows.length === 0 && (
         <p className="rounded-lg border border-slate-800 bg-[#12161f] px-4 py-6 text-center text-sm text-slate-500 shadow-sm">
-          No hay candidatos pendientes de revisión.
+          No hay correos pendientes de revisión.
         </p>
       )}
 
