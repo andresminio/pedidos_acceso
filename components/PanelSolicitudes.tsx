@@ -3,10 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
+import { agregarCategoria, cargarCategorias, cargarSubcategorias } from "@/lib/categorias";
+import { anioCuatrimestreDeFecha } from "@/lib/fechas";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
 import SyncStatus from "@/components/SyncStatus";
+
+const AGREGAR_CATEGORIA = "__agregar_categoria__";
 
 interface Columna {
   key: string;
@@ -419,6 +423,12 @@ function FilaSolicitudEdicion({
   onCerrar: () => void;
   colSpan: number;
 }) {
+  const [nombreSolicitante, setNombreSolicitante] = useState(row.nombre_solicitante);
+  const [categoria, setCategoria] = useState(row.categoria ?? "");
+  const [nuevaCategoria, setNuevaCategoria] = useState(false);
+  const [subcategoria, setSubcategoria] = useState(row.subcategoria ?? "");
+  const [fecha, setFecha] = useState(row.fecha);
+  const [solicitud, setSolicitud] = useState(row.solicitud);
   const [estado, setEstado] = useState(row.estado);
   const [subestado, setSubestado] = useState(row.subestado ?? "");
   const [fechaRespuesta, setFechaRespuesta] = useState(row.fecha_respuesta ?? "");
@@ -426,6 +436,16 @@ function FilaSolicitudEdicion({
   const [guardando, setGuardando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const filaRef = useRef<HTMLTableRowElement>(null);
+
+  const [categorias, setCategorias] = useState<string[]>([]);
+  const [subcategorias, setSubcategorias] = useState<string[]>([]);
+
+  useEffect(() => {
+    cargarCategorias().then(setCategorias);
+  }, []);
+  useEffect(() => {
+    cargarSubcategorias(categoria).then(setSubcategorias);
+  }, [categoria]);
 
   // Click afuera de la fila de edición (incluida la fila original de
   // arriba) la cierra sin guardar, igual que "Cancelar".
@@ -439,9 +459,42 @@ function FilaSolicitudEdicion({
     return () => document.removeEventListener("mousedown", handleClickFuera);
   }, [onCerrar]);
 
+  function handleCategoriaChange(value: string) {
+    if (value === AGREGAR_CATEGORIA) {
+      setNuevaCategoria(true);
+      setCategoria("");
+      return;
+    }
+    setNuevaCategoria(false);
+    setCategoria(value);
+  }
+
+  async function confirmarNuevaCategoria(valor: string) {
+    const limpio = valor.trim();
+    if (!limpio) {
+      setNuevaCategoria(false);
+      return;
+    }
+    if (!categorias.includes(limpio)) {
+      setCategorias((c) => [...c, limpio].sort((a, b) => a.localeCompare(b, "es")));
+    }
+    setCategoria(limpio);
+    setNuevaCategoria(false);
+    const { error } = await agregarCategoria(limpio);
+    if (error) console.error("No se pudo guardar la categoría nueva:", error);
+  }
+
   async function handleGuardar() {
     setGuardando(true);
+    const { anio, cuatrimestre } = anioCuatrimestreDeFecha(fecha);
     await onUpdate(row.id, {
+      anio,
+      cuatrimestre,
+      fecha,
+      nombre_solicitante: nombreSolicitante,
+      solicitud,
+      categoria: categoria || null,
+      subcategoria: subcategoria || null,
       estado,
       subestado: estado === "Cerrado" ? subestado || null : null,
       fecha_respuesta: fechaRespuesta || null,
@@ -465,6 +518,80 @@ function FilaSolicitudEdicion({
     <tr ref={filaRef} className="bg-[#0e1219]">
       <td colSpan={colSpan} className="px-3 py-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
+            Solicitante
+            <input
+              className="input"
+              value={nombreSolicitante}
+              onChange={(e) => setNombreSolicitante(e.target.value)}
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
+            Categoría
+            {nuevaCategoria ? (
+              <input
+                autoFocus
+                placeholder="Nombre de la categoría"
+                className="input"
+                onBlur={(e) => confirmarNuevaCategoria(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    confirmarNuevaCategoria(e.currentTarget.value);
+                  }
+                }}
+              />
+            ) : (
+              <select
+                className="input"
+                value={categoria}
+                onChange={(e) => handleCategoriaChange(e.target.value)}
+              >
+                <option value="">—</option>
+                {categorias.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+                <option value={AGREGAR_CATEGORIA}>+ Agregar categoría</option>
+              </select>
+            )}
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
+            Subcategoría
+            <input
+              list={`subcategoria-sugerencias-edicion-${row.id}`}
+              className="input"
+              value={subcategoria}
+              onChange={(e) => setSubcategoria(e.target.value)}
+            />
+            <datalist id={`subcategoria-sugerencias-edicion-${row.id}`}>
+              {subcategorias.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
+            Fecha
+            <input
+              type="date"
+              className="input"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+            />
+          </label>
+        </div>
+
+        <label className="mt-3 flex flex-col gap-1 text-xs text-slate-400">
+          Solicitud
+          <textarea
+            className="input min-h-16"
+            value={solicitud}
+            onChange={(e) => setSolicitud(e.target.value)}
+          />
+        </label>
+
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Estado
             <select
@@ -504,7 +631,7 @@ function FilaSolicitudEdicion({
               onChange={(e) => setFechaRespuesta(e.target.value)}
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-400 sm:col-span-2 lg:col-span-1">
+          <label className="flex flex-col gap-1 text-xs text-slate-400">
             Observaciones
             <input
               className="input"
@@ -513,6 +640,7 @@ function FilaSolicitudEdicion({
             />
           </label>
         </div>
+
         <div className="mt-3 flex items-center justify-between gap-2">
           <button
             type="button"
@@ -533,7 +661,7 @@ function FilaSolicitudEdicion({
             </button>
             <button
               type="button"
-              disabled={guardando || eliminando}
+              disabled={guardando || eliminando || !nombreSolicitante || !solicitud}
               onClick={handleGuardar}
               className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50"
             >
