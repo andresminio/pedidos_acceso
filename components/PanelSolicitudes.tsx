@@ -524,9 +524,41 @@ function FilaSolicitudEdicion({
       subestado: estado === "Cerrado" ? subestado || null : null,
       fecha_respuesta: fechaRespuesta || null,
       observaciones: observaciones || null,
+      respuesta_ia_borrador: respuestaIA || null,
     });
     setGuardando(false);
     onCerrar();
+  }
+
+  async function handleGenerarRespuesta() {
+    if (!mailOrigen) return;
+    setErrorRespuestaIA(null);
+    setGenerandoRespuesta(true);
+    try {
+      const res = await fetch("/api/generar-respuesta", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          solicitud,
+          nombre_solicitante: nombreSolicitante,
+          categoria,
+          estado,
+          cuerpo_mail: mailOrigen.cuerpo_resumen,
+          asunto: mailOrigen.asunto,
+          remitente: mailOrigen.remitente,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.borrador) {
+        setErrorRespuestaIA(data.error ?? "No se pudo generar la respuesta.");
+        return;
+      }
+      setRespuestaIA(data.borrador);
+    } catch (e) {
+      setErrorRespuestaIA(e instanceof Error ? e.message : "Error de red.");
+    } finally {
+      setGenerandoRespuesta(false);
+    }
   }
 
   async function handleEliminar() {
@@ -684,6 +716,37 @@ function FilaSolicitudEdicion({
             />
           </label>
         </div>
+
+        {mailOrigen && (
+          <div className="mt-3 flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400">Modelo de respuesta</span>
+              <button
+                type="button"
+                disabled={generandoRespuesta}
+                onClick={handleGenerarRespuesta}
+                className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              >
+                <IconoIA />
+                {generandoRespuesta
+                  ? "Generando…"
+                  : respuestaIA
+                    ? "Volver a generar con IA"
+                    : "Generar modelo de respuesta con IA"}
+              </button>
+              {errorRespuestaIA && (
+                <span className="text-xs text-red-400">{errorRespuestaIA}</span>
+              )}
+            </div>
+            {respuestaIA && (
+              <textarea
+                className="input min-h-24"
+                value={respuestaIA}
+                onChange={(e) => setRespuestaIA(e.target.value)}
+              />
+            )}
+          </div>
+        )}
 
         <div className="mt-3 flex items-center justify-between gap-2">
           <div className="flex gap-2">
