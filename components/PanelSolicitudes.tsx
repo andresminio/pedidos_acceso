@@ -77,6 +77,12 @@ export default function PanelSolicitudes() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ids de pedidos que tienen un correo importado vinculado (candidatos_correo
+  // .pedido_id) — a esos se les puede generar un modelo de respuesta con IA.
+  // Se pide aparte (no viene en pedidos_solicitudes) para no consultar
+  // candidatos_correo fila por fila en la tabla.
+  const [pedidosConCorreo, setPedidosConCorreo] = useState<Set<string>>(new Set());
+
   const [filtroAnio, setFiltroAnio] = useState<string>("");
   const [filtroCuatrimestre, setFiltroCuatrimestre] = useState<string>("");
   const [filtroEstado, setFiltroEstado] = useState<string>("");
@@ -117,16 +123,19 @@ export default function PanelSolicitudes() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("pedidos_solicitudes")
-      .select("*")
-      .order("fecha", { ascending: false });
+    const [{ data, error }, correoRes] = await Promise.all([
+      supabase.from("pedidos_solicitudes").select("*").order("fecha", { ascending: false }),
+      supabase.from("candidatos_correo").select("pedido_id").not("pedido_id", "is", null),
+    ]);
     if (error) {
       setError(error.message);
     } else {
       setRows(data as Solicitud[]);
       setError(null);
     }
+    setPedidosConCorreo(
+      new Set((correoRes.data ?? []).map((r) => r.pedido_id as string))
+    );
     setLoading(false);
   }, []);
 
@@ -334,6 +343,7 @@ export default function PanelSolicitudes() {
                 editando={row.id === editandoId}
                 onAbrir={() => setEditandoId(row.id)}
                 onCerrarEdicion={() => setEditandoId(null)}
+                tieneCorreo={pedidosConCorreo.has(row.id)}
               />
             ))}
           </tbody>
