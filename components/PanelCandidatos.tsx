@@ -690,6 +690,25 @@ function FilaRespuesta({
 
   const tieneCuerpo = !!row.cuerpo_resumen?.trim();
 
+  function handleDescartarClick() {
+    const confirmado = window.confirm(
+      "¿Descartar este correo? No se va a vincular a ningún pedido."
+    );
+    if (!confirmado) return;
+    onDescartar();
+  }
+
+  function handleVincularClick() {
+    if (!seleccionado) return;
+    const confirmado = window.confirm(
+      `¿Vincular y cerrar el pedido de "${seleccionado.nombre_solicitante}" (${fechaCorta(
+        seleccionado.fecha
+      )}) con esta respuesta? Esta acción no se puede deshacer.`
+    );
+    if (!confirmado) return;
+    onVincular(seleccionado.id);
+  }
+
   return (
     <div className="rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-sm">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -704,14 +723,14 @@ function FilaRespuesta({
       )}
 
       {tieneCuerpo && (
-        <div className="mb-3 flex flex-col gap-1 text-xs text-slate-500">
+        <div className="mb-4 flex flex-col gap-1 text-xs text-slate-500">
           Correo recibido
           <blockquote
             onClick={() => {
               if (window.getSelection()?.toString()) return;
               setExpandido((v) => !v);
             }}
-            className="cursor-pointer whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400"
+            className="cursor-pointer whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-3 text-sm italic leading-relaxed text-slate-400"
           >
             {expandido
               ? textoCompacto(row.cuerpo_resumen!)
@@ -757,7 +776,7 @@ function FilaRespuesta({
         <button
           type="button"
           disabled={busy || !seleccionado}
-          onClick={() => seleccionado && onVincular(seleccionado.id)}
+          onClick={handleVincularClick}
           className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
         >
           Vincular y cerrar
@@ -765,7 +784,7 @@ function FilaRespuesta({
         <button
           type="button"
           disabled={busy}
-          onClick={onDescartar}
+          onClick={handleDescartarClick}
           className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
         >
           Descartar

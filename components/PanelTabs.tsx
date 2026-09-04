@@ -17,8 +17,7 @@ export default function PanelTabs({ activa }: { activa: "registro" | "revision" 
         supabase
           .from("candidatos_correo")
           .select("id", { count: "exact", head: true })
-          .eq("estado_revision", "pendiente")
-          .eq("es_pedido_acceso", true),
+          .eq("estado_revision", "pendiente"),
       ]);
       setTotalRegistro(registro.count ?? 0);
       setTotalRevision(revision.count ?? 0);
