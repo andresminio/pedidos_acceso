@@ -136,7 +136,17 @@ export default function PanelSolicitudes() {
     setLoading(true);
     const [{ data, error }, correoRes] = await Promise.all([
       supabase.from("pedidos_solicitudes").select("*").order("fecha", { ascending: false }),
-      supabase.from("candidatos_correo").select("pedido_id").not("pedido_id", "is", null),
+      supabase
+        .from("candidatos_correo")
+        .select("pedido_id")
+        .not("pedido_id", "is", null)
+        // Solo el correo original del pedido habilita "Generar respuesta con
+        // IA" (necesita ese cuerpo de mail para armar el prompt). Una
+        // respuesta vinculada (es_respuesta_pedido = true) no cuenta: un
+        // pedido cargado por import masivo puede tener una respuesta
+        // vinculada sin tener nunca el correo original, y ahí no hay nada
+        // que generar.
+        .eq("es_respuesta_pedido", false),
     ]);
     if (error) {
       setError(error.message);
