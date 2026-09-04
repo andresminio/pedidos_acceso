@@ -54,6 +54,17 @@ const COLUMNAS_DEFAULT = [
 
 const COLUMNAS_STORAGE_KEY = "pedidos_columnas_visibles";
 
+// Check dentro de un círculo — distinto del IconoIA (estrella) para no
+// confundir "hay correo/IA disponible" con "ya se vinculó una respuesta".
+function IconoRespuestaVinculada() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8 12.5l2.5 2.5L16 9.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 // Comparación case-insensitive porque hay datos viejos cargados con
 // "CERRADO"/"PENDIENTE" en mayúscula, además de "Cerrado"/"Pendiente".
 function PillEstado({ estado }: { estado: string }) {
@@ -399,6 +410,14 @@ function FilaSolicitud({
             className="shrink-0 text-slate-400"
           >
             <IconoIA />
+          </span>
+        )}
+        {row.respuesta_texto && (
+          <span
+            title="Respuesta vinculada"
+            className="shrink-0 text-emerald-500"
+          >
+            <IconoRespuestaVinculada />
           </span>
         )}
         <span className="truncate">{row.solicitud}</span>
