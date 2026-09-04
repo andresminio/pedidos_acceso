@@ -233,15 +233,40 @@ export default function PanelCandidatos() {
   // Vincula un correo detectado como "respuesta a un pedido" con el pedido
   // elegido a mano: lo cierra con la fecha del mail y guarda el cuerpo como
   // la respuesta real (separado del borrador de IA, que es otra cosa).
+  //
+  // Si el pedido ya tenía una respuesta cargada (típico caso: el
+  // solicitante repregunta sobre un pedido ya Cerrado), no la pisamos —
+  // se acumulan las dos, cada una con la fecha del correo que la trajo,
+  // para no perder el historial.
   async function handleVincular(row: CandidatoCorreo, pedidoId: string) {
     setBusyId(row.id);
+
+    const { data: pedidoActual, error: errLectura } = await supabase
+      .from("pedidos_solicitudes")
+      .select("respuesta_texto")
+      .eq("id", pedidoId)
+      .maybeSingle();
+
+    if (errLectura) {
+      setBusyId(null);
+      setError(errLectura.message);
+      return;
+    }
+
+    const fechaCorreo = row.fecha_correo.slice(0, 10);
+    const respuestaNueva = `-- ${fechaCorta(fechaCorreo)} --\n${textoCompacto(
+      row.cuerpo_resumen ?? ""
+    )}`;
+    const respuestaTexto = pedidoActual?.respuesta_texto
+      ? `${pedidoActual.respuesta_texto}\n\n${respuestaNueva}`
+      : respuestaNueva;
 
     const { error: errPedido } = await supabase
       .from("pedidos_solicitudes")
       .update({
         estado: "Cerrado",
-        fecha_respuesta: row.fecha_correo.slice(0, 10),
-        respuesta_texto: row.cuerpo_resumen,
+        fecha_respuesta: fechaCorreo,
+        respuesta_texto: respuestaTexto,
       })
       .eq("id", pedidoId);
 
@@ -701,9 +726,9 @@ function FilaRespuesta({
   function handleVincularClick() {
     if (!seleccionado) return;
     const confirmado = window.confirm(
-      `¿Vincular y cerrar el pedido de "${seleccionado.nombre_solicitante}" (${fechaCorta(
+      `Vas a vincular y cerrar el pedido de "${seleccionado.nombre_solicitante}" (${fechaCorta(
         seleccionado.fecha
-      )}) con esta respuesta? Esta acción no se puede deshacer.`
+      )}) con esta respuesta`
     );
     if (!confirmado) return;
     onVincular(seleccionado.id);

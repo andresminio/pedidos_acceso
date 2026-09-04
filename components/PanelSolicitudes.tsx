@@ -516,6 +516,7 @@ function FilaSolicitudEdicion({
   } | null>(null);
   const [generandoRespuesta, setGenerandoRespuesta] = useState(false);
   const [errorRespuestaIA, setErrorRespuestaIA] = useState<string | null>(null);
+  const [desvinculando, setDesvinculando] = useState(false);
 
   useEffect(() => {
     // es_respuesta_pedido=false: si este pedido también tiene un correo de
@@ -607,6 +608,36 @@ function FilaSolicitudEdicion({
       respuesta_ia_borrador: respuestaIA || null,
     });
     setGuardando(false);
+    onCerrar();
+  }
+
+  // Deshace un "Vincular y cerrar" hecho por error: el correo de respuesta
+  // vuelve a "descartado" (mismo criterio que descartar un candidato a
+  // mano) y se borra el texto/fecha de respuesta. El estado del pedido NO
+  // se toca — puede seguir Cerrado aunque no tenga una respuesta
+  // vinculada (el cierre no depende de este mecanismo). Solo toca el
+  // candidato de RESPUESTA (es_respuesta_pedido = true): si este pedido
+  // también tiene el correo original vinculado, ese no se toca — sigue
+  // disponible para "Generar respuesta con IA".
+  async function handleDesvincular() {
+    const confirmado = window.confirm(
+      `Vas a desvincular la respuesta del pedido de "${row.nombre_solicitante}". El correo pasa a descartado; el estado del pedido no cambia.`
+    );
+    if (!confirmado) return;
+    setDesvinculando(true);
+    const { error: errCorreo } = await supabase
+      .from("candidatos_correo")
+      .update({ estado_revision: "descartado", revisado_en: new Date().toISOString() })
+      .eq("pedido_id", row.id)
+      .eq("es_respuesta_pedido", true);
+    if (errCorreo) {
+      console.error("No se pudo desvincular el correo de respuesta:", errCorreo.message);
+    }
+    await onUpdate(row.id, {
+      fecha_respuesta: null,
+      respuesta_texto: null,
+    });
+    setDesvinculando(false);
     onCerrar();
   }
 
@@ -811,7 +842,17 @@ function FilaSolicitudEdicion({
 
             {row.respuesta_texto && (
               <div className="flex flex-col gap-1 text-xs text-slate-400">
-                Respuesta enviada
+                <div className="flex items-center justify-between gap-2">
+                  <span>Respuesta enviada</span>
+                  <button
+                    type="button"
+                    disabled={desvinculando}
+                    onClick={handleDesvincular}
+                    className="whitespace-nowrap text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
+                  >
+                    {desvinculando ? "Desvinculando…" : "Desvincular"}
+                  </button>
+                </div>
                 <blockquote className="max-h-48 overflow-y-auto whitespace-pre-line rounded-md border border-emerald-900/40 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
                   {textoCompacto(row.respuesta_texto)}
                 </blockquote>
