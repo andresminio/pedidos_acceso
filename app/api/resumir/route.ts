@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { generarConGemini } from "@/lib/geminiServer";
 
 export const runtime = "nodejs";
-
-const DEFAULT_MODEL = "gemini-flash-latest";
 
 // Mismo criterio de estilo que mail-bot/classify.py para "solicitud_propuesta":
 // directo al grano, sin frases de relleno tipo "Se solicita información sobre".
@@ -27,57 +26,17 @@ Texto original:
 `;
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "GEMINI_API_KEY no configurado en el servidor." },
-      { status: 500 }
-    );
-  }
-
   const body = await req.json().catch(() => null);
   const texto: string | undefined = body?.texto;
   if (!texto || !texto.trim()) {
     return NextResponse.json({ error: "Falta el texto a resumir." }, { status: 400 });
   }
 
-  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
   const prompt = PROMPT.replace("{texto}", texto.trim().slice(0, 8000));
+  const resultado = await generarConGemini(prompt);
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-        }),
-      }
-    );
-
-    if (!res.ok) {
-      const errText = await res.text();
-      return NextResponse.json(
-        { error: `Gemini respondió ${res.status}: ${errText}` },
-        { status: 502 }
-      );
-    }
-
-    const data = await res.json();
-    const resumen: string | undefined =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!resumen) {
-      return NextResponse.json(
-        { error: "Gemini no devolvió texto." },
-        { status: 502 }
-      );
-    }
-
-    return NextResponse.json({ resumen: resumen.trim() });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "error desconocido";
-    return NextResponse.json({ error: message }, { status: 500 });
+  if ("error" in resultado) {
+    return NextResponse.json({ error: resultado.error }, { status: resultado.status });
   }
+  return NextResponse.json({ resumen: resultado.texto });
 }

@@ -225,7 +225,7 @@ export default function PanelCandidatos() {
         <div>
           <h2 className="text-lg font-semibold text-white">Correos en revisión</h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
-            El bot revisa automáticamente el correo institucional cada 1 hora
+            MaryBot revisa automáticamente el correo institucional cada 1 hora
             y detecta posibles pedidos de acceso que aún no fueron
             registrados. Revisá los pedidos detectados y decidí qué hacer con
             cada uno.

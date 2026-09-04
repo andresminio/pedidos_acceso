@@ -16,6 +16,10 @@ build/
 .env.*.local
 mail-bot/.env
 
+# Datos importados puntuales (cargas masivas a mano vía SQL editor) — no
+# son parte del esquema, no hace falta versionarlos.
+supabase/import_homologados.sql
+
 # Logs
 *.log
 npm-debug.log*

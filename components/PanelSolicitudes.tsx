@@ -487,15 +487,15 @@ function FilaSolicitudEdicion({
       .then(({ data }) => setMailOrigen(data));
   }, [row.id]);
 
-  // Si está Cerrado, la F. respuesta es obligatoria y tiene que ser
-  // posterior a la fecha de ingreso (no tiene sentido responder antes de
-  // recibir el pedido).
+  // Si está Cerrado, la F. respuesta es obligatoria y no puede ser anterior
+  // a la fecha de ingreso (puede ser el mismo día: no tiene sentido
+  // responder antes de recibir el pedido, pero sí el mismo día).
   const errorFechaRespuesta =
     estado === "Cerrado"
       ? !fechaRespuesta
         ? "Un pedido Cerrado necesita F. respuesta."
-        : fechaRespuesta <= fecha
-          ? "La F. respuesta tiene que ser posterior a la fecha de ingreso."
+        : fechaRespuesta < fecha
+          ? "La F. respuesta no puede ser anterior a la fecha de ingreso."
           : null
       : null;
 

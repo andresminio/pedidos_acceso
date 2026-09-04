@@ -18,8 +18,8 @@ from google.genai import errors as genai_errors
 
 CONTEXTO_PATH = Path(__file__).parent / "contexto_clasificacion.md"
 
-MAX_INTENTOS = 3
-ESPERA_BASE_SEGUNDOS = 10  # backoff: 10s, 20s entre reintentos
+INTENTOS_POR_MODELO = 2
+ESPERA_ENTRE_INTENTOS_SEGUNDOS = 5  # espera fija entre los 2 intentos de un mismo modelo
 
 # Mismo listado que lib/types.ts (TEMAS) del panel Next.js. Si agregan un
 # tema nuevo ahí, conviene reflejarlo acá también.
@@ -120,6 +120,24 @@ def _lista_subcategorias() -> str:
     return "\n".join(lineas)
 
 DEFAULT_MODEL = "gemini-flash-latest"  # alias: siempre apunta al Flash vigente
+
+# Cuando un modelo está saturado (503 UNAVAILABLE), reintentar el mismo
+# modelo no sirve de mucho — el pool de capacidad es el mismo. Por eso, tras
+# un par de intentos rápidos, se rota a otro modelo (pool de capacidad
+# separado) antes de rendirse. Ver classify_mail().
+MODELOS_FALLBACK = [
+    "gemini-flash-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash",
+]
+
+
+def _modelos_a_intentar() -> list[str]:
+    # Si se fija GEMINI_MODEL a mano (.env), se respeta como único modelo,
+    # sin rotar a otros — se asume una elección intencional.
+    override = os.environ.get("GEMINI_MODEL")
+    return [override] if override else MODELOS_FALLBACK
 
 PROMPT_TEMPLATE = """Sos un asistente que ayuda a una oficina pública (Cámara Nacional \
 Electoral) a triar su correo entrante para detectar pedidos de acceso a la \
@@ -257,7 +275,6 @@ def remitente_excluido(remitente: str) -> str | None:
 
 
 def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
-    model = os.environ.get("GEMINI_MODEL", DEFAULT_MODEL)
     prompt = PROMPT_TEMPLATE.format(
         categorias=", ".join(CATEGORIAS),
         subcategorias=_lista_subcategorias(),
@@ -268,28 +285,42 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
     )
 
     client = _client()
+    modelos = _modelos_a_intentar()
     response = None
-    for intento in range(1, MAX_INTENTOS + 1):
-        try:
-            response = client.models.generate_content(
-                model=model,
-                contents=prompt,
-                config={"response_mime_type": "application/json"},
-            )
-            break
-        except genai_errors.ServerError as e:
-            # 503 / modelo saturado — transitorio, no un error de nuestro
-            # lado. Reintentamos con espera creciente antes de rendirnos.
-            if intento == MAX_INTENTOS:
-                raise
-            espera = ESPERA_BASE_SEGUNDOS * intento
-            print(
-                f"Gemini no disponible (intento {intento}/{MAX_INTENTOS}), "
-                f"reintento en {espera}s: {e}"
-            )
-            time.sleep(espera)
+    ultimo_error: genai_errors.ServerError | None = None
 
-    assert response is not None  # inalcanzable: o rompe el loop o levanta arriba
+    for idx_modelo, model in enumerate(modelos):
+        for intento in range(1, INTENTOS_POR_MODELO + 1):
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config={"response_mime_type": "application/json"},
+                )
+                break
+            except genai_errors.ServerError as e:
+                # 503 / modelo saturado — transitorio, no un error de
+                # nuestro lado. Un par de intentos rápidos por si es un
+                # blip, y si persiste, se prueba con otro modelo (pool de
+                # capacidad separado) más abajo.
+                ultimo_error = e
+                if intento < INTENTOS_POR_MODELO:
+                    print(
+                        f"Gemini ({model}) no disponible (intento "
+                        f"{intento}/{INTENTOS_POR_MODELO}), reintento en "
+                        f"{ESPERA_ENTRE_INTENTOS_SEGUNDOS}s: {e}"
+                    )
+                    time.sleep(ESPERA_ENTRE_INTENTOS_SEGUNDOS)
+                else:
+                    print(f"Gemini ({model}) no disponible tras {INTENTOS_POR_MODELO} intentos: {e}")
+        if response is not None:
+            break
+        if idx_modelo < len(modelos) - 1:
+            print(f"Rotando al siguiente modelo: {modelos[idx_modelo + 1]}")
+
+    if response is None:
+        assert ultimo_error is not None
+        raise ultimo_error
     raw = (response.text or "").strip()
     data = json.loads(raw)
 

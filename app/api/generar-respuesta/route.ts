@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { generarConGemini } from "@/lib/geminiServer";
 
 export const runtime = "nodejs";
-
-const DEFAULT_MODEL = "gemini-flash-latest";
 
 // Prompt genérico por ahora — la idea es afinarlo con contexto real de la
 // oficina (tono, formato de oficio, aclaraciones legales, etc.) más
@@ -40,14 +39,6 @@ Estado: {estado}
 `;
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "GEMINI_API_KEY no configurado en el servidor." },
-      { status: 500 }
-    );
-  }
-
   const body = await req.json().catch(() => null);
   const {
     solicitud,
@@ -66,7 +57,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
   const prompt = PROMPT.replace(/\{nombre_solicitante\}/g, nombre_solicitante || "el/la solicitante")
     .replace(/\{solicitud\}/g, String(solicitud).slice(0, 2000))
     .replace(/\{categoria\}/g, categoria || "sin categoría")
@@ -75,40 +65,10 @@ export async function POST(req: NextRequest) {
     .replace(/\{asunto\}/g, asunto || "(sin asunto)")
     .replace(/\{cuerpo_mail\}/g, String(cuerpo_mail).slice(0, 6000));
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-        }),
-      }
-    );
+  const resultado = await generarConGemini(prompt);
 
-    if (!res.ok) {
-      const errText = await res.text();
-      return NextResponse.json(
-        { error: `Gemini respondió ${res.status}: ${errText}` },
-        { status: 502 }
-      );
-    }
-
-    const data = await res.json();
-    const borrador: string | undefined =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!borrador) {
-      return NextResponse.json(
-        { error: "Gemini no devolvió texto." },
-        { status: 502 }
-      );
-    }
-
-    return NextResponse.json({ borrador: borrador.trim() });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "error desconocido";
-    return NextResponse.json({ error: message }, { status: 500 });
+  if ("error" in resultado) {
+    return NextResponse.json({ error: resultado.error }, { status: resultado.status });
   }
+  return NextResponse.json({ borrador: resultado.texto });
 }
