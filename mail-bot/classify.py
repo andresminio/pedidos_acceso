@@ -128,8 +128,7 @@ DEFAULT_MODEL = "gemini-flash-latest"  # alias: siempre apunta al Flash vigente
 MODELOS_FALLBACK = [
     "gemini-flash-latest",
     "gemini-3.5-flash-lite",
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
+    "gemini-3.6-flash",
 ]
 
 
@@ -284,10 +283,19 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
         cuerpo=cuerpo[:4000],
     )
 
+    # Códigos por los que vale la pena rotar a otro modelo:
+    # 429/500/503 = saturado o límite de cuota (transitorio, el pool de
+    # capacidad de otro modelo puede estar libre); 404 = el modelo fue
+    # discontinuado (Google los retira con el tiempo) — no tiene sentido
+    # reintentarlo, directo al siguiente. Cualquier otro código (400, 401,
+    # 403, etc.) no es cuestión de qué modelo se use, así que se corta ahí
+    # y se levanta el error tal cual.
+    CODIGOS_ROTABLES = {404, 429, 500, 503}
+
     client = _client()
     modelos = _modelos_a_intentar()
     response = None
-    ultimo_error: genai_errors.ServerError | None = None
+    ultimo_error: genai_errors.APIError | None = None
 
     for idx_modelo, model in enumerate(modelos):
         for intento in range(1, INTENTOS_POR_MODELO + 1):
@@ -298,12 +306,14 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
                     config={"response_mime_type": "application/json"},
                 )
                 break
-            except genai_errors.ServerError as e:
-                # 503 / modelo saturado — transitorio, no un error de
-                # nuestro lado. Un par de intentos rápidos por si es un
-                # blip, y si persiste, se prueba con otro modelo (pool de
-                # capacidad separado) más abajo.
+            except genai_errors.APIError as e:
                 ultimo_error = e
+                if e.code not in CODIGOS_ROTABLES:
+                    raise  # error no relacionado al modelo (auth, request inválido, etc.)
+                if e.code == 404:
+                    # Modelo discontinuado: no tiene sentido reintentarlo.
+                    print(f"Gemini ({model}) ya no está disponible (404): {e}")
+                    break
                 if intento < INTENTOS_POR_MODELO:
                     print(
                         f"Gemini ({model}) no disponible (intento "
