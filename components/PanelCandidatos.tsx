@@ -328,14 +328,12 @@ export default function PanelCandidatos() {
 
       {candidatosRespuesta.length > 0 && (
         <div className="mt-6 border-t border-slate-800 pt-4">
-          <h3 className="mb-1 text-sm font-semibold text-white">
+          <h2 className="text-lg font-semibold text-white">
             Respuestas para vincular
-          </h3>
-          <p className="mb-3 max-w-2xl text-xs text-slate-500">
-            MaryBot detectó que estos correos no son pedidos nuevos, sino
-            respuestas para un pedido ya cargado (por ejemplo, de Nora o
-            Prosecretaría). Buscá el pedido correspondiente para cerrarlo con
-            esta respuesta.
+          </h2>
+          <p className="mb-3 mt-1 max-w-2xl text-sm text-slate-400">
+            MaryBot detectó que estos correos son respuestas para un pedido
+            ya cargado. Vincula y cerrá el pedido.
           </p>
           <div className="space-y-4">
             {candidatosRespuesta.map((row) => (
