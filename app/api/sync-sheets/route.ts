@@ -64,6 +64,44 @@ async function marcarSincronizado() {
   }
 }
 
+// Inserta una fila nueva justo debajo del encabezado (fila 2), no al
+// final. La hoja se mantiene ordenada de más reciente a más antiguo (ver
+// /api/resync-sheets), así que un pedido recién creado tiene que entrar
+// arriba de todo — `values.append` en cambio siempre agrega al final de
+// los datos existentes, sin noción de orden.
+async function insertRowAtTop(
+  sheets: ReturnType<typeof google.sheets>,
+  spreadsheetId: string,
+  tab: string,
+  row: string[]
+) {
+  const sheetId = await getSheetId(sheets, spreadsheetId, tab);
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          insertDimension: {
+            range: {
+              sheetId,
+              dimension: "ROWS",
+              startIndex: 1, // 0-indexed: fila 2 (1-indexed), debajo del encabezado
+              endIndex: 2,
+            },
+            inheritFromBefore: false,
+          },
+        },
+      ],
+    },
+  });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${tab}!A2:M2`,
+    valueInputOption: "RAW",
+    requestBody: { values: [row] },
+  });
+}
+
 // Borra la fila entera (no solo su contenido), corriendo las de abajo
 // para arriba — igual que borrar una fila a mano en Sheets.
 async function deleteRow(
@@ -140,14 +178,8 @@ export async function POST(req: NextRequest) {
         requestBody: { values: [row] },
       });
     } else {
-      // Append: primera vez que se ve este id.
-      await sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range: `${tab}!A:M`,
-        valueInputOption: "RAW",
-        insertDataOption: "INSERT_ROWS",
-        requestBody: { values: [row] },
-      });
+      // Primera vez que se ve este id: entra arriba de todo (fila 2).
+      await insertRowAtTop(sheets, spreadsheetId, tab, row);
     }
 
     await marcarSincronizado();
