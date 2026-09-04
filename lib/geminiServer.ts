@@ -5,7 +5,7 @@
 // un solo intento por modelo — son endpoints que el usuario espera en
 // pantalla (botón "Reescribir/Generar con IA"), no un proceso de fondo.
 
-const MODELOS_FALLBACK = ["gemini-flash-latest", "gemini-3.5-flash-lite", "gemini-2.5-flash"];
+const MODELOS_FALLBACK = ["gemini-flash-latest", "gemini-3.5-flash-lite", "gemini-3.6-flash"];
 
 function modelosAIntentar(): string[] {
   // Si se fija GEMINI_MODEL a mano en Vercel, se respeta como único modelo,
@@ -14,10 +14,12 @@ function modelosAIntentar(): string[] {
   return override ? [override] : MODELOS_FALLBACK;
 }
 
-// Códigos por los que vale la pena probar otro modelo (saturación/cuota).
-// Cualquier otro error (400, 403, etc.) no es cuestión de modelo — se
-// devuelve tal cual, sin rotar.
-const CODIGOS_REINTENTABLES = new Set([429, 500, 503]);
+// Códigos por los que vale la pena probar otro modelo: 429/500/503 =
+// saturación/cuota (transitorio), 404 = el modelo fue discontinuado por
+// Google (pasa con el tiempo — ver mail-bot/classify.py). Cualquier otro
+// error (400, 403, etc.) no es cuestión de modelo — se devuelve tal cual,
+// sin rotar.
+const CODIGOS_REINTENTABLES = new Set([404, 429, 500, 503]);
 
 export async function generarConGemini(
   prompt: string
