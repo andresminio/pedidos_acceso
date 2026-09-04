@@ -280,13 +280,12 @@ export default function PanelCandidatos() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-white">Correos en revisión</h2>
-          <p className="mt-1 max-w-2xl text-sm text-slate-400">
-            MaryBot detecta posibles pedidos de acceso que aún no fueron
-            registrados. Revisalos y decidí qué hacer con cada uno.
-          </p>
-        </div>
+        <p className="max-w-2xl text-sm text-slate-400">
+          MaryBot analiza automáticamente el correo institucional para
+          identificar posibles pedidos de acceso a la información y cerrar
+          procesos abiertos. Revisá las sugerencias y confirmá las acciones
+          pendientes.
+        </p>
         <p className="whitespace-nowrap text-xs text-slate-500">
           {ultimaCorrida ? (
             <>última corrida: {fechaCortaHora(ultimaCorrida)}</>
@@ -298,6 +297,10 @@ export default function PanelCandidatos() {
           {rows.length === 1 ? "" : "s"}
         </p>
       </div>
+
+      <h2 className="mb-2 text-lg font-semibold text-white">
+        Nuevos pedidos de información
+      </h2>
 
       {error && (
         <div className="mb-4 rounded-md border border-red-900/50 bg-red-950/50 px-3 py-2 text-sm text-red-300">
@@ -328,13 +331,9 @@ export default function PanelCandidatos() {
 
       {candidatosRespuesta.length > 0 && (
         <div className="mt-6 border-t border-slate-800 pt-4">
-          <h2 className="text-lg font-semibold text-white">
+          <h2 className="mb-2 text-lg font-semibold text-white">
             Respuestas para vincular
           </h2>
-          <p className="mb-3 mt-1 max-w-2xl text-sm text-slate-400">
-            MaryBot detectó que estos correos son respuestas para un pedido
-            ya cargado. Vincula y cerrá el pedido.
-          </p>
           <div className="space-y-4">
             {candidatosRespuesta.map((row) => (
               <FilaRespuesta
@@ -697,14 +696,6 @@ function FilaRespuesta({
         <p className="text-xs text-slate-500">
           correo · {fechaCortaHora(row.fecha_correo)} · de {row.remitente}
         </p>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onDescartar}
-          className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-        >
-          Descartar
-        </button>
       </div>
 
       <h3 className="mb-1 font-semibold text-white">{row.asunto}</h3>
@@ -762,7 +753,7 @@ function FilaRespuesta({
         </div>
       )}
 
-      <div className="mt-3 flex items-center gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
           disabled={busy || !seleccionado}
@@ -770,6 +761,14 @@ function FilaRespuesta({
           className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
         >
           Vincular y cerrar
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onDescartar}
+          className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+        >
+          Descartar
         </button>
         {seleccionado && (
           <span className="text-xs text-slate-500">
