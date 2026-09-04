@@ -587,6 +587,7 @@ function FilaSolicitudEdicion({
           cuerpo_mail: mailOrigen.cuerpo_resumen,
           asunto: mailOrigen.asunto,
           remitente: mailOrigen.remitente,
+          fecha,
         }),
       });
       const data = await res.json();
