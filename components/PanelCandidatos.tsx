@@ -134,6 +134,14 @@ export default function PanelCandidatos() {
     load();
   }, [load]);
 
+  // Se refresca sola cada 30s — el bot de correo corre en una PC aparte
+  // (Programador de tareas), así que sin esto la página se queda con lo
+  // que había al abrirla hasta que alguien la recarga a mano.
+  useEffect(() => {
+    const id = setInterval(load, 30_000);
+    return () => clearInterval(id);
+  }, [load]);
+
   const loadDescartados = useCallback(async () => {
     setCargandoDescartados(true);
     const { data, error } = await supabase
@@ -275,10 +283,8 @@ export default function PanelCandidatos() {
         <div>
           <h2 className="text-lg font-semibold text-white">Correos en revisión</h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-400">
-            MaryBot revisa automáticamente el correo institucional cada 1 hora
-            y detecta posibles pedidos de acceso que aún no fueron
-            registrados. Revisá los pedidos detectados y decidí qué hacer con
-            cada uno.
+            MaryBot detecta posibles pedidos de acceso que aún no fueron
+            registrados. Revisalos y decidí qué hacer con cada uno.
           </p>
         </div>
         <p className="whitespace-nowrap text-xs text-slate-500">
@@ -659,19 +665,31 @@ function FilaRespuesta({
   const [buscado, setBuscado] = useState(false);
   const [seleccionado, setSeleccionado] = useState<PedidoBusqueda | null>(null);
 
-  async function buscarPedidos() {
-    if (!busqueda.trim()) return;
+  const buscarPedidos = useCallback(async (termino: string) => {
+    if (!termino.trim()) return;
     setBuscando(true);
     const { data } = await supabase
       .from("pedidos_solicitudes")
       .select("id, nombre_solicitante, fecha, solicitud, estado")
-      .ilike("nombre_solicitante", `%${busqueda.trim()}%`)
+      .ilike("nombre_solicitante", `%${termino.trim()}%`)
       .order("fecha", { ascending: false })
       .limit(8);
-    setResultados((data as PedidoBusqueda[]) ?? []);
+    const encontrados = (data as PedidoBusqueda[]) ?? [];
+    setResultados(encontrados);
     setBuscando(false);
     setBuscado(true);
-  }
+    // Preseleccionar el primer resultado: el apellido ya lo detectó la IA
+    // (viene del asunto "Re: ... - APELLIDO" de la cadena), así que no
+    // tiene sentido pedirle al usuario que busque y elija a mano si ya
+    // hay un match — igual confirma con "Vincular y cerrar".
+    setSeleccionado((actual) => actual ?? encontrados[0] ?? null);
+  }, []);
+
+  // Busca sola al aparecer, sin esperar a que alguien apriete "Buscar".
+  useEffect(() => {
+    buscarPedidos(busqueda);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const tieneCuerpo = !!row.cuerpo_resumen?.trim();
 
@@ -724,14 +742,14 @@ function FilaRespuesta({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                buscarPedidos();
+                buscarPedidos(busqueda);
               }
             }}
             placeholder="Nombre del solicitante…"
           />
           <button
             type="button"
-            onClick={buscarPedidos}
+            onClick={() => buscarPedidos(busqueda)}
             disabled={!busqueda.trim() || buscando}
             className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
           >

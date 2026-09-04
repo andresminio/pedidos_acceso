@@ -143,6 +143,16 @@ export default function PanelSolicitudes() {
     load();
   }, [load]);
 
+  // Se refresca sola cada 30s (mismo criterio que /revision): si alguien
+  // más edita un pedido, o el bot vincula una respuesta, se ve sin
+  // necesidad de recargar la página a mano. No pisa una fila que estés
+  // editando: el formulario de edición guarda su propio estado local al
+  // abrirse y no se resetea con cada refresco de fondo.
+  useEffect(() => {
+    const id = setInterval(load, 30_000);
+    return () => clearInterval(id);
+  }, [load]);
+
   async function handleCreate(input: SolicitudInput) {
     setSaving(true);
     const { error } = await supabase.from("pedidos_solicitudes").insert({
