@@ -87,6 +87,33 @@ y actualizo `getSheetsClient()` en `app/api/sync-sheets/route.ts`.
    duplican filas, y el estado en la hoja siempre queda igual al de
    Supabase, incluyendo cuando pasa a "Cerrado".
 
+### 4.1 Carga masiva por SQL (importar muchos pedidos de una)
+
+El trigger dispara **una llamada al webhook por cada fila** que se inserta.
+Con una carga masiva (decenas o cientos de filas en un solo `INSERT`), eso
+satura la cuota de lecturas de la API de Google Sheets y la mayoría de las
+llamadas rebota con error 500 — pasó una vez con una importación de 532
+filas. Para evitarlo:
+
+1. Antes del `INSERT` masivo, desactivá el trigger de insert:
+   ```sql
+   alter table public.pedidos_solicitudes disable trigger pedidos_solicitudes_sync_insert;
+   ```
+2. Corré el `INSERT` masivo.
+3. Reactivá el trigger:
+   ```sql
+   alter table public.pedidos_solicitudes enable trigger pedidos_solicitudes_sync_insert;
+   ```
+4. Sincronizá la hoja entera de una — llamá a `/api/resync-sheets` (reescribe
+   toda la hoja desde Supabase en una sola lectura + escritura, no dispara la
+   cuota):
+   ```
+   POST https://<tu-app>.vercel.app/api/resync-sheets?secret=<SYNC_WEBHOOK_SECRET>
+   ```
+   Se puede pegar esa URL directo en el navegador (usa POST igual, así que
+   hace falta algo que mande POST — un `curl -X POST "<url>"`, o Postman/Thunder
+   Client. Un simple `fetch` en la consola del navegador también sirve).
+
 ## 5. Desarrollo local
 
 ```bash

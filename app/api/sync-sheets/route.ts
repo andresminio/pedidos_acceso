@@ -1,75 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { supabase } from "@/lib/supabase";
+import {
+  HEADERS,
+  SolicitudRecord,
+  toRow,
+  getSheetsClient,
+  getSheetId,
+} from "@/lib/sheetsServer";
 
 export const runtime = "nodejs";
-
-// Columnas en el mismo orden que se escriben en la hoja.
-// La columna A es el id (uuid) — clave usada para el upsert idempotente.
-const HEADERS = [
-  "id",
-  "Año",
-  "Cuatrimestre",
-  "Fecha",
-  "Nombre del solicitante",
-  "Solicitud",
-  "Categoría",
-  "Subcategoria",
-  "Nombre del archivo/ Respuesta",
-  "Estado",
-  "Sub-estado",
-  "F. respuesta",
-  "Observaciones",
-];
-
-interface SolicitudRecord {
-  id: string;
-  anio: number;
-  cuatrimestre: number;
-  fecha: string;
-  nombre_solicitante: string;
-  solicitud: string;
-  categoria: string | null;
-  subcategoria: string | null;
-  nombre_archivo: string | null;
-  estado: string;
-  subestado: string | null;
-  fecha_respuesta: string | null;
-  observaciones: string | null;
-}
-
-function toRow(r: SolicitudRecord): string[] {
-  return [
-    r.id,
-    String(r.anio ?? ""),
-    String(r.cuatrimestre ?? ""),
-    r.fecha ?? "",
-    r.nombre_solicitante ?? "",
-    r.solicitud ?? "",
-    r.categoria ?? "",
-    r.subcategoria ?? "",
-    r.nombre_archivo ?? "",
-    r.estado ?? "",
-    r.subestado ?? "",
-    r.fecha_respuesta ?? "",
-    r.observaciones ?? "",
-  ];
-}
-
-function getSheetsClient() {
-  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-  const refreshToken = process.env.GOOGLE_OAUTH_REFRESH_TOKEN;
-  if (!clientId || !clientSecret || !refreshToken) {
-    throw new Error(
-      "Faltan credenciales OAuth de Google (GOOGLE_OAUTH_CLIENT_ID / " +
-        "GOOGLE_OAUTH_CLIENT_SECRET / GOOGLE_OAUTH_REFRESH_TOKEN)."
-    );
-  }
-  const auth = new google.auth.OAuth2(clientId, clientSecret);
-  auth.setCredentials({ refresh_token: refreshToken });
-  return google.sheets({ version: "v4", auth });
-}
 
 // Inserta encabezados si la hoja está vacía.
 async function ensureHeaders(
@@ -107,24 +47,6 @@ async function findRowIndexById(
     if (values[i][0] === id) return i + 1; // 1-indexed
   }
   return null;
-}
-
-// sheetId (gid) numérico de la pestaña, necesario para batchUpdate
-// (deleteDimension no acepta el nombre de la pestaña, solo su id interno).
-async function getSheetId(
-  sheets: ReturnType<typeof google.sheets>,
-  spreadsheetId: string,
-  tab: string
-): Promise<number> {
-  const meta = await sheets.spreadsheets.get({
-    spreadsheetId,
-    fields: "sheets.properties",
-  });
-  const encontrada = meta.data.sheets?.find((s) => s.properties?.title === tab);
-  if (!encontrada || encontrada.properties?.sheetId == null) {
-    throw new Error(`No se encontró la pestaña "${tab}" en la hoja.`);
-  }
-  return encontrada.properties.sheetId;
 }
 
 // Marca "ahora" como la última sincronización exitosa con la hoja. A
