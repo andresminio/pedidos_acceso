@@ -730,35 +730,13 @@ function FilaRespuesta({
         </div>
       )}
 
-      <label className="flex flex-col gap-1 text-xs text-slate-500">
-        Buscar pedido a vincular (por solicitante)
-        <div className="flex gap-2">
-          <input
-            className="input"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                buscarPedidos(busqueda);
-              }
-            }}
-            placeholder="Nombre del solicitante…"
-          />
-          <button
-            type="button"
-            onClick={() => buscarPedidos(busqueda)}
-            disabled={!busqueda.trim() || buscando}
-            className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-          >
-            {buscando ? "Buscando…" : "Buscar"}
-          </button>
-        </div>
-      </label>
+      <p className="text-xs text-slate-500">
+        {buscando ? "Buscando pedido…" : "Pedidos candidatos a vincular"}
+      </p>
 
-      {buscado && resultados.length === 0 && (
+      {buscado && !buscando && resultados.length === 0 && (
         <p className="mt-2 text-xs text-slate-500">
-          No se encontraron pedidos con ese nombre.
+          No se encontraron pedidos de {row.nombre_solicitante ?? "este solicitante"}.
         </p>
       )}
 
