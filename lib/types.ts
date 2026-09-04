@@ -113,6 +113,7 @@ export interface Solicitud {
   fecha_respuesta: string | null;
   observaciones: string | null;
   respuesta_ia_borrador: string | null;
+  respuesta_texto: string | null;
   synced_at: string | null;
   created_at: string;
   updated_at: string;
@@ -139,6 +140,7 @@ export interface CandidatoCorreo {
   asunto: string | null;
   cuerpo_resumen: string | null;
   es_pedido_acceso: boolean;
+  es_respuesta_pedido: boolean;
   urgencia: string | null;
   confianza_ia: string | null;
   nombre_solicitante: string | null;

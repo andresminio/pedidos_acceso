@@ -147,6 +147,7 @@ texto extra) con este formato exacto:
 
 {{
   "es_pedido_acceso": true o false,
+  "es_respuesta_pedido": true o false,
   "confianza_ia": "una frase corta explicando por qué lo clasificaste así",
   "nombre_solicitante": "nombre de quien pide, o null si no se puede inferir",
   "solicitud_propuesta": "qué se solicita, directo y breve (ver formato abajo), o null",
@@ -170,6 +171,16 @@ notificaciones automáticas, mails internos administrativos, o \
 conversaciones que no son un pedido nuevo.
 - Si no estás seguro, marcá "es_pedido_acceso": false y explicá por qué en \
 "confianza_ia".
+- "es_respuesta_pedido" es true cuando el mail NO es un pedido nuevo, sino \
+que trae la respuesta que hay que enviarle a un solicitante por un pedido \
+que YA fue cargado antes — típicamente Nora, la Prosecretaría, u otra \
+área interna mandando el texto de la respuesta para que la oficina se lo \
+reenvíe al solicitante (a veces citando el pedido original, el nombre de \
+quien preguntó, o "esta es la respuesta para..."). En ese caso \
+"es_pedido_acceso" tiene que ser false (no es un pedido nuevo) y \
+"es_respuesta_pedido" true. Para el resto de los mails internos (avisos, \
+coordinación sin una respuesta concreta para reenviar, etc.) los dos \
+quedan en false.
 - "Datos Históricos" aplica en dos casos: (1) pedidos de resultados o \
 padrones de elecciones ANTERIORES a 1983 (retorno de la democracia), o \
 (2) pedidos de cualquier otro tipo de documentación sobre temas \
@@ -203,6 +214,7 @@ Cuerpo:
 @dataclass
 class Clasificacion:
     es_pedido_acceso: bool
+    es_respuesta_pedido: bool
     confianza_ia: str | None
     nombre_solicitante: str | None
     solicitud_propuesta: str | None
@@ -343,6 +355,7 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
 
     return Clasificacion(
         es_pedido_acceso=bool(data.get("es_pedido_acceso", False)),
+        es_respuesta_pedido=bool(data.get("es_respuesta_pedido", False)),
         confianza_ia=data.get("confianza_ia"),
         nombre_solicitante=data.get("nombre_solicitante"),
         solicitud_propuesta=data.get("solicitud_propuesta"),

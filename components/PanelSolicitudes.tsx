@@ -479,10 +479,16 @@ function FilaSolicitudEdicion({
   const [errorRespuestaIA, setErrorRespuestaIA] = useState<string | null>(null);
 
   useEffect(() => {
+    // es_respuesta_pedido=false: si este pedido también tiene un correo de
+    // RESPUESTA vinculado (ver "Respuestas para vincular"), puede haber dos
+    // filas de candidatos_correo con el mismo pedido_id — filtramos para
+    // quedarnos solo con el correo original (si no, .maybeSingle() rompe
+    // con más de una fila).
     supabase
       .from("candidatos_correo")
       .select("cuerpo_resumen, asunto, remitente")
       .eq("pedido_id", row.id)
+      .eq("es_respuesta_pedido", false)
       .maybeSingle()
       .then(({ data }) => setMailOrigen(data));
   }, [row.id]);
@@ -752,9 +758,9 @@ function FilaSolicitudEdicion({
           </label>
         </div>
 
-        {mailOrigen && (
+        {(mailOrigen?.cuerpo_resumen || row.respuesta_texto) && (
           <div className="mt-3 flex flex-col gap-3">
-            {mailOrigen.cuerpo_resumen && (
+            {mailOrigen?.cuerpo_resumen && (
               <div className="flex flex-col gap-1 text-xs text-slate-400">
                 Correo recibido
                 <blockquote className="max-h-48 overflow-y-auto whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
@@ -763,6 +769,19 @@ function FilaSolicitudEdicion({
               </div>
             )}
 
+            {row.respuesta_texto && (
+              <div className="flex flex-col gap-1 text-xs text-slate-400">
+                Respuesta enviada
+                <blockquote className="max-h-48 overflow-y-auto whitespace-pre-line rounded-md border border-emerald-900/40 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
+                  {textoCompacto(row.respuesta_texto)}
+                </blockquote>
+              </div>
+            )}
+          </div>
+        )}
+
+        {mailOrigen && (
+          <div className="mt-3 flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400">Modelo de respuesta</span>

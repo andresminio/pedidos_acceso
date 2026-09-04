@@ -84,6 +84,7 @@ def main() -> int:
                 print(f"UID {msg.uid}: remitente excluido por regla '{patron_excluido}', salteo Gemini.")
                 clasif = Clasificacion(
                     es_pedido_acceso=False,
+                    es_respuesta_pedido=False,
                     confianza_ia=f"Excluido sin llamar a Gemini: remitente coincide con la regla '{patron_excluido}' de contexto_clasificacion.md.",
                     nombre_solicitante=None,
                     solicitud_propuesta=None,
@@ -98,9 +99,12 @@ def main() -> int:
                 client, clasif.nombre_solicitante, msg.fecha
             ):
                 estado_revision = "ya_cargado"
-            elif not clasif.es_pedido_acceso:
+            elif not clasif.es_pedido_acceso and not clasif.es_respuesta_pedido:
                 # Igual lo guardamos (para auditoría / no reprocesar) pero
-                # nunca va a aparecer en la cola de revisión.
+                # nunca va a aparecer en la cola de revisión. Si es una
+                # respuesta a vincular, en cambio, sí queda "pendiente"
+                # para que aparezca en la cola (aunque no sea un pedido
+                # nuevo).
                 estado_revision = "descartado"
 
             candidato = {
@@ -110,6 +114,7 @@ def main() -> int:
                 "asunto": msg.asunto,
                 "cuerpo_resumen": msg.cuerpo[:2000],
                 "es_pedido_acceso": clasif.es_pedido_acceso,
+                "es_respuesta_pedido": clasif.es_respuesta_pedido,
                 "confianza_ia": clasif.confianza_ia,
                 "nombre_solicitante": clasif.nombre_solicitante,
                 "fecha_propuesta": msg.fecha.date().isoformat(),

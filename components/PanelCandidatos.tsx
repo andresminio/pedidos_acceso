@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
   agregarCategoria,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/categorias";
 import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
 import { textoCompacto } from "@/lib/texto";
+import { fechaCorta } from "@/lib/fechas";
 
 const AGREGAR_CATEGORIA = "__agregar_categoria__";
 // El botón "Revisar correo ahora" (BotonRevisarCorreo) quedó descartado:
@@ -96,11 +97,13 @@ export default function PanelCandidatos() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    // Sin filtrar por es_pedido_acceso: "pendiente" incluye tanto
+    // candidatos a pedido nuevo como respuestas para vincular (se separan
+    // más abajo con candidatosPedido/candidatosRespuesta).
     const { data, error } = await supabase
       .from("candidatos_correo")
       .select("*")
       .eq("estado_revision", "pendiente")
-      .eq("es_pedido_acceso", true)
       .order("fecha_correo", { ascending: false });
     if (error) {
       setError(error.message);
@@ -219,6 +222,53 @@ export default function PanelCandidatos() {
     await load();
   }
 
+  // Vincula un correo detectado como "respuesta a un pedido" con el pedido
+  // elegido a mano: lo cierra con la fecha del mail y guarda el cuerpo como
+  // la respuesta real (separado del borrador de IA, que es otra cosa).
+  async function handleVincular(row: CandidatoCorreo, pedidoId: string) {
+    setBusyId(row.id);
+
+    const { error: errPedido } = await supabase
+      .from("pedidos_solicitudes")
+      .update({
+        estado: "Cerrado",
+        fecha_respuesta: row.fecha_correo.slice(0, 10),
+        respuesta_texto: row.cuerpo_resumen,
+      })
+      .eq("id", pedidoId);
+
+    if (errPedido) {
+      setBusyId(null);
+      setError(errPedido.message);
+      return;
+    }
+
+    const { error: errCandidato } = await supabase
+      .from("candidatos_correo")
+      .update({
+        estado_revision: "aprobado",
+        pedido_id: pedidoId,
+        revisado_en: new Date().toISOString(),
+      })
+      .eq("id", row.id);
+
+    setBusyId(null);
+    if (errCandidato) {
+      setError(errCandidato.message);
+      return;
+    }
+    await load();
+  }
+
+  const candidatosPedido = useMemo(
+    () => rows.filter((r) => !r.es_respuesta_pedido),
+    [rows]
+  );
+  const candidatosRespuesta = useMemo(
+    () => rows.filter((r) => r.es_respuesta_pedido),
+    [rows]
+  );
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -250,14 +300,14 @@ export default function PanelCandidatos() {
       )}
 
       {loading && <p className="text-sm text-slate-500">Cargando…</p>}
-      {!loading && rows.length === 0 && (
+      {!loading && candidatosPedido.length === 0 && (
         <p className="rounded-lg border border-slate-800 bg-[#12161f] px-4 py-6 text-center text-sm text-slate-500 shadow-sm">
           No hay correos pendientes de revisión.
         </p>
       )}
 
       <div className="space-y-4">
-        {rows.map((row) => (
+        {candidatosPedido.map((row) => (
           <FilaCandidato
             key={row.id}
             row={row}
@@ -269,6 +319,31 @@ export default function PanelCandidatos() {
           />
         ))}
       </div>
+
+      {candidatosRespuesta.length > 0 && (
+        <div className="mt-6 border-t border-slate-800 pt-4">
+          <h3 className="mb-1 text-sm font-semibold text-white">
+            Respuestas para vincular
+          </h3>
+          <p className="mb-3 max-w-2xl text-xs text-slate-500">
+            MaryBot detectó que estos correos no son pedidos nuevos, sino
+            respuestas para un pedido ya cargado (por ejemplo, de Nora o
+            Prosecretaría). Buscá el pedido correspondiente para cerrarlo con
+            esta respuesta.
+          </p>
+          <div className="space-y-4">
+            {candidatosRespuesta.map((row) => (
+              <FilaRespuesta
+                key={row.id}
+                row={row}
+                busy={busyId === row.id}
+                onDescartar={() => handleDescartar(row)}
+                onVincular={(pedidoId) => handleVincular(row, pedidoId)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-4 text-sm">
         <p className="text-slate-500">
@@ -391,6 +466,7 @@ function FilaCandidato({
       fecha_respuesta: null,
       observaciones: "Cargado automáticamente desde correo",
       respuesta_ia_borrador: null,
+      respuesta_texto: null,
     });
   }
 
@@ -554,6 +630,161 @@ function PillOrigenDescarte({ revisadoEn }: { revisadoEn: string | null }) {
     <span className="rounded-full bg-slate-700/20 px-2 py-0.5 text-[10px] text-slate-500">
       Descartado por IA
     </span>
+  );
+}
+
+interface PedidoBusqueda {
+  id: string;
+  nombre_solicitante: string;
+  fecha: string;
+  solicitud: string;
+  estado: string;
+}
+
+function FilaRespuesta({
+  row,
+  busy,
+  onDescartar,
+  onVincular,
+}: {
+  row: CandidatoCorreo;
+  busy: boolean;
+  onDescartar: () => void;
+  onVincular: (pedidoId: string) => void;
+}) {
+  const [expandido, setExpandido] = useState(false);
+  const [busqueda, setBusqueda] = useState(row.nombre_solicitante ?? "");
+  const [buscando, setBuscando] = useState(false);
+  const [resultados, setResultados] = useState<PedidoBusqueda[]>([]);
+  const [buscado, setBuscado] = useState(false);
+  const [seleccionado, setSeleccionado] = useState<PedidoBusqueda | null>(null);
+
+  async function buscarPedidos() {
+    if (!busqueda.trim()) return;
+    setBuscando(true);
+    const { data } = await supabase
+      .from("pedidos_solicitudes")
+      .select("id, nombre_solicitante, fecha, solicitud, estado")
+      .ilike("nombre_solicitante", `%${busqueda.trim()}%`)
+      .order("fecha", { ascending: false })
+      .limit(8);
+    setResultados((data as PedidoBusqueda[]) ?? []);
+    setBuscando(false);
+    setBuscado(true);
+  }
+
+  const tieneCuerpo = !!row.cuerpo_resumen?.trim();
+
+  return (
+    <div className="rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-sm">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-slate-500">
+          correo · {fechaCortaHora(row.fecha_correo)} · de {row.remitente}
+        </p>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onDescartar}
+          className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+        >
+          Descartar
+        </button>
+      </div>
+
+      <h3 className="mb-1 font-semibold text-white">{row.asunto}</h3>
+      {row.confianza_ia && (
+        <p className="mb-3 text-xs italic text-slate-500">IA: {row.confianza_ia}</p>
+      )}
+
+      {tieneCuerpo && (
+        <div className="mb-3 flex flex-col gap-1 text-xs text-slate-500">
+          Correo recibido
+          <blockquote
+            onClick={() => {
+              if (window.getSelection()?.toString()) return;
+              setExpandido((v) => !v);
+            }}
+            className="cursor-pointer whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400"
+          >
+            {expandido
+              ? textoCompacto(row.cuerpo_resumen!)
+              : textoCompacto(row.cuerpo_resumen!).slice(0, 240)}
+            {!expandido && row.cuerpo_resumen!.length > 240 ? "…" : ""}
+          </blockquote>
+        </div>
+      )}
+
+      <label className="flex flex-col gap-1 text-xs text-slate-500">
+        Buscar pedido a vincular (por solicitante)
+        <div className="flex gap-2">
+          <input
+            className="input"
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                buscarPedidos();
+              }
+            }}
+            placeholder="Nombre del solicitante…"
+          />
+          <button
+            type="button"
+            onClick={buscarPedidos}
+            disabled={!busqueda.trim() || buscando}
+            className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+          >
+            {buscando ? "Buscando…" : "Buscar"}
+          </button>
+        </div>
+      </label>
+
+      {buscado && resultados.length === 0 && (
+        <p className="mt-2 text-xs text-slate-500">
+          No se encontraron pedidos con ese nombre.
+        </p>
+      )}
+
+      {resultados.length > 0 && (
+        <div className="mt-2 flex flex-col gap-1">
+          {resultados.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setSeleccionado(p)}
+              className={`rounded-md border px-3 py-2 text-left text-xs ${
+                seleccionado?.id === p.id
+                  ? "border-blue-600 bg-blue-950/30 text-white"
+                  : "border-slate-800 text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              <span className="font-medium">{p.nombre_solicitante}</span>
+              {" · "}
+              {fechaCorta(p.fecha)} · {p.estado}
+              <span className="block truncate text-slate-500">{p.solicitud}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          type="button"
+          disabled={busy || !seleccionado}
+          onClick={() => seleccionado && onVincular(seleccionado.id)}
+          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+        >
+          Vincular y cerrar
+        </button>
+        {seleccionado && (
+          <span className="text-xs text-slate-500">
+            Pedido de {seleccionado.nombre_solicitante} ({fechaCorta(seleccionado.fecha)}) va a
+            quedar Cerrado con esta respuesta.
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 

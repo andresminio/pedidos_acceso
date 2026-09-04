@@ -81,6 +81,7 @@ export default function SolicitudForm({
       fecha_respuesta: null,
       observaciones: null,
       respuesta_ia_borrador: null,
+      respuesta_texto: null,
     });
     setForm(empty);
     setNuevoTema(false);
