@@ -170,11 +170,14 @@ notificaciones automáticas, mails internos administrativos, o \
 conversaciones que no son un pedido nuevo.
 - Si no estás seguro, marcá "es_pedido_acceso": false y explicá por qué en \
 "confianza_ia".
-- "Datos Históricos" es SOLO para pedidos sobre elecciones o información \
-electoral ANTERIOR a 1983 (retorno de la democracia). Un pedido sobre \
-elecciones de 1983 en adelante — aunque sean "viejas" o de hace décadas — \
-no es "Datos Históricos": clasificalo en la categoría que corresponda al \
-tema (por ejemplo "Resultados Electorales" o "Padrón Electoral").
+- "Datos Históricos" aplica en dos casos: (1) pedidos de resultados o \
+padrones de elecciones ANTERIORES a 1983 (retorno de la democracia), o \
+(2) pedidos de cualquier otro tipo de documentación sobre temas \
+infrecuentes ANTERIORES a 2011. Un pedido sobre elecciones de 1983 en \
+adelante que no sea de un tema infrecuente previo a 2011 — aunque sea \
+"viejo" o de hace décadas — no es "Datos Históricos": clasificalo en la \
+categoría que corresponda al tema (por ejemplo "Resultados Electorales" o \
+"Padrón Electoral").
 - Para "solicitud_propuesta": andá directo al grano, sin frases de relleno. \
 NUNCA arranques con "Se solicita información sobre", "El remitente pide", \
 "Solicita acceso a" ni nada equivalente — esa parte ya se sabe (es un \
