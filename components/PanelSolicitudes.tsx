@@ -374,7 +374,7 @@ export default function PanelSolicitudes() {
                 editando={row.id === editandoId}
                 onAbrir={() => setEditandoId(row.id)}
                 onCerrarEdicion={() => setEditandoId(null)}
-                tieneCorreo={pedidosConCorreo.has(row.id)}
+                tieneCorreo={pedidosConCorreo.has(row.id) && !row.respuesta_texto}
               />
             ))}
           </tbody>
@@ -820,7 +820,7 @@ function FilaSolicitudEdicion({
           </div>
         )}
 
-        {mailOrigen && (
+        {mailOrigen && !row.respuesta_texto && (
           <div className="mt-3 flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
