@@ -6,6 +6,7 @@ procesado (guardado en Supabase). No marca nada como leído.
 from __future__ import annotations
 
 import email
+import html
 import imaplib
 import os
 import re
@@ -41,6 +42,33 @@ def _sacar_banner_seguridad(texto: str) -> str:
     return texto.strip()
 
 
+# Bloques que no aportan texto legible (van enteros afuera, no solo el tag).
+_HTML_BLOQUES_RE = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
+# Saltos de línea "visuales": <br>, cierre de párrafo/div/tabla, etc.
+_HTML_SALTOS_RE = re.compile(
+    r"<(br|/p|/div|/tr|/table|/li|/h[1-6])\s*/?>", re.IGNORECASE
+)
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _html_a_texto(contenido_html: str) -> str:
+    """
+    Conversión liviana de HTML a texto plano — sin dependencias extra
+    (BeautifulSoup, html2text, etc.), alcanza para lo que necesitamos acá:
+    que el cuerpo de un mail HTML-only se pueda leer, no que quede
+    perfecto. Saca <script>/<style> enteros, convierte los tags que
+    "cortan línea" en saltos de línea reales, tira el resto de las
+    etiquetas, y decodifica entidades (&nbsp;, &amp;, etc.).
+    """
+    texto = _HTML_BLOQUES_RE.sub("", contenido_html)
+    texto = _HTML_SALTOS_RE.sub("\n", texto)
+    texto = _HTML_TAG_RE.sub("", texto)
+    texto = html.unescape(texto)
+    # El &nbsp; decodificado es un espacio "duro" (\xa0), lo normalizamos.
+    texto = texto.replace("\xa0", " ")
+    return texto
+
+
 @dataclass
 class MailMessage:
     uid: str
@@ -67,6 +95,7 @@ def _decode(value: str | None) -> str:
 def _extract_body(msg: email.message.Message) -> tuple[str, bool]:
     tiene_adjuntos = False
     body = ""
+    body_html = ""  # fallback: si no hay text/plain, se convierte esto
     if msg.is_multipart():
         for part in msg.walk():
             content_disposition = str(part.get("Content-Disposition") or "")
@@ -81,13 +110,29 @@ def _extract_body(msg: email.message.Message) -> tuple[str, bool]:
                     body = payload.decode(charset, errors="replace")
                 except Exception:
                     pass
+            elif content_type == "text/html" and not body_html:
+                try:
+                    payload = part.get_payload(decode=True)
+                    charset = part.get_content_charset() or "utf-8"
+                    body_html = payload.decode(charset, errors="replace")
+                except Exception:
+                    pass
     else:
         try:
             payload = msg.get_payload(decode=True)
             charset = msg.get_content_charset() or "utf-8"
-            body = payload.decode(charset, errors="replace") if payload else ""
+            crudo = payload.decode(charset, errors="replace") if payload else ""
         except Exception:
-            body = str(msg.get_payload())
+            crudo = str(msg.get_payload())
+        if msg.get_content_type() == "text/html":
+            body_html = crudo
+        else:
+            body = crudo
+
+    # Sin text/plain (mail HTML-only, cada vez más común): convertimos el
+    # HTML a texto legible en vez de guardar las etiquetas crudas.
+    if not body.strip() and body_html.strip():
+        body = _html_a_texto(body_html)
 
     body = _sacar_banner_seguridad(body)
     return body.strip()[:MAX_BODY_CHARS], tiene_adjuntos

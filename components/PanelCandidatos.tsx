@@ -657,7 +657,7 @@ function FilaRespuesta({
   onVincular: (pedidoId: string) => void;
 }) {
   const [expandido, setExpandido] = useState(false);
-  const [busqueda, setBusqueda] = useState(row.nombre_solicitante ?? "");
+  const busqueda = row.nombre_solicitante ?? "";
   const [buscando, setBuscando] = useState(false);
   const [resultados, setResultados] = useState<PedidoBusqueda[]>([]);
   const [buscado, setBuscado] = useState(false);
