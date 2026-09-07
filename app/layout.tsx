@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import VersionBanner from "@/components/VersionBanner";
+import PushSetup from "@/components/PushSetup";
 
 export const metadata: Metadata = {
   title: "UEEDA Pedidos de acceso a la información pública",
@@ -24,6 +25,7 @@ export default function RootLayout({
     <html lang="es">
       <body className="min-h-screen antialiased">
         <VersionBanner />
+        <PushSetup />
         {children}
       </body>
     </html>

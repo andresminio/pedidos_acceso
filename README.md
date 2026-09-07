@@ -129,19 +129,27 @@ app/
   page.tsx                 → página principal
   revision/page.tsx        → cola de candidatos detectados en el correo
   api/sync-sheets/route.ts → recibe el webhook y escribe en Google Sheets
+  api/push/subscribe/route.ts → alta/baja de suscripciones de Web Push
+  api/push/send/route.ts   → recibe el webhook y manda el push a todos
 components/
   AuthGate.tsx              → login por magic link (Supabase Auth)
   PanelSolicitudes.tsx       → tabla + filtros + edición inline
   SolicitudForm.tsx         → alta de nuevo pedido
   PanelCandidatos.tsx        → cola de revisión de candidatos de correo
   BotonRevisarCorreo.tsx     → botón "Revisar correo ahora" (dispara el watcher)
+  PushSetup.tsx              → botón "Activar avisos" (Web Push, ver sección 7)
+  VersionBanner.tsx          → popup "hay una versión nueva" tras un deploy
 lib/
   supabase.ts               → cliente de Supabase (anon key, solo cliente)
   types.ts                  → tipos y estados posibles
+  webpush.ts                 → configuración de claves VAPID para web-push
+public/
+  sw.js                      → service worker (recibe el push, muestra la notificación)
 supabase/
   schema.sql                        → tabla pedidos_solicitudes, índices, trigger, RLS
   schema_candidatos_correo.sql      → tablas candidatos_correo + mail_sync_state
   schema_revision_triggers.sql      → tabla revision_triggers (botón ↔ watcher)
+  schema_push_subscriptions.sql     → tabla push_subscriptions (Web Push)
 mail-bot/
   ingest.py                  → conexión IMAP, trae mails nuevos
   classify.py                → clasificación con Gemini Flash
@@ -301,6 +309,61 @@ las dudas, pero no generan trabajo de revisión.
 - No verifica el certificado SSL del servidor (ver 6.2) — asumido
   aceptable porque la conexión viaja por la red interna/VPN, no por
   internet abierto.
+
+## 7. Avisos push (Web Push)
+
+Cada persona que instala la app (`MaryBot`, ver PWA arriba) puede activar
+avisos en su propia PC con el botón flotante "🔔 Activar avisos" (abajo a
+la izquierda). Es por navegador/dispositivo — activarlo en tu PC no avisa
+a nadie más, cada compañera tiene que hacerlo en la suya. Cuando
+`mail-bot` deja un candidato nuevo en `candidatos_correo` con
+`estado_revision = "pendiente"`, todos los navegadores suscriptos reciben
+una notificación nativa (con la app cerrada también), vía
+`app/api/push/send/route.ts`.
+
+### 7.1 Supabase
+
+1. SQL Editor → pegá `supabase/schema_push_subscriptions.sql` → **Run**.
+   Crea `push_subscriptions` (una fila por navegador suscripto).
+
+### 7.2 Claves VAPID y secreto de envío
+
+En **Vercel → Settings → Environment Variables** agregá:
+
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` — clave pública VAPID (viaja al cliente).
+- `VAPID_PRIVATE_KEY` — clave privada VAPID (**secreto**).
+- `VAPID_SUBJECT` — `mailto:tu-email@lo-que-uses` (lo exige el estándar
+  Web Push, no se usa para mandar mail).
+- `PUSH_SEND_SECRET` — string random largo, valida que `/api/push/send`
+  lo llame realmente el webhook de Supabase (mismo criterio que
+  `SYNC_WEBHOOK_SECRET`).
+
+Si hace falta regenerar el par de claves VAPID:
+
+```bash
+node -e "
+const c=require('crypto');
+const {publicKey,privateKey}=c.generateKeyPairSync('ec',{namedCurve:'prime256v1'});
+const b64url=b=>b.toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const pj=publicKey.export({format:'jwk'});
+const pub=Buffer.concat([Buffer.from([4]),Buffer.from(pj.x,'base64'),Buffer.from(pj.y,'base64')]);
+const priv=Buffer.from(privateKey.export({format:'jwk'}).d,'base64');
+console.log('PUBLIC:',b64url(pub));
+console.log('PRIVATE:',b64url(priv));
+"
+```
+
+### 7.3 Database Webhook en Supabase (dispara el envío)
+
+1. **Database → Webhooks → Create a new hook**.
+2. Tabla: `candidatos_correo`. Eventos: solo **INSERT** (no UPDATE — si no,
+   reavisa en cada edición del candidato).
+3. Tipo: **HTTP Request**, método **POST**.
+   URL: `https://<tu-app>.vercel.app/api/push/send`
+4. Headers: `x-webhook-secret: <el mismo valor de PUSH_SEND_SECRET>`.
+5. Guardá. El endpoint filtra solo, así que aunque el webhook dispare en
+   cada INSERT (incluidos los que quedan como `ya_cargado` o
+   `descartado`), solo se manda push cuando `estado_revision === "pendiente"`.
 
 ## Notas de seguridad
 

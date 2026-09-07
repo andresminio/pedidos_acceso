@@ -732,6 +732,32 @@ function FilaSolicitudEdicion({
     setDesvinculandoId(null);
   }
 
+  // Renombra el título de un evento de la línea de tiempo (ej. "Respuesta"
+  // -> "Respuesta de Nora"). No aplica a "Recepción" (no es un evento real,
+  // sale de row.fecha/row.solicitud) ni al borrador de IA (su etiqueta fija
+  // — ETIQUETA_BORRADOR — es lo que activa la UI especial del popup).
+  async function handleRenombrarEvento(evento: PedidoEvento, nuevaEtiqueta: string) {
+    const limpia = nuevaEtiqueta.trim();
+    if (!limpia || limpia === evento.etiqueta) return;
+
+    const { error } = await supabase
+      .from("pedido_eventos")
+      .update({ etiqueta: limpia })
+      .eq("id", evento.id);
+    if (error) {
+      console.error("No se pudo renombrar el evento:", error.message);
+      return;
+    }
+    setEventos((prev) =>
+      prev.map((e) => (e.id === evento.id ? { ...e, etiqueta: limpia } : e))
+    );
+    setAbierto((prev) =>
+      prev && prev !== "recepcion" && prev.id === evento.id
+        ? { ...prev, etiqueta: limpia }
+        : prev
+    );
+  }
+
   // Guarda los cambios hechos al modelo de respuesta desde el popup del
   // punto "Proyecto de respuesta de UEEDA" (textarea + regenerar), sin
   // necesidad de pasar por el botón "Guardar" general del pedido.
@@ -952,6 +978,7 @@ function FilaSolicitudEdicion({
 
         {abierto && (
           <PopupEventoPedido
+            key={abierto === "recepcion" ? "recepcion" : abierto.id}
             row={row}
             abierto={abierto}
             mailOrigen={mailOrigen}
@@ -964,6 +991,7 @@ function FilaSolicitudEdicion({
             onGenerarRespuesta={handleGenerarRespuesta}
             onGuardarBorrador={handleGuardarBorrador}
             onSacarBorrador={handleSacarBorrador}
+            onRenombrar={handleRenombrarEvento}
             onDesvincular={(evento) => {
               handleDesvincularEvento(evento);
               setAbierto(null);
@@ -1112,9 +1140,9 @@ function LineaTiempoPedido({
   onAbrir: (item: PedidoEvento | "recepcion") => void;
 }) {
   return (
-    <div className="mt-3">
-      <p className="mb-2 text-xs text-slate-400">Línea de tiempo</p>
-      <div className="flex items-start overflow-x-auto pb-1">
+    <div className="mt-5">
+      <p className="mb-3 text-sm text-slate-400">Línea de tiempo</p>
+      <div className="flex items-start overflow-x-auto pb-2">
         <PuntoTiempo
           etiqueta="Recepción"
           fecha={row.fecha}
@@ -1123,7 +1151,7 @@ function LineaTiempoPedido({
         />
         {eventos.map((ev) => (
           <div key={ev.id} className="flex shrink-0 items-start">
-            <div className="mt-[7px] h-px w-6 shrink-0 bg-slate-700" />
+            <div className="mt-2.5 h-px w-12 shrink-0 bg-slate-700" />
             <PuntoTiempo
               etiqueta={ev.etiqueta}
               fecha={ev.fecha}
@@ -1158,6 +1186,7 @@ function PopupEventoPedido({
   onGenerarRespuesta,
   onGuardarBorrador,
   onSacarBorrador,
+  onRenombrar,
   onDesvincular,
   onCerrar,
 }: {
@@ -1177,10 +1206,24 @@ function PopupEventoPedido({
   onGenerarRespuesta: () => void;
   onGuardarBorrador: () => void;
   onSacarBorrador: () => void;
+  onRenombrar: (evento: PedidoEvento, nuevaEtiqueta: string) => void;
   onDesvincular: (evento: PedidoEvento) => void;
   onCerrar: () => void;
 }) {
   const esBorrador = abierto !== "recepcion" && abierto.etiqueta === ETIQUETA_BORRADOR;
+  // Solo se puede renombrar un evento real (no "Recepción", que no tiene
+  // fila propia en pedido_eventos) y que no sea el borrador de IA (su
+  // etiqueta fija identifica esa fila especial en el resto del código).
+  const puedeRenombrar = abierto !== "recepcion" && !esBorrador;
+  const [editandoEtiqueta, setEditandoEtiqueta] = useState(false);
+  const [valorEtiqueta, setValorEtiqueta] = useState(
+    abierto === "recepcion" ? "" : abierto.etiqueta
+  );
+
+  function guardarEtiqueta() {
+    setEditandoEtiqueta(false);
+    if (abierto !== "recepcion") onRenombrar(abierto, valorEtiqueta);
+  }
 
   return (
     <div
@@ -1193,9 +1236,30 @@ function PopupEventoPedido({
       >
         <div className="mb-3 flex items-start justify-between gap-2">
           <div>
-            <h4 className="font-semibold text-white">
-              {abierto === "recepcion" ? "Recepción" : abierto.etiqueta}
-            </h4>
+            {editandoEtiqueta ? (
+              <input
+                autoFocus
+                className="input h-7 w-48 px-1.5 py-0 text-sm font-semibold"
+                value={valorEtiqueta}
+                onChange={(e) => setValorEtiqueta(e.target.value)}
+                onBlur={guardarEtiqueta}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                  if (e.key === "Escape") {
+                    setValorEtiqueta(abierto === "recepcion" ? "" : abierto.etiqueta);
+                    setEditandoEtiqueta(false);
+                  }
+                }}
+              />
+            ) : (
+              <h4
+                className={`font-semibold text-white ${puedeRenombrar ? "cursor-text" : ""}`}
+                title={puedeRenombrar ? "Doble click para editar el nombre" : undefined}
+                onDoubleClick={() => puedeRenombrar && setEditandoEtiqueta(true)}
+              >
+                {abierto === "recepcion" ? "Recepción" : abierto.etiqueta}
+              </h4>
+            )}
             <p className="text-xs text-slate-500">
               {fechaCorta(abierto === "recepcion" ? row.fecha : abierto.fecha)}
             </p>
@@ -1290,14 +1354,14 @@ function PuntoTiempo({
     <button
       type="button"
       onClick={onClick}
-      className="flex shrink-0 flex-col items-center gap-1 px-1"
+      className="flex shrink-0 flex-col items-center gap-1.5 px-3"
     >
-      <span className={`h-3 w-3 rounded-full ${color}`} />
-      <span className="whitespace-nowrap text-[11px] text-slate-500">
+      <span className={`h-4 w-4 rounded-full ${color}`} />
+      <span className="whitespace-nowrap text-xs text-slate-500">
         {fechaCorta(fecha)}
       </span>
       <span
-        className="max-w-24 truncate text-[11px] font-medium text-slate-300"
+        className="max-w-32 truncate text-xs font-medium text-slate-300"
         title={etiqueta}
       >
         {etiqueta}
