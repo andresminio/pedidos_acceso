@@ -114,7 +114,7 @@ export default function PushSetup() {
           <IconoCampana />
         </span>
         <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium opacity-0 transition-all duration-300 ease-out group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100">
-          Avisos activados — desactivar
+          Avisos activados
         </span>
       </button>
     );
