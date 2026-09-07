@@ -325,9 +325,9 @@ export default function PanelResumen() {
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hoja5), "Pedidos");
 
-    const sufijoAnio = filtroAnio === "todos" ? "todos_los_anos" : String(filtroAnio);
+    const sufijoAnio = filtroAnio === "todos" ? "todos" : String(filtroAnio);
     const sufijoCuatrimestre =
-      filtroCuatrimestre === "todos" ? "todo_el_ano" : `cuatrimestre_${filtroCuatrimestre}`;
+      filtroCuatrimestre === "todos" ? "completo" : `cuatrimestre_${filtroCuatrimestre}`;
     XLSX.writeFile(wb, `resumen_pedidos_${sufijoAnio}_${sufijoCuatrimestre}.xlsx`);
   }
 
