@@ -199,6 +199,7 @@ export default function PanelCandidatos() {
       .update({
         estado_revision: "pendiente",
         es_pedido_acceso: true,
+        es_respuesta_pedido: false,
         revisado_en: null,
       })
       .eq("id", row.id);
