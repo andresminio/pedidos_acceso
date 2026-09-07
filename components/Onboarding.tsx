@@ -28,6 +28,16 @@ function IconoBot() {
   );
 }
 
+function IconoReenvio() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
+      <rect x="3" y="6" width="14" height="10" rx="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 7.5l7 5 7-5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M17 9.5h2.5M19.5 9.5 17.5 7.5M19.5 9.5 17.5 11.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function IconoBandeja() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
@@ -100,6 +110,12 @@ const PASOS: Paso[] = [
     texto:
       'MaryBot revisa el correo institucional cada cierto tiempo y clasifica automáticamente cada mail en tres categorías: un pedido de acceso nuevo, una respuesta/repregunta sobre un pedido que ya existe, o un mail no relacionado con pedidos de acceso. Nunca carga ni cierra nada por su cuenta — todo pasa por una persona antes de quedar registrado.',
     Icono: IconoBot,
+  },
+  {
+    titulo: "Importante",
+    texto:
+      "Acordate que MaryBot facilita el registro, seguimiento y generación de respuesta pero no hace cambios sobre el correo. Tenés que reenviar los mails a Nora y las respuestas al solicitante desde el webmail.",
+    Icono: IconoReenvio,
   },
   {
     titulo: "Escenario 1: llega un pedido nuevo",
