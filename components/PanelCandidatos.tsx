@@ -732,6 +732,7 @@ function FilaRespuesta({
 }) {
   const [expandido, setExpandido] = useState(false);
   const busqueda = row.nombre_solicitante ?? "";
+  const [terminoBusqueda, setTerminoBusqueda] = useState(busqueda);
   const [buscando, setBuscando] = useState(false);
   const [resultados, setResultados] = useState<PedidoBusqueda[]>([]);
   const [buscado, setBuscado] = useState(false);
@@ -767,11 +768,20 @@ function FilaRespuesta({
     setSeleccionado((actual) => actual ?? encontrados[0] ?? null);
   }, []);
 
-  // Busca sola al aparecer, sin esperar a que alguien apriete "Buscar".
+  // Busca sola al aparecer, sin esperar a que alguien apriete "Buscar" —
+  // pero solo si la IA propuso un nombre. Si no (ej. un mail interno sin
+  // solicitante identificado), no hay con qué buscar automáticamente y
+  // queda esperando a que alguien escriba el nombre a mano (ver el input
+  // de abajo).
   useEffect(() => {
-    buscarPedidos(busqueda);
+    if (busqueda.trim()) buscarPedidos(busqueda);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function handleBuscarManual() {
+    setSeleccionado(null);
+    buscarPedidos(terminoBusqueda);
+  }
 
   const tieneCuerpo = !!row.cuerpo_resumen?.trim();
 
@@ -829,6 +839,26 @@ function FilaRespuesta({
       <p className="text-xs text-slate-500">
         {buscando ? "Buscando pedido…" : "Pedidos candidatos a vincular"}
       </p>
+
+      <div className="mt-2 flex items-center gap-2">
+        <input
+          className="input w-64"
+          value={terminoBusqueda}
+          onChange={(e) => setTerminoBusqueda(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleBuscarManual();
+          }}
+          placeholder="Buscar por apellido del solicitante…"
+        />
+        <button
+          type="button"
+          onClick={handleBuscarManual}
+          disabled={buscando || !terminoBusqueda.trim()}
+          className="rounded-md border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+        >
+          Buscar
+        </button>
+      </div>
 
       {buscado && !buscando && resultados.length === 0 && (
         <p className="mt-2 text-xs text-slate-500">

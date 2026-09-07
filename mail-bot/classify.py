@@ -203,6 +203,14 @@ distinto a los de la lista) → una frase corta (2-4 palabras) específica \
 al caso, por ejemplo "Reenvío a Secretaría Electoral" — evitá una \
 etiqueta genérica como "Respuesta" a secas.
 Si "es_respuesta_pedido" es false, "etiqueta_evento" queda en null.
+- Si "es_respuesta_pedido" es true, "nombre_solicitante" tiene que ser el \
+nombre del solicitante ORIGINAL del pedido al que corresponde esta \
+respuesta — buscalo en el texto citado/reenviado del hilo (líneas "De:", \
+firma, el cuerpo del pedido original), NO el remitente de este mail (que \
+suele ser alguien interno: Nora, Prosecretaría, otra área). Es \
+indispensable para poder vincular automáticamente esta respuesta con el \
+pedido ya cargado — si queda en null aunque el nombre esté en el hilo \
+citado, no se puede encontrar el pedido para vincular.
 - "Datos Históricos" aplica en dos casos: (1) pedidos de resultados o \
 padrones de elecciones ANTERIORES a 1983 (retorno de la democracia), o \
 (2) pedidos de cualquier otro tipo de documentación sobre temas \
