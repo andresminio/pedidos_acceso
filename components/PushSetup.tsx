@@ -96,7 +96,7 @@ export default function PushSetup() {
         type="button"
         onClick={desactivar}
         title="Click para desactivar los avisos en este navegador"
-        className="fixed bottom-5 left-5 z-40 flex items-center gap-1.5 rounded-full border border-emerald-800 bg-emerald-950/60 px-3 py-1.5 text-xs font-medium text-emerald-300 shadow-lg hover:bg-emerald-950"
+        className="fixed bottom-20 right-5 z-40 flex items-center gap-1.5 rounded-full border border-emerald-800 bg-emerald-950/60 px-3 py-1.5 text-xs font-medium text-emerald-300 shadow-lg hover:bg-emerald-950"
       >
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
         Avisos activados
@@ -110,7 +110,7 @@ export default function PushSetup() {
         type="button"
         onClick={() => setOculto(true)}
         title="Los bloqueaste desde el navegador — se pueden reactivar desde su configuración de notificaciones"
-        className="fixed bottom-5 left-5 z-40 rounded-full border border-slate-700 bg-[#12161f] px-3 py-1.5 text-xs text-slate-500 shadow-lg"
+        className="fixed bottom-20 right-5 z-40 rounded-full border border-slate-700 bg-[#12161f] px-3 py-1.5 text-xs text-slate-500 shadow-lg"
       >
         Avisos bloqueados ✕
       </button>
@@ -122,7 +122,7 @@ export default function PushSetup() {
       type="button"
       onClick={activar}
       disabled={estado === "activando"}
-      className="fixed bottom-5 left-5 z-40 rounded-full border border-slate-700 bg-[#12161f] px-3 py-1.5 text-xs font-medium text-slate-300 shadow-lg hover:bg-slate-800 disabled:opacity-50"
+      className="fixed bottom-20 right-5 z-40 rounded-full border border-slate-700 bg-[#12161f] px-3 py-1.5 text-xs font-medium text-slate-300 shadow-lg hover:bg-slate-800 disabled:opacity-50"
     >
       {estado === "activando" ? "Activando…" : "🔔 Activar avisos"}
     </button>
