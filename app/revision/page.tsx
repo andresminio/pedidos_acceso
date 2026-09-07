@@ -1,5 +1,6 @@
 import PanelCandidatos from "@/components/PanelCandidatos";
 import PanelTabs from "@/components/PanelTabs";
+import Onboarding from "@/components/Onboarding";
 
 export default function Revision() {
   return (
@@ -41,6 +42,7 @@ export default function Revision() {
         </div>
       </header>
       <PanelCandidatos />
+      <Onboarding />
     </main>
   );
 }

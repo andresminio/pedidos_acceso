@@ -1,5 +1,6 @@
 import PanelSolicitudes from "@/components/PanelSolicitudes";
 import PanelTabs from "@/components/PanelTabs";
+import Onboarding from "@/components/Onboarding";
 
 export default function Home() {
   return (
@@ -41,6 +42,7 @@ export default function Home() {
         </div>
       </header>
       <PanelSolicitudes />
+      <Onboarding />
     </main>
   );
 }
