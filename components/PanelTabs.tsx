@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
-export default function PanelTabs({ activa }: { activa: "registro" | "revision" }) {
+export default function PanelTabs({
+  activa,
+}: {
+  activa: "registro" | "revision" | "resumen";
+}) {
   const [totalRegistro, setTotalRegistro] = useState<number | null>(null);
   const [totalRevision, setTotalRevision] = useState<number | null>(null);
 
@@ -33,6 +37,7 @@ export default function PanelTabs({ activa }: { activa: "registro" | "revision" 
         label="En revisión"
         contador={totalRevision}
       />
+      <Tab href="/resumen" activo={activa === "resumen"} label="Resumen" contador={null} />
     </div>
   );
 }
