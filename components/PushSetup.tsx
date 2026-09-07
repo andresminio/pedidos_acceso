@@ -9,6 +9,19 @@ import { useEffect, useState } from "react";
 
 type Estado = "sin_soporte" | "inactivo" | "activando" | "activo" | "denegado";
 
+function IconoCampana() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
+      <path
+        d="M6 10a6 6 0 0 1 12 0c0 3.2 1 4.8 1.8 5.6.4.4.1 1.1-.5 1.1H4.7c-.6 0-.9-.7-.5-1.1C5 14.8 6 13.2 6 10Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M10 19.5a2.2 2.2 0 0 0 4 0" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 // Nota TS: construimos con `new Uint8Array(n)` (no `Uint8Array.from(...)`)
 // a propósito — así el array queda respaldado por un ArrayBuffer "normal"
 // y no un ArrayBufferLike genérico, que es lo que pide el tipo de
@@ -95,11 +108,14 @@ export default function PushSetup() {
       <button
         type="button"
         onClick={desactivar}
-        title="Click para desactivar los avisos en este navegador"
-        className="fixed bottom-20 right-5 z-40 flex items-center gap-1.5 rounded-full border border-emerald-800 bg-emerald-950/60 px-3 py-1.5 text-xs font-medium text-emerald-300 shadow-lg hover:bg-emerald-950"
+        className="group fixed bottom-20 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-emerald-700 px-2.5 text-white shadow-lg shadow-emerald-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-emerald-600 hover:px-4"
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        Avisos activados
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+          <IconoCampana />
+        </span>
+        <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium opacity-0 transition-all duration-300 ease-out group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100">
+          Avisos activados — desactivar
+        </span>
       </button>
     );
   }
@@ -109,10 +125,14 @@ export default function PushSetup() {
       <button
         type="button"
         onClick={() => setOculto(true)}
-        title="Los bloqueaste desde el navegador — se pueden reactivar desde su configuración de notificaciones"
-        className="fixed bottom-20 right-5 z-40 rounded-full border border-slate-700 bg-[#12161f] px-3 py-1.5 text-xs text-slate-500 shadow-lg"
+        className="group fixed bottom-20 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-slate-700 px-2.5 text-white shadow-lg transition-all duration-300 ease-out hover:w-56 hover:bg-slate-600 hover:px-4"
       >
-        Avisos bloqueados ✕
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+          <IconoCampana />
+        </span>
+        <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium opacity-0 transition-all duration-300 ease-out group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100">
+          Avisos bloqueados — ocultar
+        </span>
       </button>
     );
   }
@@ -122,9 +142,14 @@ export default function PushSetup() {
       type="button"
       onClick={activar}
       disabled={estado === "activando"}
-      className="fixed bottom-20 right-5 z-40 rounded-full border border-slate-700 bg-[#12161f] px-3 py-1.5 text-xs font-medium text-slate-300 shadow-lg hover:bg-slate-800 disabled:opacity-50"
+      className="group fixed bottom-20 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-blue-600 px-2.5 text-white shadow-lg shadow-blue-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-blue-500 hover:px-4 disabled:opacity-50"
     >
-      {estado === "activando" ? "Activando…" : "🔔 Activar avisos"}
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+        <IconoCampana />
+      </span>
+      <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium opacity-0 transition-all duration-300 ease-out group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100">
+        {estado === "activando" ? "Activando…" : "Activar avisos"}
+      </span>
     </button>
   );
 }
