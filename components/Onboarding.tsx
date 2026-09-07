@@ -112,19 +112,19 @@ const PASOS: Paso[] = [
     Icono: IconoBot,
   },
   {
-    titulo: "Importante",
+    titulo: "Un asistente que te ayuda a registrar pedidos",
     texto:
       "Acordate que MaryBot facilita el registro, seguimiento y generación de respuesta pero no hace cambios sobre el correo. Tenés que reenviar los mails a Nora y las respuestas al solicitante desde el webmail.",
     Icono: IconoReenvio,
   },
   {
-    titulo: "Escenario 1: llega un pedido nuevo",
+    titulo: "Llega un pedido nuevo, ingresalo",
     texto:
       'Cuando MaryBot detecta un correo que parece un pedido nuevo, aparece en "En revisión" → "Nuevos pedidos de información", con los datos ya propuestos (solicitante, categoría, fecha). Revisalos, corregí lo que haga falta y tocá "Cargar como pedido" — o "Descartar" si en realidad no es un pedido.',
     Icono: IconoBandeja,
   },
   {
-    titulo: "Escenario 2: llega una respuesta o repregunta",
+    titulo: "Llega una respuesta, revisala",
     texto:
       'Cuando llega la respuesta de Nora, de Prosecretaría, o el solicitante repregunta sobre su pedido, el correo aparece en "Respuestas para vincular". Elegí el pedido correspondiente, ajustá la etiqueta si hace falta, y tocá "Vincular". Si esa respuesta cierra el pedido, tildá "Cerrar pedido" antes de confirmar; si es un paso intermedio (por ejemplo, un reenvío a otra área), dejalo sin tildar.',
     Icono: IconoVincular,
