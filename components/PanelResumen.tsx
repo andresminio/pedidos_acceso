@@ -335,7 +335,7 @@ export default function PanelResumen() {
     <div>
       {/* Banner con filtros aplicables a toda la hoja */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-[#12161f] px-4 py-3">
-        <h2 className="text-lg font-semibold text-white">Pedidos de acceso</h2>
+        <h2 className="text-lg font-semibold text-white">Estadísticas</h2>
         <div className="flex flex-wrap items-center gap-2">
           <select
             className="input w-auto"
