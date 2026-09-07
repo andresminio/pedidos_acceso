@@ -62,6 +62,29 @@ function IconoVincular() {
   );
 }
 
+function IconoLineaTiempo() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
+      <path d="M4 12h16" strokeLinecap="round" />
+      <circle cx="6" cy="12" r="1.8" fill="currentColor" stroke="none" />
+      <circle cx="13" cy="12" r="1.8" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="12" r="1.8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function IconoResumen() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
+      <path d="M4 20V4" strokeLinecap="round" />
+      <path d="M4 20h16" strokeLinecap="round" />
+      <rect x="7" y="13" width="3" height="7" rx="0.6" />
+      <rect x="12" y="9" width="3" height="11" rx="0.6" />
+      <rect x="17" y="6" width="3" height="14" rx="0.6" />
+    </svg>
+  );
+}
+
 function IconoListo() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
@@ -87,13 +110,25 @@ const PASOS: Paso[] = [
   {
     titulo: "Escenario 2: llega una respuesta o repregunta",
     texto:
-      'Cuando llega la respuesta de Nora, de Prosecretaría, o el solicitante repregunta sobre su pedido, el correo aparece en "Respuestas para vincular". Elegí el pedido correspondiente, ajustá la etiqueta si hace falta, y tocá "Vincular". Si esa respuesta cierra el pedido, tildá "Cerrar pedido" antes de confirmar; si es un paso intermedio (por ejemplo, un reenvío a otra área), dejalo sin tildar. Desde el panel del pedido también podés generar un modelo de respuesta con IA. Además, dentro de cada pedido cargado podés ver la línea de tiempo con todos los mails vinculados, desde la recepción hasta la respuesta.',
+      'Cuando llega la respuesta de Nora, de Prosecretaría, o el solicitante repregunta sobre su pedido, el correo aparece en "Respuestas para vincular". Elegí el pedido correspondiente, ajustá la etiqueta si hace falta, y tocá "Vincular". Si esa respuesta cierra el pedido, tildá "Cerrar pedido" antes de confirmar; si es un paso intermedio (por ejemplo, un reenvío a otra área), dejalo sin tildar.',
     Icono: IconoVincular,
+  },
+  {
+    titulo: "Dentro de cada pedido",
+    texto:
+      'Desde el panel del pedido también podés generar un modelo de respuesta con IA. Además, dentro de cada pedido cargado podés ver la línea de tiempo con todos los mails vinculados, desde la recepción hasta la respuesta.',
+    Icono: IconoLineaTiempo,
+  },
+  {
+    titulo: "La pestaña Resumen",
+    texto:
+      'En la pestaña "Resumen" podés ver un resumen de la información: contadores, tablas por cuatrimestre y tema, y un Excel descargable con todo.',
+    Icono: IconoResumen,
   },
   {
     titulo: "¡Listo!",
     texto:
-      'Eso es todo para arrancar. Si algo se descartó por error, desde "Ver descartados" se puede recuperar o pasar directo a "Respuestas para vincular". Y en la pestaña "Resumen" podés ver un resumen de la información: contadores, tablas por cuatrimestre y tema, y un Excel descargable con todo.',
+      'Eso es todo para arrancar. Si algo se descartó por error, desde "Ver descartados" se puede recuperar o pasar directo a "Respuestas para vincular".',
     Icono: IconoListo,
   },
 ];
