@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { fechaCorta } from "@/lib/fechas";
-import SyncStatus from "@/components/SyncStatus";
 
 interface FilaResumen {
   anio: number;
@@ -334,10 +333,6 @@ export default function PanelResumen() {
 
   return (
     <div>
-      <div className="mb-3">
-        <SyncStatus />
-      </div>
-
       {/* Banner con filtros aplicables a toda la hoja */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-[#12161f] px-4 py-3">
         <h2 className="text-lg font-semibold text-white">Estadísticas</h2>
