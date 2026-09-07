@@ -130,9 +130,9 @@ const PASOS: Paso[] = [
     Icono: IconoVincular,
   },
   {
-    titulo: "Dentro de cada pedido",
+    titulo: "Una línea de tiempo de cada pedido",
     texto:
-      'Desde el panel del pedido también podés generar un modelo de respuesta con IA. Además, dentro de cada pedido cargado podés ver la línea de tiempo con todos los mails vinculados, desde la recepción hasta la respuesta.',
+      'Desde el panel del pedido ingresados podés generar un proyecto de respuesta con IA y ver la línea de tiempo con todos los mails vinculados asociados al pedido, desde la recepción hasta la respuesta final.',
     Icono: IconoLineaTiempo,
   },
   {
