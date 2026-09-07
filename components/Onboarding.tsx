@@ -62,17 +62,6 @@ function IconoVincular() {
   );
 }
 
-function IconoLineaTiempo() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
-      <path d="M4 12h16" strokeLinecap="round" />
-      <circle cx="6" cy="12" r="1.8" fill="currentColor" stroke="none" />
-      <circle cx="13" cy="12" r="1.8" fill="currentColor" stroke="none" />
-      <circle cx="19" cy="12" r="1.8" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
 function IconoListo() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
@@ -86,7 +75,7 @@ const PASOS: Paso[] = [
   {
     titulo: "¿Qué es MaryBot?",
     texto:
-      'MaryBot revisa el correo institucional cada cierto tiempo y clasifica automáticamente cada mail en una de dos categorías: un pedido de acceso nuevo, o una respuesta/repregunta sobre un pedido que ya existe. Nunca carga ni cierra nada por su cuenta — todo pasa por una persona antes de quedar registrado.',
+      'MaryBot revisa el correo institucional cada cierto tiempo y clasifica automáticamente cada mail en tres categorías: un pedido de acceso nuevo, una respuesta/repregunta sobre un pedido que ya existe, o un mail no relacionado con pedidos de acceso. Nunca carga ni cierra nada por su cuenta — todo pasa por una persona antes de quedar registrado.',
     Icono: IconoBot,
   },
   {
@@ -98,19 +87,13 @@ const PASOS: Paso[] = [
   {
     titulo: "Escenario 2: llega una respuesta o repregunta",
     texto:
-      'Cuando llega la respuesta de Nora, de Prosecretaría, o el solicitante repregunta sobre su pedido, el correo aparece en "Respuestas para vincular". Elegí el pedido correspondiente, ajustá la etiqueta si hace falta, y tocá "Vincular". Si esa respuesta cierra el pedido, tildá "Cerrar pedido" antes de confirmar; si es un paso intermedio (por ejemplo, un reenvío a otra área), dejalo sin tildar.',
+      'Cuando llega la respuesta de Nora, de Prosecretaría, o el solicitante repregunta sobre su pedido, el correo aparece en "Respuestas para vincular". Elegí el pedido correspondiente, ajustá la etiqueta si hace falta, y tocá "Vincular". Si esa respuesta cierra el pedido, tildá "Cerrar pedido" antes de confirmar; si es un paso intermedio (por ejemplo, un reenvío a otra área), dejalo sin tildar. Desde el panel del pedido también podés generar un modelo de respuesta con IA. Además, dentro de cada pedido cargado podés ver la línea de tiempo con todos los mails vinculados, desde la recepción hasta la respuesta.',
     Icono: IconoVincular,
-  },
-  {
-    titulo: "La línea de tiempo de cada pedido",
-    texto:
-      'Cada pedido tiene su propia línea de tiempo: un punto por cada paso (recepción, respuestas, repreguntas, el borrador de respuesta con IA). Click en cualquier punto para ver el correo completo — desde ahí también se puede desvincular si hace falta.',
-    Icono: IconoLineaTiempo,
   },
   {
     titulo: "¡Listo!",
     texto:
-      'Eso es todo para arrancar. Si algo se descartó por error, desde "Ver descartados" se puede recuperar o pasar directo a "Respuestas para vincular".',
+      'Eso es todo para arrancar. Si algo se descartó por error, desde "Ver descartados" se puede recuperar o pasar directo a "Respuestas para vincular". Y en la pestaña "Resumen" podés ver un resumen de la información: contadores, tablas por cuatrimestre y tema, y un Excel descargable con todo.',
     Icono: IconoListo,
   },
 ];
