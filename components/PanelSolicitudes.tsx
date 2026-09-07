@@ -19,6 +19,12 @@ import IconoIA from "@/components/IconoIA";
 
 const AGREGAR_CATEGORIA = "__agregar_categoria__";
 
+// Etiqueta fija del punto de línea de tiempo que guarda el modelo de
+// respuesta generado con IA (y editado a mano después) — se ACTUALIZA en
+// el lugar en cada Guardar (no se duplica), y se distingue visualmente de
+// los eventos vinculados desde un correo real (ver LineaTiempoPedido).
+const ETIQUETA_BORRADOR = "Proyecto de respuesta de UEEDA";
+
 interface Columna {
   key: string;
   label: string;
@@ -638,8 +644,36 @@ function FilaSolicitudEdicion({
       observaciones: observaciones || null,
       respuesta_ia_borrador: respuestaIA || null,
     });
+    await guardarEventoBorrador();
     setGuardando(false);
     onCerrar();
+  }
+
+  async function guardarEventoBorrador() {
+    const eventoBorrador = eventos.find((e) => e.etiqueta === ETIQUETA_BORRADOR);
+    const texto = respuestaIA.trim();
+
+    if (!texto) {
+      if (eventoBorrador) {
+        await supabase.from("pedido_eventos").delete().eq("id", eventoBorrador.id);
+      }
+      return;
+    }
+
+    const hoy = new Date().toISOString().slice(0, 10);
+    if (eventoBorrador) {
+      await supabase
+        .from("pedido_eventos")
+        .update({ cuerpo: texto, fecha: hoy })
+        .eq("id", eventoBorrador.id);
+    } else {
+      await supabase.from("pedido_eventos").insert({
+        pedido_id: row.id,
+        fecha: hoy,
+        etiqueta: ETIQUETA_BORRADOR,
+        cuerpo: texto,
+      });
+    }
   }
 
   // Saca un punto de la línea de tiempo (deshace una vinculación hecha por
@@ -674,8 +708,11 @@ function FilaSolicitudEdicion({
     }
 
     const restantes = eventos.filter((e) => e.id !== evento.id);
-    const nuevaFechaRespuesta = restantes.length
-      ? restantes.reduce((max, e) => (e.fecha > max ? e.fecha : max), restantes[0].fecha)
+    // El proyecto de respuesta (borrador) no cuenta como "fecha de
+    // respuesta" real — solo los eventos vinculados desde un correo.
+    const restantesReales = restantes.filter((e) => e.etiqueta !== ETIQUETA_BORRADOR);
+    const nuevaFechaRespuesta = restantesReales.length
+      ? restantesReales.reduce((max, e) => (e.fecha > max ? e.fecha : max), restantesReales[0].fecha)
       : null;
     await onUpdate(row.id, { fecha_respuesta: nuevaFechaRespuesta });
     setFechaRespuesta(nuevaFechaRespuesta ?? "");
@@ -879,7 +916,7 @@ function FilaSolicitudEdicion({
           onDesvincular={handleDesvincularEvento}
         />
 
-        {mailOrigen && eventos.length === 0 && (
+        {mailOrigen && !eventos.some((e) => e.etiqueta !== ETIQUETA_BORRADOR) && (
           <div className="mt-3 flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -1043,7 +1080,9 @@ function LineaTiempoPedido({
             <PuntoTiempo
               etiqueta={ev.etiqueta}
               fecha={ev.fecha}
-              color="bg-emerald-500"
+              color={
+                ev.etiqueta === ETIQUETA_BORRADOR ? "bg-amber-500" : "bg-emerald-500"
+              }
               onClick={() => setAbierto(ev)}
             />
           </div>
