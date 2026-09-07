@@ -91,21 +91,17 @@ export default function PanelResumen() {
     return { total, cerrados, pendientes: total - cerrados };
   }, [rowsDelPeriodo]);
 
-  // Tabla 1: cantidad por cuatrimestre del año elegido. Si además hay un
-  // cuatrimestre puntual seleccionado en el banner, se muestra solo ese
-  // (la agrupación por cuatrimestre sigue siendo la misma, nada más que
-  // recortada al filtro).
-  const tabla1 = useMemo(() => {
-    const todos = CUATRIMESTRES.map((c) => {
+  // Tabla por cuatrimestre — SIEMPRE el desglose completo del año elegido
+  // (1er/2do/3er), sin importar el cuatrimestre puntual del banner: esta es
+  // la base de la Hoja 1 del Excel ("Cantidad de solicitudes recibidas por
+  // año") y no cambia según ese filtro.
+  const tabla1AnioCompleto = useMemo(() => {
+    const filas = CUATRIMESTRES.map((c) => {
       const delCuatrimestre = rowsDelAnio.filter((r) => r.cuatrimestre === c);
       const cerrado = delCuatrimestre.filter((r) => esCerrado(r.estado)).length;
       const total = delCuatrimestre.length;
       return { cuatrimestre: c, cerrado, pendiente: total - cerrado, total };
     }).filter((f) => f.total > 0 || f.cuatrimestre <= 2); // no mostrar 3er vacío si nunca hay datos ahí
-    const filas =
-      filtroCuatrimestre === "todos"
-        ? todos
-        : todos.filter((f) => f.cuatrimestre === filtroCuatrimestre);
     const totales = filas.reduce(
       (acc, f) => ({
         cerrado: acc.cerrado + f.cerrado,
@@ -115,7 +111,27 @@ export default function PanelResumen() {
       { cerrado: 0, pendiente: 0, total: 0 }
     );
     return { filas, totales };
-  }, [rowsDelAnio, filtroCuatrimestre]);
+  }, [rowsDelAnio]);
+
+  // Versión para la pantalla (tabla debajo del banner): esta sí se recorta
+  // al cuatrimestre puntual elegido, porque en pantalla pedimos que todo
+  // responda a los filtros. El Excel usa tabla1AnioCompleto en su lugar —
+  // son cosas distintas a propósito, no hay que unificarlas.
+  const tabla1 = useMemo(() => {
+    const filas =
+      filtroCuatrimestre === "todos"
+        ? tabla1AnioCompleto.filas
+        : tabla1AnioCompleto.filas.filter((f) => f.cuatrimestre === filtroCuatrimestre);
+    const totales = filas.reduce(
+      (acc, f) => ({
+        cerrado: acc.cerrado + f.cerrado,
+        pendiente: acc.pendiente + f.pendiente,
+        total: acc.total + f.total,
+      }),
+      { cerrado: 0, pendiente: 0, total: 0 }
+    );
+    return { filas, totales };
+  }, [tabla1AnioCompleto, filtroCuatrimestre]);
 
   // Tabla 2: por estado detallado (subestado si está Cerrado) x cuatrimestre.
   const tabla2 = useMemo(() => {
@@ -179,8 +195,8 @@ export default function PanelResumen() {
     return { filas, totales };
   }, [rowsDelPeriodo]);
 
-  // Tabla 4 / gráfico: totales por tema del período elegido en el banner
-  // (año + cuatrimestre, igual que el resto).
+  // Gráfico en pantalla: totales por tema del período elegido en el banner
+  // (año + cuatrimestre) — este sí sigue los filtros.
   const tabla4 = useMemo(() => {
     const porCategoria = new Map<string, number>();
     for (const r of rowsDelPeriodo) {
@@ -193,6 +209,22 @@ export default function PanelResumen() {
     const total = filas.reduce((acc, f) => acc + f.cantidad, 0);
     return { filas, total };
   }, [rowsDelPeriodo]);
+
+  // Hoja 4 del Excel: totales por tema desde SIEMPRE, sin filtrar por año
+  // ni cuatrimestre — a propósito distinto del gráfico de pantalla. Es la
+  // única hoja que no depende del banner.
+  const totalesTemaHistorico = useMemo(() => {
+    const porCategoria = new Map<string, number>();
+    for (const r of rows) {
+      const cat = r.categoria?.trim() || SIN_CATEGORIA;
+      porCategoria.set(cat, (porCategoria.get(cat) ?? 0) + 1);
+    }
+    const filas = Array.from(porCategoria.entries())
+      .map(([tema, cantidad]) => ({ tema, cantidad }))
+      .sort((a, b) => b.cantidad - a.cantidad);
+    const total = filas.reduce((acc, f) => acc + f.cantidad, 0);
+    return { filas, total };
+  }, [rows]);
 
   const maxTema = tabla4.filas[0]?.cantidad ?? 0;
 
@@ -208,15 +240,20 @@ export default function PanelResumen() {
     const wb = XLSX.utils.book_new();
 
     const hoja1 = [
-      [`Cantidad de solicitudes por cuatrimestre — ${etiquetaPeriodo}`],
+      [`Cantidad de solicitudes de información recibidas por año — ${etiquetaAnio}`],
       ["Cuatrimestre", "Cerrado", "Pendiente", "Total"],
-      ...tabla1.filas.map((f) => [
+      ...tabla1AnioCompleto.filas.map((f) => [
         NOMBRE_CUATRIMESTRE[f.cuatrimestre],
         f.cerrado,
         f.pendiente,
         f.total,
       ]),
-      ["Total", tabla1.totales.cerrado, tabla1.totales.pendiente, tabla1.totales.total],
+      [
+        "Total",
+        tabla1AnioCompleto.totales.cerrado,
+        tabla1AnioCompleto.totales.pendiente,
+        tabla1AnioCompleto.totales.total,
+      ],
     ];
     XLSX.utils.book_append_sheet(
       wb,
@@ -245,10 +282,10 @@ export default function PanelResumen() {
     );
 
     const hoja4 = [
-      [`Totales por tema — ${etiquetaPeriodo}`],
+      ["Totales por tema — histórico completo (desde el inicio)"],
       ["Tema", "Cantidad"],
-      ...tabla4.filas.map((f) => [f.tema, f.cantidad]),
-      ["Total", tabla4.total],
+      ...totalesTemaHistorico.filas.map((f) => [f.tema, f.cantidad]),
+      ["Total", totalesTemaHistorico.total],
     ];
     XLSX.utils.book_append_sheet(
       wb,
