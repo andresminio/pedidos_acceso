@@ -20,6 +20,15 @@ mail-bot/.env
 # son parte del esquema, no hace falta versionarlos.
 supabase/import_homologados.sql
 
+# Migraciones puntuales ya aplicadas a la base — schema.sql y los demás
+# schema_*.sql ya reflejan el estado final, así que estas quedan como
+# referencia histórica en el disco pero no hace falta seguir versionándolas.
+supabase/migration_*.sql
+
+# Planillas y documentos importados a mano — contienen datos reales de
+# solicitantes (nombres, pedidos), no deberían viajar en el repo.
+datos importados/
+
 # Logs
 *.log
 npm-debug.log*
