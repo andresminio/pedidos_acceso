@@ -778,6 +778,19 @@ function FilaRespuesta({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Autocompletar: busca solo al tipear (debounce de 300ms), como una
+  // sugerencia — sin esperar a que apriete "Buscar". Se cancela el
+  // resultado anterior si sigue escribiendo antes de que termine.
+  useEffect(() => {
+    if (!terminoBusqueda.trim() || terminoBusqueda.trim().length < 2) return;
+    const id = setTimeout(() => {
+      setSeleccionado(null);
+      buscarPedidos(terminoBusqueda);
+    }, 300);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [terminoBusqueda]);
+
   function handleBuscarManual() {
     setSeleccionado(null);
     buscarPedidos(terminoBusqueda);
