@@ -21,13 +21,15 @@ MAX_BODY_CHARS = 4000  # tope para no mandar cuerpos gigantes a Gemini
 # Banner que el gateway de seguridad del organismo agrega a los mails
 # externos ("Seguridad Informática le informa que este mail... PHISHING...").
 # Es ruido institucional, no contenido real del mail — se saca antes de
-# guardar y de mandarlo a Gemini. Si en algún momento cambia la redacción
-# exacta, ajustar este patrón.
+# guardar y de mandarlo a Gemini. Hay más de una redacción en uso (varían
+# en cómo terminan) — el grupo final agrupa los cierres conocidos; si
+# aparece una redacción nueva, sumar su cierre a esa alternativa.
 _BANNER_SEGURIDAD_RE = re.compile(
     # [⚠️!\s]* absorbe el ícono ⚠️ (que en realidad son dos
     # caracteres: el símbolo y un "variation selector" invisible pegado)
     # junto con cualquier espacio/! sueltos antes del texto del banner.
-    r"[⚠️!\s]*Seguridad Inform[aá]tica le informa.*?elimine el mensaje inmediatamente\.?",
+    r"[⚠️!\s]*Seguridad Inform[aá]tica le informa.*?"
+    r"(?:elimine el mensaje inmediatamente|p[eé]guelo manualmente en su navegador)\.?",
     re.IGNORECASE | re.DOTALL,
 )
 

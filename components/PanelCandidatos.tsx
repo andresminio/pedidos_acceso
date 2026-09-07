@@ -198,6 +198,30 @@ export default function PanelCandidatos() {
     await load();
   }
 
+  // Para cuando la IA (o un descarte manual) se equivocó y en realidad el
+  // correo es una repregunta/respuesta activa sobre un pedido ya cargado:
+  // en vez de mandarlo a "Nuevos pedidos de información" (que lo trataría
+  // como un pedido nuevo), lo pasa a "Respuestas para vincular".
+  async function handlePasarAVincular(row: CandidatoCorreo) {
+    setBusyId(row.id);
+    const { error } = await supabase
+      .from("candidatos_correo")
+      .update({
+        estado_revision: "pendiente",
+        es_pedido_acceso: false,
+        es_respuesta_pedido: true,
+        revisado_en: null,
+      })
+      .eq("id", row.id);
+    setBusyId(null);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setDescartados((prev) => prev.filter((d) => d.id !== row.id));
+    await load();
+  }
+
   async function handleCargar(row: CandidatoCorreo, campos: SolicitudInput) {
     setBusyId(row.id);
 
@@ -402,6 +426,7 @@ export default function PanelCandidatos() {
               row={d}
               busy={busyId === d.id}
               onPasarARevision={() => handlePasarARevision(d)}
+              onPasarAVincular={() => handlePasarAVincular(d)}
             />
           ))}
         </div>
@@ -857,10 +882,12 @@ function FilaDescartado({
   row,
   busy,
   onPasarARevision,
+  onPasarAVincular,
 }: {
   row: CandidatoCorreo;
   busy: boolean;
   onPasarARevision: () => void;
+  onPasarAVincular: () => void;
 }) {
   const [expandido, setExpandido] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -898,14 +925,26 @@ function FilaDescartado({
             <div className="mt-1 italic text-slate-600">IA: {row.confianza_ia}</div>
           )}
         </div>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onPasarARevision}
-          className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-        >
-          Pasar a revisión
-        </button>
+        <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onPasarARevision}
+            title="Tratarlo como un pedido de acceso nuevo, todavía no registrado"
+            className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+          >
+            Pasar a revisión
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onPasarAVincular}
+            title="Es una respuesta o repregunta sobre un pedido ya cargado — pasarlo a &quot;Respuestas para vincular&quot;"
+            className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+          >
+            Pasar a vincular
+          </button>
+        </div>
       </div>
       {expandido && tieneCuerpo && (
         <>
