@@ -231,49 +231,46 @@ export default function PanelCandidatos() {
   }
 
   // Vincula un correo detectado como "respuesta a un pedido" con el pedido
-  // elegido a mano: lo cierra con la fecha del mail y guarda el cuerpo como
-  // la respuesta real (separado del borrador de IA, que es otra cosa).
-  //
-  // Si el pedido ya tenía una respuesta cargada (típico caso: el
-  // solicitante repregunta sobre un pedido ya Cerrado), no la pisamos —
-  // se acumulan las dos, cada una con la fecha del correo que la trajo,
-  // para no perder el historial.
-  async function handleVincular(row: CandidatoCorreo, pedidoId: string) {
+  // elegido a mano: agrega un punto a la línea de tiempo del pedido
+  // (pedido_eventos) con la etiqueta que confirmó el usuario. Un pedido
+  // puede tener varios eventos (reenvío, respuesta de Nora, repregunta del
+  // solicitante, respuesta final...), así que NO se pisa nada acá — cada
+  // vinculación es un evento nuevo. Cerrar el pedido es una decisión aparte
+  // (checkbox "Cerrar pedido" en FilaRespuesta), no algo automático.
+  async function handleVincular(
+    row: CandidatoCorreo,
+    pedidoId: string,
+    etiqueta: string,
+    cerrarPedido: boolean
+  ) {
     setBusyId(row.id);
 
-    const { data: pedidoActual, error: errLectura } = await supabase
-      .from("pedidos_solicitudes")
-      .select("respuesta_texto")
-      .eq("id", pedidoId)
-      .maybeSingle();
+    const fechaCorreo = row.fecha_correo.slice(0, 10);
 
-    if (errLectura) {
+    const { error: errEvento } = await supabase.from("pedido_eventos").insert({
+      pedido_id: pedidoId,
+      fecha: fechaCorreo,
+      etiqueta,
+      cuerpo: row.cuerpo_resumen,
+      candidato_correo_id: row.id,
+    });
+
+    if (errEvento) {
       setBusyId(null);
-      setError(errLectura.message);
+      setError(errEvento.message);
       return;
     }
 
-    const fechaCorreo = row.fecha_correo.slice(0, 10);
-    const respuestaNueva = `-- ${fechaCorta(fechaCorreo)} --\n${textoCompacto(
-      row.cuerpo_resumen ?? ""
-    )}`;
-    const respuestaTexto = pedidoActual?.respuesta_texto
-      ? `${pedidoActual.respuesta_texto}\n\n${respuestaNueva}`
-      : respuestaNueva;
-
-    const { error: errPedido } = await supabase
-      .from("pedidos_solicitudes")
-      .update({
-        estado: "Cerrado",
-        fecha_respuesta: fechaCorreo,
-        respuesta_texto: respuestaTexto,
-      })
-      .eq("id", pedidoId);
-
-    if (errPedido) {
-      setBusyId(null);
-      setError(errPedido.message);
-      return;
+    if (cerrarPedido) {
+      const { error: errPedido } = await supabase
+        .from("pedidos_solicitudes")
+        .update({ estado: "Cerrado", fecha_respuesta: fechaCorreo })
+        .eq("id", pedidoId);
+      if (errPedido) {
+        setBusyId(null);
+        setError(errPedido.message);
+        return;
+      }
     }
 
     const { error: errCandidato } = await supabase
@@ -366,7 +363,9 @@ export default function PanelCandidatos() {
                 row={row}
                 busy={busyId === row.id}
                 onDescartar={() => handleDescartar(row)}
-                onVincular={(pedidoId) => handleVincular(row, pedidoId)}
+                onVincular={(pedidoId, etiqueta, cerrarPedido) =>
+                  handleVincular(row, pedidoId, etiqueta, cerrarPedido)
+                }
               />
             ))}
           </div>
@@ -678,7 +677,7 @@ function FilaRespuesta({
   row: CandidatoCorreo;
   busy: boolean;
   onDescartar: () => void;
-  onVincular: (pedidoId: string) => void;
+  onVincular: (pedidoId: string, etiqueta: string, cerrarPedido: boolean) => void;
 }) {
   const [expandido, setExpandido] = useState(false);
   const busqueda = row.nombre_solicitante ?? "";
@@ -686,6 +685,13 @@ function FilaRespuesta({
   const [resultados, setResultados] = useState<PedidoBusqueda[]>([]);
   const [buscado, setBuscado] = useState(false);
   const [seleccionado, setSeleccionado] = useState<PedidoBusqueda | null>(null);
+  // Etiqueta para el punto en la línea de tiempo del pedido — la sugiere
+  // la IA (etiqueta_evento) pero se puede corregir antes de confirmar.
+  const [etiqueta, setEtiqueta] = useState(row.etiqueta_evento ?? "Respuesta");
+  // Vincular no cierra el pedido por sí solo: un pedido puede tener varios
+  // pasos (reenvío, respuesta de Nora, repregunta...) antes del cierre
+  // real, así que la decisión de cerrar es explícita acá.
+  const [cerrarPedido, setCerrarPedido] = useState(false);
 
   const buscarPedidos = useCallback(async (termino: string) => {
     if (!termino.trim()) return;
@@ -725,13 +731,13 @@ function FilaRespuesta({
 
   function handleVincularClick() {
     if (!seleccionado) return;
-    const confirmado = window.confirm(
-      `Vas a vincular y cerrar el pedido de "${seleccionado.nombre_solicitante}" (${fechaCorta(
-        seleccionado.fecha
-      )}) con esta respuesta`
-    );
+    const etiquetaFinal = etiqueta.trim() || "Respuesta";
+    const mensaje = cerrarPedido
+      ? `Vas a agregar "${etiquetaFinal}" a la línea de tiempo y cerrar el pedido de "${seleccionado.nombre_solicitante}" (${fechaCorta(seleccionado.fecha)})`
+      : `Vas a agregar "${etiquetaFinal}" a la línea de tiempo del pedido de "${seleccionado.nombre_solicitante}" (${fechaCorta(seleccionado.fecha)}), sin cerrarlo`;
+    const confirmado = window.confirm(mensaje);
     if (!confirmado) return;
-    onVincular(seleccionado.id);
+    onVincular(seleccionado.id, etiquetaFinal, cerrarPedido);
   }
 
   return (
@@ -797,6 +803,28 @@ function FilaRespuesta({
         </div>
       )}
 
+      {seleccionado && (
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-1.5 text-xs text-slate-500">
+            Etiqueta
+            <input
+              className="input w-56"
+              value={etiqueta}
+              onChange={(e) => setEtiqueta(e.target.value)}
+              placeholder="Ej: Respuesta de Nora"
+            />
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-slate-400">
+            <input
+              type="checkbox"
+              checked={cerrarPedido}
+              onChange={(e) => setCerrarPedido(e.target.checked)}
+            />
+            Cerrar pedido
+          </label>
+        </div>
+      )}
+
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -804,7 +832,7 @@ function FilaRespuesta({
           onClick={handleVincularClick}
           className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
         >
-          Vincular y cerrar
+          Vincular
         </button>
         <button
           type="button"
@@ -816,8 +844,8 @@ function FilaRespuesta({
         </button>
         {seleccionado && (
           <span className="text-xs text-slate-500">
-            Pedido de {seleccionado.nombre_solicitante} ({fechaCorta(seleccionado.fecha)}) va a
-            quedar Cerrado con esta respuesta.
+            Se agrega a la línea de tiempo del pedido de {seleccionado.nombre_solicitante} (
+            {fechaCorta(seleccionado.fecha)}){cerrarPedido ? " y lo cierra." : "."}
           </span>
         )}
       </div>

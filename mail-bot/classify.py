@@ -148,6 +148,7 @@ texto extra) con este formato exacto:
 {{
   "es_pedido_acceso": true o false,
   "es_respuesta_pedido": true o false,
+  "etiqueta_evento": "si es_respuesta_pedido es true, una etiqueta corta (2-4 palabras) para la línea de tiempo del pedido, ver abajo; si no, null",
   "confianza_ia": "una frase corta explicando por qué lo clasificaste así",
   "nombre_solicitante": "nombre de quien pide, o null si no se puede inferir",
   "solicitud_propuesta": "qué se solicita, directo y breve (ver formato abajo), o null",
@@ -181,6 +182,16 @@ quien preguntó, o "esta es la respuesta para..."). En ese caso \
 "es_respuesta_pedido" true. Para el resto de los mails internos (avisos, \
 coordinación sin una respuesta concreta para reenviar, etc.) los dos \
 quedan en false.
+- "etiqueta_evento" describe QUÉ tipo de paso es este correo dentro del \
+intercambio de un pedido ya cargado — se va a mostrar como un punto en la \
+línea de tiempo del pedido (Recepción → ... → respuesta final). Usá una \
+frase corta (2-4 palabras), por ejemplo: "Respuesta de Nora", "Respuesta \
+de Prosecretaría", "Reenvío a Secretaría Electoral", "Repregunta del \
+solicitante" (cuando quien escribe es el solicitante original volviendo a \
+preguntar sobre su pedido, no alguien interno), "Respuesta final". Fijate \
+en el remitente y el tono para decidir si es alguien interno mandando una \
+respuesta, o el solicitante repreguntando. Si "es_respuesta_pedido" es \
+false, dejalo en null.
 - "Datos Históricos" aplica en dos casos: (1) pedidos de resultados o \
 padrones de elecciones ANTERIORES a 1983 (retorno de la democracia), o \
 (2) pedidos de cualquier otro tipo de documentación sobre temas \
@@ -215,6 +226,7 @@ Cuerpo:
 class Clasificacion:
     es_pedido_acceso: bool
     es_respuesta_pedido: bool
+    etiqueta_evento: str | None
     confianza_ia: str | None
     nombre_solicitante: str | None
     solicitud_propuesta: str | None
@@ -356,6 +368,7 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
     return Clasificacion(
         es_pedido_acceso=bool(data.get("es_pedido_acceso", False)),
         es_respuesta_pedido=bool(data.get("es_respuesta_pedido", False)),
+        etiqueta_evento=data.get("etiqueta_evento"),
         confianza_ia=data.get("confianza_ia"),
         nombre_solicitante=data.get("nombre_solicitante"),
         solicitud_propuesta=data.get("solicitud_propuesta"),

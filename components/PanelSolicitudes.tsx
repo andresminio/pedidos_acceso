@@ -12,7 +12,7 @@ import {
 import { anioCuatrimestreDeFecha, fechaCorta } from "@/lib/fechas";
 import { textoCompacto } from "@/lib/texto";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
-import type { Solicitud, SolicitudInput } from "@/lib/types";
+import type { PedidoEvento, Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
 import SyncStatus from "@/components/SyncStatus";
 import IconoIA from "@/components/IconoIA";
@@ -93,6 +93,11 @@ export default function PanelSolicitudes() {
   // Se pide aparte (no viene en pedidos_solicitudes) para no consultar
   // candidatos_correo fila por fila en la tabla.
   const [pedidosConCorreo, setPedidosConCorreo] = useState<Set<string>>(new Set());
+  // ids de pedidos que ya tienen al menos un evento en su línea de tiempo
+  // (pedido_eventos) — para el ícono de "respuesta vinculada" en la lista.
+  const [pedidosConRespuesta, setPedidosConRespuesta] = useState<Set<string>>(
+    new Set()
+  );
 
   const [filtroAnio, setFiltroAnio] = useState<string>("");
   const [filtroCuatrimestre, setFiltroCuatrimestre] = useState<string>("");
@@ -134,7 +139,7 @@ export default function PanelSolicitudes() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [{ data, error }, correoRes] = await Promise.all([
+    const [{ data, error }, correoRes, eventosRes] = await Promise.all([
       supabase.from("pedidos_solicitudes").select("*").order("fecha", { ascending: false }),
       supabase
         .from("candidatos_correo")
@@ -147,6 +152,7 @@ export default function PanelSolicitudes() {
         // vinculada sin tener nunca el correo original, y ahí no hay nada
         // que generar.
         .eq("es_respuesta_pedido", false),
+      supabase.from("pedido_eventos").select("pedido_id"),
     ]);
     if (error) {
       setError(error.message);
@@ -156,6 +162,9 @@ export default function PanelSolicitudes() {
     }
     setPedidosConCorreo(
       new Set((correoRes.data ?? []).map((r) => r.pedido_id as string))
+    );
+    setPedidosConRespuesta(
+      new Set((eventosRes.data ?? []).map((r) => r.pedido_id as string))
     );
     setLoading(false);
   }, []);
@@ -374,7 +383,8 @@ export default function PanelSolicitudes() {
                 editando={row.id === editandoId}
                 onAbrir={() => setEditandoId(row.id)}
                 onCerrarEdicion={() => setEditandoId(null)}
-                tieneCorreo={pedidosConCorreo.has(row.id) && !row.respuesta_texto}
+                tieneCorreo={pedidosConCorreo.has(row.id) && !pedidosConRespuesta.has(row.id)}
+                tieneRespuesta={pedidosConRespuesta.has(row.id)}
               />
             ))}
           </tbody>
@@ -393,6 +403,7 @@ function FilaSolicitud({
   onAbrir,
   onCerrarEdicion,
   tieneCorreo,
+  tieneRespuesta,
 }: {
   row: Solicitud;
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
@@ -402,6 +413,7 @@ function FilaSolicitud({
   onAbrir: () => void;
   onCerrarEdicion: () => void;
   tieneCorreo: boolean;
+  tieneRespuesta: boolean;
 }) {
   const colSpanTotal = colsVisibles.size;
 
@@ -422,9 +434,9 @@ function FilaSolicitud({
             <IconoIA />
           </span>
         )}
-        {row.respuesta_texto && (
+        {tieneRespuesta && (
           <span
-            title="Respuesta vinculada"
+            title="Tiene eventos en la línea de tiempo"
             className="shrink-0 text-emerald-500"
           >
             <IconoRespuestaVinculada />
@@ -516,7 +528,13 @@ function FilaSolicitudEdicion({
   } | null>(null);
   const [generandoRespuesta, setGenerandoRespuesta] = useState(false);
   const [errorRespuestaIA, setErrorRespuestaIA] = useState<string | null>(null);
-  const [desvinculando, setDesvinculando] = useState(false);
+
+  // Línea de tiempo del pedido: cada fila de pedido_eventos es un punto
+  // (reenvío, respuesta de Nora, repregunta del solicitante, etc.),
+  // ordenados por fecha. El punto de "Recepción" no vive acá — se arma
+  // directo con row.fecha / row.solicitud / mailOrigen.
+  const [eventos, setEventos] = useState<PedidoEvento[]>([]);
+  const [desvinculandoId, setDesvinculandoId] = useState<string | null>(null);
 
   useEffect(() => {
     // es_respuesta_pedido=false: si este pedido también tiene un correo de
@@ -532,6 +550,19 @@ function FilaSolicitudEdicion({
       .maybeSingle()
       .then(({ data }) => setMailOrigen(data));
   }, [row.id]);
+
+  const cargarEventos = useCallback(async () => {
+    const { data } = await supabase
+      .from("pedido_eventos")
+      .select("*")
+      .eq("pedido_id", row.id)
+      .order("fecha", { ascending: true });
+    setEventos((data as PedidoEvento[]) ?? []);
+  }, [row.id]);
+
+  useEffect(() => {
+    cargarEventos();
+  }, [cargarEventos]);
 
   // Si está Cerrado, la F. respuesta es obligatoria y no puede ser anterior
   // a la fecha de ingreso (puede ser el mismo día: no tiene sentido
@@ -611,34 +642,45 @@ function FilaSolicitudEdicion({
     onCerrar();
   }
 
-  // Deshace un "Vincular y cerrar" hecho por error: el correo de respuesta
-  // vuelve a "descartado" (mismo criterio que descartar un candidato a
-  // mano) y se borra el texto/fecha de respuesta. El estado del pedido NO
-  // se toca — puede seguir Cerrado aunque no tenga una respuesta
-  // vinculada (el cierre no depende de este mecanismo). Solo toca el
-  // candidato de RESPUESTA (es_respuesta_pedido = true): si este pedido
-  // también tiene el correo original vinculado, ese no se toca — sigue
-  // disponible para "Generar respuesta con IA".
-  async function handleDesvincular() {
+  // Saca un punto de la línea de tiempo (deshace una vinculación hecha por
+  // error): el correo asociado (si lo hay) vuelve a "descartado" — mismo
+  // criterio que descartar un candidato a mano — y la fecha_respuesta del
+  // pedido se recalcula con lo que quede (la más reciente, o vacía si no
+  // queda ningún evento). El estado del pedido NO se toca acá: puede
+  // seguir Cerrado aunque se le saque el último evento — el cierre es una
+  // decisión aparte (checkbox "Cerrar pedido" al vincular).
+  async function handleDesvincularEvento(evento: PedidoEvento) {
     const confirmado = window.confirm(
-      `Vas a desvincular la respuesta del pedido de "${row.nombre_solicitante}". El correo pasa a descartado; el estado del pedido no cambia.`
+      `Vas a sacar "${evento.etiqueta}" (${fechaCorta(evento.fecha)}) de la línea de tiempo.`
     );
     if (!confirmado) return;
-    setDesvinculando(true);
-    const { error: errCorreo } = await supabase
-      .from("candidatos_correo")
-      .update({ estado_revision: "descartado", revisado_en: new Date().toISOString() })
-      .eq("pedido_id", row.id)
-      .eq("es_respuesta_pedido", true);
-    if (errCorreo) {
-      console.error("No se pudo desvincular el correo de respuesta:", errCorreo.message);
+    setDesvinculandoId(evento.id);
+
+    if (evento.candidato_correo_id) {
+      const { error: errCorreo } = await supabase
+        .from("candidatos_correo")
+        .update({ estado_revision: "descartado", revisado_en: new Date().toISOString() })
+        .eq("id", evento.candidato_correo_id);
+      if (errCorreo) {
+        console.error("No se pudo descartar el correo vinculado:", errCorreo.message);
+      }
     }
-    await onUpdate(row.id, {
-      fecha_respuesta: null,
-      respuesta_texto: null,
-    });
-    setDesvinculando(false);
-    onCerrar();
+
+    const { error } = await supabase.from("pedido_eventos").delete().eq("id", evento.id);
+    if (error) {
+      console.error("No se pudo desvincular el evento:", error.message);
+      setDesvinculandoId(null);
+      return;
+    }
+
+    const restantes = eventos.filter((e) => e.id !== evento.id);
+    const nuevaFechaRespuesta = restantes.length
+      ? restantes.reduce((max, e) => (e.fecha > max ? e.fecha : max), restantes[0].fecha)
+      : null;
+    await onUpdate(row.id, { fecha_respuesta: nuevaFechaRespuesta });
+    setFechaRespuesta(nuevaFechaRespuesta ?? "");
+    setEventos(restantes);
+    setDesvinculandoId(null);
   }
 
   async function handleGenerarRespuesta() {
@@ -829,39 +871,15 @@ function FilaSolicitudEdicion({
           </label>
         </div>
 
-        {(mailOrigen?.cuerpo_resumen || row.respuesta_texto) && (
-          <div className="mt-3 flex flex-col gap-3">
-            {mailOrigen?.cuerpo_resumen && (
-              <div className="flex flex-col gap-1 text-xs text-slate-400">
-                Correo recibido
-                <blockquote className="max-h-48 overflow-y-auto whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
-                  {textoCompacto(mailOrigen.cuerpo_resumen)}
-                </blockquote>
-              </div>
-            )}
+        <LineaTiempoPedido
+          row={row}
+          mailOrigen={mailOrigen}
+          eventos={eventos}
+          desvinculandoId={desvinculandoId}
+          onDesvincular={handleDesvincularEvento}
+        />
 
-            {row.respuesta_texto && (
-              <div className="flex flex-col gap-1 text-xs text-slate-400">
-                <div className="flex items-center justify-between gap-2">
-                  <span>Respuesta enviada</span>
-                  <button
-                    type="button"
-                    disabled={desvinculando}
-                    onClick={handleDesvincular}
-                    className="whitespace-nowrap text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
-                  >
-                    {desvinculando ? "Desvinculando…" : "Desvincular"}
-                  </button>
-                </div>
-                <blockquote className="max-h-48 overflow-y-auto whitespace-pre-line rounded-md border border-emerald-900/40 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400">
-                  {textoCompacto(row.respuesta_texto)}
-                </blockquote>
-              </div>
-            )}
-          </div>
-        )}
-
-        {mailOrigen && !row.respuesta_texto && (
+        {mailOrigen && eventos.length === 0 && (
           <div className="mt-3 flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -982,5 +1000,136 @@ function BotonColumnas({
         </>
       )}
     </div>
+  );
+}
+
+// Línea de tiempo del pedido: "Recepción" (siempre presente, sale del
+// pedido en sí — el mail original si lo hay, si no la solicitud tal como
+// quedó cargada) seguida de cada evento vinculado (reenvío, respuesta de
+// Nora, repregunta del solicitante, etc.), ordenados por fecha. Click en
+// un punto abre el correo completo en un popup.
+function LineaTiempoPedido({
+  row,
+  mailOrigen,
+  eventos,
+  desvinculandoId,
+  onDesvincular,
+}: {
+  row: Solicitud;
+  mailOrigen: {
+    cuerpo_resumen: string | null;
+    asunto: string | null;
+    remitente: string;
+  } | null;
+  eventos: PedidoEvento[];
+  desvinculandoId: string | null;
+  onDesvincular: (evento: PedidoEvento) => void;
+}) {
+  const [abierto, setAbierto] = useState<PedidoEvento | "recepcion" | null>(null);
+
+  return (
+    <div className="mt-3">
+      <p className="mb-2 text-xs text-slate-400">Línea de tiempo</p>
+      <div className="flex items-start overflow-x-auto pb-1">
+        <PuntoTiempo
+          etiqueta="Recepción"
+          fecha={row.fecha}
+          color="bg-blue-500"
+          onClick={() => setAbierto("recepcion")}
+        />
+        {eventos.map((ev) => (
+          <div key={ev.id} className="flex shrink-0 items-start">
+            <div className="mt-[7px] h-px w-6 shrink-0 bg-slate-700" />
+            <PuntoTiempo
+              etiqueta={ev.etiqueta}
+              fecha={ev.fecha}
+              color="bg-emerald-500"
+              onClick={() => setAbierto(ev)}
+            />
+          </div>
+        ))}
+      </div>
+
+      {abierto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setAbierto(null)}
+        >
+          <div
+            className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <div>
+                <h4 className="font-semibold text-white">
+                  {abierto === "recepcion" ? "Recepción" : abierto.etiqueta}
+                </h4>
+                <p className="text-xs text-slate-500">
+                  {fechaCorta(abierto === "recepcion" ? row.fecha : abierto.fecha)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAbierto(null)}
+                className="text-slate-400 hover:text-slate-200"
+              >
+                ✕
+              </button>
+            </div>
+            <blockquote className="whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-3 text-sm italic leading-relaxed text-slate-400">
+              {abierto === "recepcion"
+                ? textoCompacto(mailOrigen?.cuerpo_resumen || row.solicitud)
+                : textoCompacto(abierto.cuerpo || "(sin texto)")}
+            </blockquote>
+            {abierto !== "recepcion" && (
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  disabled={desvinculandoId === abierto.id}
+                  onClick={() => {
+                    onDesvincular(abierto);
+                    setAbierto(null);
+                  }}
+                  className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
+                >
+                  {desvinculandoId === abierto.id ? "Desvinculando…" : "Desvincular"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PuntoTiempo({
+  etiqueta,
+  fecha,
+  color,
+  onClick,
+}: {
+  etiqueta: string;
+  fecha: string;
+  color: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex shrink-0 flex-col items-center gap-1 px-1"
+    >
+      <span className={`h-3 w-3 rounded-full ${color}`} />
+      <span className="whitespace-nowrap text-[11px] text-slate-500">
+        {fechaCorta(fecha)}
+      </span>
+      <span
+        className="max-w-24 truncate text-[11px] font-medium text-slate-300"
+        title={etiqueta}
+      >
+        {etiqueta}
+      </span>
+    </button>
   );
 }

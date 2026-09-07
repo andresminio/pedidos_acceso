@@ -85,6 +85,7 @@ def main() -> int:
                 clasif = Clasificacion(
                     es_pedido_acceso=False,
                     es_respuesta_pedido=False,
+                    etiqueta_evento=None,
                     confianza_ia=f"Excluido sin llamar a Gemini: remitente coincide con la regla '{patron_excluido}' de contexto_clasificacion.md.",
                     nombre_solicitante=None,
                     solicitud_propuesta=None,
@@ -115,6 +116,7 @@ def main() -> int:
                 "cuerpo_resumen": msg.cuerpo[:2000],
                 "es_pedido_acceso": clasif.es_pedido_acceso,
                 "es_respuesta_pedido": clasif.es_respuesta_pedido,
+                "etiqueta_evento": clasif.etiqueta_evento,
                 "confianza_ia": clasif.confianza_ia,
                 "nombre_solicitante": clasif.nombre_solicitante,
                 "fecha_propuesta": msg.fecha.date().isoformat(),

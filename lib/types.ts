@@ -141,6 +141,10 @@ export interface CandidatoCorreo {
   cuerpo_resumen: string | null;
   es_pedido_acceso: boolean;
   es_respuesta_pedido: boolean;
+  // Sugerencia de la IA sobre qué tipo de evento es este correo dentro del
+  // intercambio ("Respuesta de Nora", "Repregunta del solicitante", etc.).
+  // Editable a mano al vincular — ver FilaRespuesta en PanelCandidatos.
+  etiqueta_evento: string | null;
   urgencia: string | null;
   confianza_ia: string | null;
   nombre_solicitante: string | null;
@@ -165,4 +169,19 @@ export interface RevisionTrigger {
   estado: EstadoTrigger;
   mensaje: string | null;
   completado_en: string | null;
+}
+
+// Un punto en la línea de tiempo de un pedido: recepción, reenvío,
+// respuesta de Nora, repregunta del solicitante, etc. El punto de
+// "Recepción" en sí no vive acá — se arma directo desde
+// pedidos_solicitudes (fecha + solicitud); esta tabla solo guarda los
+// eventos posteriores, vinculados desde "Respuestas para vincular".
+export interface PedidoEvento {
+  id: string;
+  pedido_id: string;
+  fecha: string; // date ISO (yyyy-mm-dd)
+  etiqueta: string;
+  cuerpo: string | null;
+  candidato_correo_id: string | null;
+  creado_en: string;
 }
