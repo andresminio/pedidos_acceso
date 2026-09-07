@@ -215,10 +215,12 @@ y la misma `SUPABASE_URL` / `SUPABASE_KEY` (anon key) que usa el panel.
 
 `mail-bot/.env` está en `.gitignore` — nunca se sube al repo.
 
-El bot usa el alias `gemini-flash-latest`, así que siempre pega contra
-el modelo Flash vigente sin que haga falta tocar código cuando Google
-saca una versión nueva (se puede fijar una versión específica con
-`GEMINI_MODEL` en el `.env` si en algún momento se prefiere).
+El bot prueba `gemini-3.5-flash-lite` y, si está saturado, rota a
+`gemini-3.6-flash` (se puede fijar una versión específica con
+`GEMINI_MODEL` en el `.env` si en algún momento se prefiere). Se sacó el
+alias `gemini-flash-latest` de la lista — en la práctica siempre devolvía
+503 (saturado) y solo hacía perder tiempo antes de rotar al modelo que sí
+respondía.
 
 ### 6.4 Automatizarlo: Programador de tareas de Windows (cada 2hs)
 

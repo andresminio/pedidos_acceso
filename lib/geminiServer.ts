@@ -5,7 +5,11 @@
 // un solo intento por modelo — son endpoints que el usuario espera en
 // pantalla (botón "Reescribir/Generar con IA"), no un proceso de fondo.
 
-const MODELOS_FALLBACK = ["gemini-flash-latest", "gemini-3.5-flash-lite", "gemini-3.6-flash"];
+// "gemini-flash-latest" (el alias al Flash vigente) se sacó de la lista:
+// en la práctica siempre está saturado (503) y solo hace perder tiempo
+// antes de rotar al siguiente modelo (ver mail-bot/classify.py, mismo
+// criterio).
+const MODELOS_FALLBACK = ["gemini-3.5-flash-lite", "gemini-3.6-flash"];
 
 function modelosAIntentar(): string[] {
   // Si se fija GEMINI_MODEL a mano en Vercel, se respeta como único modelo,

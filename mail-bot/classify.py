@@ -119,14 +119,16 @@ def _lista_subcategorias() -> str:
             lineas.append(f"- {cat}: (sin subcategorías típicas)")
     return "\n".join(lineas)
 
-DEFAULT_MODEL = "gemini-flash-latest"  # alias: siempre apunta al Flash vigente
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
 
 # Cuando un modelo está saturado (503 UNAVAILABLE), reintentar el mismo
 # modelo no sirve de mucho — el pool de capacidad es el mismo. Por eso, tras
 # un par de intentos rápidos, se rota a otro modelo (pool de capacidad
 # separado) antes de rendirse. Ver classify_mail().
+# "gemini-flash-latest" (el alias al Flash vigente) se sacó de la lista:
+# en la práctica siempre está saturado (503) y solo hace perder tiempo
+# antes de rotar a los modelos de abajo.
 MODELOS_FALLBACK = [
-    "gemini-flash-latest",
     "gemini-3.5-flash-lite",
     "gemini-3.6-flash",
 ]
