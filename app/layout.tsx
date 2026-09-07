@@ -3,7 +3,7 @@ import "./globals.css";
 import VersionBanner from "@/components/VersionBanner";
 
 export const metadata: Metadata = {
-  title: "Pedidos de Acceso a la Información Pública",
+  title: "UEEDA Pedidos de acceso a la información pública",
   description: "Panel de registro y seguimiento de pedidos de acceso a la información pública",
   manifest: "/manifest.json",
   icons: {

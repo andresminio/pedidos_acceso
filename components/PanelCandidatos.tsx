@@ -397,7 +397,7 @@ export default function PanelCandidatos() {
         </h2>
         {!loading && candidatosRespuesta.length === 0 && (
           <p className="rounded-lg border border-slate-800 bg-[#12161f] px-4 py-6 text-center text-sm text-slate-500 shadow-sm">
-            No hay respuestas pendientes de vincular.
+            No hay respuestas pendientes de vinculación.
           </p>
         )}
         {candidatosRespuesta.length > 0 && (
