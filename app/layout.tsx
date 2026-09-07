@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import VersionBanner from "@/components/VersionBanner";
 
 export const metadata: Metadata = {
   title: "Pedidos de Acceso a la Información Pública",
@@ -21,7 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <VersionBanner />
+        {children}
+      </body>
     </html>
   );
 }
