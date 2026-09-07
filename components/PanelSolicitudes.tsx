@@ -541,6 +541,12 @@ function FilaSolicitudEdicion({
   // directo con row.fecha / row.solicitud / mailOrigen.
   const [eventos, setEventos] = useState<PedidoEvento[]>([]);
   const [desvinculandoId, setDesvinculandoId] = useState<string | null>(null);
+  // Punto de la línea de tiempo abierto en el popup ("recepcion" o un
+  // evento puntual) — vive acá (no en LineaTiempoPedido) porque el popup
+  // del "Proyecto de respuesta de UEEDA" necesita editar respuestaIA, que
+  // es estado de este componente.
+  const [abierto, setAbierto] = useState<PedidoEvento | "recepcion" | null>(null);
+  const [guardandoBorrador, setGuardandoBorrador] = useState(false);
 
   useEffect(() => {
     // es_respuesta_pedido=false: si este pedido también tiene un correo de
@@ -718,6 +724,29 @@ function FilaSolicitudEdicion({
     setFechaRespuesta(nuevaFechaRespuesta ?? "");
     setEventos(restantes);
     setDesvinculandoId(null);
+  }
+
+  // Guarda los cambios hechos al modelo de respuesta desde el popup del
+  // punto "Proyecto de respuesta de UEEDA" (textarea + regenerar), sin
+  // necesidad de pasar por el botón "Guardar" general del pedido.
+  async function handleGuardarBorrador() {
+    setGuardandoBorrador(true);
+    await onUpdate(row.id, { respuesta_ia_borrador: respuestaIA || null });
+    await guardarEventoBorrador();
+    await cargarEventos();
+    setGuardandoBorrador(false);
+    setAbierto(null);
+  }
+
+  // Saca el punto "Proyecto de respuesta de UEEDA" de la línea de tiempo
+  // desde su propio popup (reutiliza la confirmación y la lógica de
+  // handleDesvincularEvento) y limpia el borrador guardado en el pedido.
+  async function handleSacarBorrador() {
+    if (abierto === "recepcion" || !abierto) return;
+    await handleDesvincularEvento(abierto);
+    setRespuestaIA("");
+    await onUpdate(row.id, { respuesta_ia_borrador: null });
+    setAbierto(null);
   }
 
   async function handleGenerarRespuesta() {
@@ -908,15 +937,35 @@ function FilaSolicitudEdicion({
           </label>
         </div>
 
-        <LineaTiempoPedido
-          row={row}
-          mailOrigen={mailOrigen}
-          eventos={eventos}
-          desvinculandoId={desvinculandoId}
-          onDesvincular={handleDesvincularEvento}
-        />
+        <LineaTiempoPedido row={row} eventos={eventos} onAbrir={setAbierto} />
 
-        {mailOrigen && !eventos.some((e) => e.etiqueta !== ETIQUETA_BORRADOR) && (
+        {abierto && (
+          <PopupEventoPedido
+            row={row}
+            abierto={abierto}
+            mailOrigen={mailOrigen}
+            respuestaIA={respuestaIA}
+            onRespuestaIAChange={setRespuestaIA}
+            generandoRespuesta={generandoRespuesta}
+            errorRespuestaIA={errorRespuestaIA}
+            guardandoBorrador={guardandoBorrador}
+            desvinculandoId={desvinculandoId}
+            onGenerarRespuesta={handleGenerarRespuesta}
+            onGuardarBorrador={handleGuardarBorrador}
+            onSacarBorrador={handleSacarBorrador}
+            onDesvincular={(evento) => {
+              handleDesvincularEvento(evento);
+              setAbierto(null);
+            }}
+            onCerrar={() => setAbierto(null)}
+          />
+        )}
+
+        {/* "Generar respuesta con IA" solo aparece antes de la primera vez
+            que se guarda un proyecto — una vez que existe el punto
+            "Proyecto de respuesta de UEEDA" en la línea de tiempo, se edita
+            desde ahí (popup), no acá abajo. */}
+        {mailOrigen && eventos.length === 0 && (
           <div className="mt-3 flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -928,11 +977,7 @@ function FilaSolicitudEdicion({
                   className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
                 >
                   <IconoIA />
-                  {generandoRespuesta
-                    ? "Generando…"
-                    : respuestaIA
-                      ? "Volver a generar con IA"
-                      : "Generar respuesta con IA"}
+                  {generandoRespuesta ? "Generando…" : "Generar respuesta con IA"}
                 </button>
                 {errorRespuestaIA && (
                   <span className="text-xs text-red-400">{errorRespuestaIA}</span>
@@ -1047,23 +1092,13 @@ function BotonColumnas({
 // un punto abre el correo completo en un popup.
 function LineaTiempoPedido({
   row,
-  mailOrigen,
   eventos,
-  desvinculandoId,
-  onDesvincular,
+  onAbrir,
 }: {
   row: Solicitud;
-  mailOrigen: {
-    cuerpo_resumen: string | null;
-    asunto: string | null;
-    remitente: string;
-  } | null;
   eventos: PedidoEvento[];
-  desvinculandoId: string | null;
-  onDesvincular: (evento: PedidoEvento) => void;
+  onAbrir: (item: PedidoEvento | "recepcion") => void;
 }) {
-  const [abierto, setAbierto] = useState<PedidoEvento | "recepcion" | null>(null);
-
   return (
     <div className="mt-3">
       <p className="mb-2 text-xs text-slate-400">Línea de tiempo</p>
@@ -1072,7 +1107,7 @@ function LineaTiempoPedido({
           etiqueta="Recepción"
           fecha={row.fecha}
           color="bg-blue-500"
-          onClick={() => setAbierto("recepcion")}
+          onClick={() => onAbrir("recepcion")}
         />
         {eventos.map((ev) => (
           <div key={ev.id} className="flex shrink-0 items-start">
@@ -1083,38 +1118,127 @@ function LineaTiempoPedido({
               color={
                 ev.etiqueta === ETIQUETA_BORRADOR ? "bg-amber-500" : "bg-emerald-500"
               }
-              onClick={() => setAbierto(ev)}
+              onClick={() => onAbrir(ev)}
             />
           </div>
         ))}
       </div>
+    </div>
+  );
+}
 
-      {abierto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={() => setAbierto(null)}
-        >
-          <div
-            className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
+// Popup de un punto de la línea de tiempo. Para "recepcion" y los eventos
+// normales es de solo lectura (con "Desvincular" para sacarlos). Para el
+// punto especial "Proyecto de respuesta de UEEDA" es editable: acá vive
+// ahora todo lo que antes se mostraba siempre abajo del formulario
+// (textarea + "Volver a generar con IA") — una vez guardado el primer
+// borrador, se edita solo desde acá.
+function PopupEventoPedido({
+  row,
+  abierto,
+  mailOrigen,
+  respuestaIA,
+  onRespuestaIAChange,
+  generandoRespuesta,
+  errorRespuestaIA,
+  guardandoBorrador,
+  desvinculandoId,
+  onGenerarRespuesta,
+  onGuardarBorrador,
+  onSacarBorrador,
+  onDesvincular,
+  onCerrar,
+}: {
+  row: Solicitud;
+  abierto: PedidoEvento | "recepcion";
+  mailOrigen: {
+    cuerpo_resumen: string | null;
+    asunto: string | null;
+    remitente: string;
+  } | null;
+  respuestaIA: string;
+  onRespuestaIAChange: (texto: string) => void;
+  generandoRespuesta: boolean;
+  errorRespuestaIA: string | null;
+  guardandoBorrador: boolean;
+  desvinculandoId: string | null;
+  onGenerarRespuesta: () => void;
+  onGuardarBorrador: () => void;
+  onSacarBorrador: () => void;
+  onDesvincular: (evento: PedidoEvento) => void;
+  onCerrar: () => void;
+}) {
+  const esBorrador = abierto !== "recepcion" && abierto.etiqueta === ETIQUETA_BORRADOR;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onCerrar}
+    >
+      <div
+        className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div>
+            <h4 className="font-semibold text-white">
+              {abierto === "recepcion" ? "Recepción" : abierto.etiqueta}
+            </h4>
+            <p className="text-xs text-slate-500">
+              {fechaCorta(abierto === "recepcion" ? row.fecha : abierto.fecha)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onCerrar}
+            className="text-slate-400 hover:text-slate-200"
           >
-            <div className="mb-3 flex items-start justify-between gap-2">
-              <div>
-                <h4 className="font-semibold text-white">
-                  {abierto === "recepcion" ? "Recepción" : abierto.etiqueta}
-                </h4>
-                <p className="text-xs text-slate-500">
-                  {fechaCorta(abierto === "recepcion" ? row.fecha : abierto.fecha)}
-                </p>
-              </div>
+            ✕
+          </button>
+        </div>
+
+        {esBorrador ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setAbierto(null)}
-                className="text-slate-400 hover:text-slate-200"
+                disabled={generandoRespuesta}
+                onClick={onGenerarRespuesta}
+                className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
               >
-                ✕
+                <IconoIA />
+                {generandoRespuesta ? "Generando…" : "Volver a generar con IA"}
+              </button>
+              {errorRespuestaIA && (
+                <span className="text-xs text-red-400">{errorRespuestaIA}</span>
+              )}
+            </div>
+            <textarea
+              className="input min-h-48"
+              value={respuestaIA}
+              onChange={(e) => onRespuestaIAChange(e.target.value)}
+            />
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                disabled={guardandoBorrador}
+                onClick={onSacarBorrador}
+                className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
+              >
+                Sacar de la línea de tiempo
+              </button>
+              <button
+                type="button"
+                disabled={guardandoBorrador}
+                onClick={onGuardarBorrador}
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              >
+                {guardandoBorrador ? "Guardando…" : "Guardar"}
               </button>
             </div>
+          </div>
+        ) : (
+          <>
             <blockquote className="whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-3 text-sm italic leading-relaxed text-slate-400">
               {abierto === "recepcion"
                 ? textoCompacto(mailOrigen?.cuerpo_resumen || row.solicitud)
@@ -1125,19 +1249,16 @@ function LineaTiempoPedido({
                 <button
                   type="button"
                   disabled={desvinculandoId === abierto.id}
-                  onClick={() => {
-                    onDesvincular(abierto);
-                    setAbierto(null);
-                  }}
+                  onClick={() => onDesvincular(abierto)}
                   className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
                 >
                   {desvinculandoId === abierto.id ? "Desvinculando…" : "Desvincular"}
                 </button>
               </div>
             )}
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

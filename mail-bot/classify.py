@@ -184,14 +184,25 @@ coordinación sin una respuesta concreta para reenviar, etc.) los dos \
 quedan en false.
 - "etiqueta_evento" describe QUÉ tipo de paso es este correo dentro del \
 intercambio de un pedido ya cargado — se va a mostrar como un punto en la \
-línea de tiempo del pedido (Recepción → ... → respuesta final). Usá una \
-frase corta (2-4 palabras), por ejemplo: "Respuesta de Nora", "Respuesta \
-de Prosecretaría", "Reenvío a Secretaría Electoral", "Repregunta del \
-solicitante" (cuando quien escribe es el solicitante original volviendo a \
-preguntar sobre su pedido, no alguien interno), "Respuesta final". Fijate \
-en el remitente y el tono para decidir si es alguien interno mandando una \
-respuesta, o el solicitante repreguntando. Si "es_respuesta_pedido" es \
-false, dejalo en null.
+línea de tiempo del pedido (Recepción → ... → respuesta final). El \
+CONTENIDO manda sobre el remitente: NORA_EMAIL_REDACTADO y \
+cnelectoral.psactjudicial@pjn.gov.ar también mandan mails de coordinación \
+interna que NO son la respuesta para el solicitante (avisos, consultas \
+internas, "¿tenés novedades de tal pedido?", etc.) — para esos casos, \
+"es_respuesta_pedido" tiene que ser false igual que cualquier otro mail \
+interno sin una respuesta concreta para reenviar (ver el punto anterior), \
+así que no llegan a necesitar etiqueta. Recién si el correo SÍ trae el \
+texto de una respuesta concreta para el solicitante, elegí la etiqueta \
+según el remitente:
+  - NORA_EMAIL_REDACTADO → "Respuesta de Nora"
+  - cnelectoral.psactjudicial@pjn.gov.ar → "Respuesta Prosecretaría"
+  - El remitente es el SOLICITANTE original volviendo a escribir sobre su \
+propio pedido (no alguien interno) → "Repregunta del solicitante"
+  - Cualquier otro caso de respuesta/reenvío (otra área interna, remitente \
+distinto a los de la lista) → una frase corta (2-4 palabras) específica \
+al caso, por ejemplo "Reenvío a Secretaría Electoral" — evitá una \
+etiqueta genérica como "Respuesta" a secas.
+Si "es_respuesta_pedido" es false, "etiqueta_evento" queda en null.
 - "Datos Históricos" aplica en dos casos: (1) pedidos de resultados o \
 padrones de elecciones ANTERIORES a 1983 (retorno de la democracia), o \
 (2) pedidos de cualquier otro tipo de documentación sobre temas \

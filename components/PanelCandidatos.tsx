@@ -63,6 +63,18 @@ function nombreDeRemitente(remitente: string): string {
   return remitente.replace(/[<>]/g, "").trim();
 }
 
+// Respaldo por si el correo no tiene etiqueta_evento sugerida por la IA
+// (por ejemplo, uno pasado a mano desde "Ver descartados" con "Pasar a
+// vincular"): mismo criterio de remitentes fijos que mail-bot/classify.py,
+// para no mostrar un genérico "Respuesta" cuando se puede ser específico.
+function etiquetaSugerida(row: CandidatoCorreo): string {
+  if (row.etiqueta_evento) return row.etiqueta_evento;
+  const remitente = row.remitente.toLowerCase();
+  if (remitente.includes("NORA_EMAIL_REDACTADO")) return "Respuesta de Nora";
+  if (remitente.includes("cnelectoral.psactjudicial@pjn.gov.ar")) return "Respuesta Prosecretaría";
+  return "Respuesta";
+}
+
 function fechaCortaHora(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleString("es-AR", {
@@ -712,7 +724,7 @@ function FilaRespuesta({
   const [seleccionado, setSeleccionado] = useState<PedidoBusqueda | null>(null);
   // Etiqueta para el punto en la línea de tiempo del pedido — la sugiere
   // la IA (etiqueta_evento) pero se puede corregir antes de confirmar.
-  const [etiqueta, setEtiqueta] = useState(row.etiqueta_evento ?? "Respuesta");
+  const [etiqueta, setEtiqueta] = useState(etiquetaSugerida(row));
   // Vincular no cierra el pedido por sí solo: un pedido puede tener varios
   // pasos (reenvío, respuesta de Nora, repregunta...) antes del cierre
   // real, así que la decisión de cerrar es explícita acá.
