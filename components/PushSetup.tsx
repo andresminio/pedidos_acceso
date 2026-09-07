@@ -9,11 +9,19 @@ import { useEffect, useState } from "react";
 
 type Estado = "sin_soporte" | "inactivo" | "activando" | "activo" | "denegado";
 
-function urlBase64ToUint8Array(base64: string): Uint8Array {
+// Nota TS: construimos con `new Uint8Array(n)` (no `Uint8Array.from(...)`)
+// a propósito — así el array queda respaldado por un ArrayBuffer "normal"
+// y no un ArrayBufferLike genérico, que es lo que pide el tipo de
+// `applicationServerKey` más abajo (si no, TS 5.7+ tira error de build).
+function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
   const base64Safe = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
   const raw = atob(base64Safe);
-  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+  const output = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) {
+    output[i] = raw.charCodeAt(i);
+  }
+  return output;
 }
 
 export default function PushSetup() {
