@@ -537,7 +537,7 @@ function FilaCandidato({
       estado: "Pendiente",
       subestado: null,
       fecha_respuesta: null,
-      observaciones: "Cargado automáticamente desde correo",
+      observaciones: "Cargado automáticamente desde MaryBot",
       respuesta_ia_borrador: null,
       respuesta_texto: null,
     });
