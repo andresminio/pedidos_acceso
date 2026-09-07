@@ -110,7 +110,7 @@ const PASOS: Paso[] = [
   {
     titulo: "¡Listo!",
     texto:
-      'Eso es todo para arrancar. Si algo se descartó por error, desde "Ver descartados" se puede recuperar o pasar directo a "Respuestas para vincular". Cualquier duda, preguntale a Andrés.',
+      'Eso es todo para arrancar. Si algo se descartó por error, desde "Ver descartados" se puede recuperar o pasar directo a "Respuestas para vincular".',
     Icono: IconoListo,
   },
 ];
@@ -156,8 +156,7 @@ export default function Onboarding() {
                 </h2>
                 <p className="mt-2 text-sm text-slate-400">
                   Te mostramos en unos pasos qué hace MaryBot, cómo clasifica
-                  el correo y cómo proceder en cada pantalla. Tarda menos de
-                  un minuto.
+                  el correo y cómo proceder en cada pantalla.
                 </p>
                 <div className="mt-5 flex w-full gap-2">
                   <button

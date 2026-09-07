@@ -39,7 +39,7 @@ export default function PanelResumen() {
   const [error, setError] = useState<string | null>(null);
 
   const hoy = useMemo(() => new Date(), []);
-  const [filtroAnio, setFiltroAnio] = useState<number>(hoy.getFullYear());
+  const [filtroAnio, setFiltroAnio] = useState<number | "todos">(hoy.getFullYear());
   const [filtroCuatrimestre, setFiltroCuatrimestre] = useState<number | "todos">("todos");
 
   const load = useCallback(async () => {
@@ -72,7 +72,7 @@ export default function PanelResumen() {
   }, [rows, hoy]);
 
   const rowsDelAnio = useMemo(
-    () => rows.filter((r) => r.anio === filtroAnio),
+    () => (filtroAnio === "todos" ? rows : rows.filter((r) => r.anio === filtroAnio)),
     [rows, filtroAnio]
   );
 
@@ -196,10 +196,13 @@ export default function PanelResumen() {
 
   const maxTema = tabla4.filas[0]?.cantidad ?? 0;
 
+  const etiquetaAnio = filtroAnio === "todos" ? "Todos los años" : `Año ${filtroAnio}`;
   const etiquetaPeriodo =
     filtroCuatrimestre === "todos"
-      ? `Año ${filtroAnio}`
-      : `${NOMBRE_CUATRIMESTRE[filtroCuatrimestre]} ${filtroAnio}`;
+      ? etiquetaAnio
+      : filtroAnio === "todos"
+        ? `${NOMBRE_CUATRIMESTRE[filtroCuatrimestre]} (todos los años)`
+        : `${NOMBRE_CUATRIMESTRE[filtroCuatrimestre]} ${filtroAnio}`;
 
   function descargarExcel() {
     const wb = XLSX.utils.book_new();
@@ -222,7 +225,7 @@ export default function PanelResumen() {
     );
 
     const hoja2 = [
-      [`Cantidad según estado de situación — Año ${filtroAnio}`],
+      [`Cantidad según estado de situación — ${etiquetaAnio}`],
       ["Estado", ...CUATRIMESTRES.map((c) => NOMBRE_CUATRIMESTRE[c]), "Total"],
       ...tabla2.filas.map((f) => [f.estado, ...f.porCuatrimestre, f.total]),
       ["Total", ...tabla2.totalesPorCuatrimestre, tabla2.total],
@@ -285,9 +288,10 @@ export default function PanelResumen() {
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hoja5), "Pedidos");
 
+    const sufijoAnio = filtroAnio === "todos" ? "todos_los_anos" : String(filtroAnio);
     const sufijoCuatrimestre =
       filtroCuatrimestre === "todos" ? "todo_el_ano" : `cuatrimestre_${filtroCuatrimestre}`;
-    XLSX.writeFile(wb, `resumen_pedidos_${filtroAnio}_${sufijoCuatrimestre}.xlsx`);
+    XLSX.writeFile(wb, `resumen_pedidos_${sufijoAnio}_${sufijoCuatrimestre}.xlsx`);
   }
 
   return (
@@ -299,8 +303,11 @@ export default function PanelResumen() {
           <select
             className="input w-auto"
             value={filtroAnio}
-            onChange={(e) => setFiltroAnio(Number(e.target.value))}
+            onChange={(e) =>
+              setFiltroAnio(e.target.value === "todos" ? "todos" : Number(e.target.value))
+            }
           >
+            <option value="todos">Todos los años</option>
             {anios.map((a) => (
               <option key={a} value={a}>
                 {a}
@@ -394,7 +401,10 @@ export default function PanelResumen() {
               <div className="space-y-1.5">
                 {tabla4.filas.map((f) => (
                   <div key={f.tema} className="flex items-center gap-2 text-xs">
-                    <span className="w-36 shrink-0 truncate text-slate-400" title={f.tema}>
+                    <span
+                      className="w-56 shrink-0 truncate text-slate-400 sm:w-64"
+                      title={f.tema}
+                    >
                       {f.tema}
                     </span>
                     <div className="h-4 flex-1 rounded bg-slate-800">

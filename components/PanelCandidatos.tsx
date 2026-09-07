@@ -391,11 +391,16 @@ export default function PanelCandidatos() {
         ))}
       </div>
 
-      {candidatosRespuesta.length > 0 && (
-        <div className="mt-6 border-t border-slate-800 pt-4">
-          <h2 className="mb-2 text-lg font-semibold text-white">
-            Respuestas para vincular
-          </h2>
+      <div className="mt-6 border-t border-slate-800 pt-4">
+        <h2 className="mb-2 text-lg font-semibold text-white">
+          Respuestas para vincular
+        </h2>
+        {!loading && candidatosRespuesta.length === 0 && (
+          <p className="rounded-lg border border-slate-800 bg-[#12161f] px-4 py-6 text-center text-sm text-slate-500 shadow-sm">
+            No hay respuestas pendientes de vincular.
+          </p>
+        )}
+        {candidatosRespuesta.length > 0 && (
           <div className="space-y-4">
             {candidatosRespuesta.map((row) => (
               <FilaRespuesta
@@ -409,8 +414,8 @@ export default function PanelCandidatos() {
               />
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-4 text-sm">
         <p className="text-slate-500">
