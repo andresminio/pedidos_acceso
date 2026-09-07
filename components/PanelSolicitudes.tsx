@@ -588,6 +588,12 @@ function FilaSolicitudEdicion({
           : null
       : null;
 
+  // Un pedido Cerrado siempre tiene que decir si se respondió Completo,
+  // Parcial o fue Rechazado — si no, queda como "Cerrado sin especificar"
+  // en el resumen, que no sirve para nada.
+  const errorSubestado =
+    estado === "Cerrado" && !subestado ? "Un pedido Cerrado necesita Sub-estado." : null;
+
   useEffect(() => {
     cargarCategorias().then(setCategorias);
   }, []);
@@ -633,7 +639,7 @@ function FilaSolicitudEdicion({
   }
 
   async function handleGuardar() {
-    if (errorFechaRespuesta) return;
+    if (errorFechaRespuesta || errorSubestado) return;
     setGuardando(true);
     const { anio, cuatrimestre } = anioCuatrimestreDeFecha(fecha);
     await onUpdate(row.id, {
@@ -902,7 +908,9 @@ function FilaSolicitudEdicion({
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Sub-estado
             <select
-              className="input disabled:cursor-not-allowed disabled:opacity-40"
+              className={`input disabled:cursor-not-allowed disabled:opacity-40 ${
+                errorSubestado ? "border-red-600" : ""
+              }`}
               value={subestado}
               disabled={estado !== "Cerrado"}
               onChange={(e) => setSubestado(e.target.value)}
@@ -914,6 +922,9 @@ function FilaSolicitudEdicion({
                 </option>
               ))}
             </select>
+            {errorSubestado && (
+              <span className="text-xs text-red-400">{errorSubestado}</span>
+            )}
           </label>
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             F. respuesta
@@ -1011,7 +1022,8 @@ function FilaSolicitudEdicion({
                 eliminando ||
                 !nombreSolicitante ||
                 !solicitud ||
-                !!errorFechaRespuesta
+                !!errorFechaRespuesta ||
+                !!errorSubestado
               }
               onClick={handleGuardar}
               className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50"

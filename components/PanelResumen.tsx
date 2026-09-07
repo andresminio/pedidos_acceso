@@ -4,14 +4,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
-import { cuatrimestreDe } from "@/lib/fechas";
+import { cuatrimestreDe, fechaCorta } from "@/lib/fechas";
 
 interface FilaResumen {
   anio: number;
   cuatrimestre: number;
+  fecha: string;
+  nombre_solicitante: string;
+  solicitud: string;
   categoria: string | null;
+  subcategoria: string | null;
   estado: string;
   subestado: string | null;
+  fecha_respuesta: string | null;
 }
 
 const SIN_CATEGORIA = "Sin categoría";
@@ -43,7 +48,9 @@ export default function PanelResumen() {
     setLoading(true);
     const { data, error } = await supabase
       .from("pedidos_solicitudes")
-      .select("anio, cuatrimestre, categoria, estado, subestado");
+      .select(
+        "anio, cuatrimestre, fecha, nombre_solicitante, solicitud, categoria, subcategoria, estado, subestado, fecha_respuesta"
+      );
     if (error) {
       setError(error.message);
     } else {
@@ -246,7 +253,41 @@ export default function PanelResumen() {
       "Totales por tema"
     );
 
-    XLSX.writeFile(wb, `resumen_pedidos_${filtroAnio}.xlsx`);
+    const hoja5 = [
+      [`Pedidos — ${etiquetaPeriodo}`],
+      [
+        "Año",
+        "Cuat.",
+        "Fecha",
+        "Solicitante",
+        "Solicitud",
+        "Categoría",
+        "Subcategoría",
+        "Estado",
+        "Sub-estado",
+        "F. respuesta",
+      ],
+      ...rowsDelPeriodo
+        .slice()
+        .sort((a, b) => a.fecha.localeCompare(b.fecha))
+        .map((r) => [
+          r.anio,
+          r.cuatrimestre,
+          fechaCorta(r.fecha),
+          r.nombre_solicitante,
+          r.solicitud,
+          r.categoria || SIN_CATEGORIA,
+          r.subcategoria || "",
+          r.estado,
+          r.subestado || "",
+          fechaCorta(r.fecha_respuesta),
+        ]),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hoja5), "Pedidos");
+
+    const sufijoCuatrimestre =
+      filtroCuatrimestre === "todos" ? "todo_el_ano" : `cuatrimestre_${filtroCuatrimestre}`;
+    XLSX.writeFile(wb, `resumen_pedidos_${filtroAnio}_${sufijoCuatrimestre}.xlsx`);
   }
 
   return (

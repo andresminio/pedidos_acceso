@@ -8,6 +8,7 @@ import {
   cargarCategorias,
   cargarSubcategorias,
 } from "@/lib/categorias";
+import { SUBESTADOS_CERRADO } from "@/lib/types";
 import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
 import { textoCompacto } from "@/lib/texto";
 import { fechaCorta } from "@/lib/fechas";
@@ -277,7 +278,8 @@ export default function PanelCandidatos() {
     row: CandidatoCorreo,
     pedidoId: string,
     etiqueta: string,
-    cerrarPedido: boolean
+    cerrarPedido: boolean,
+    subestado: string
   ) {
     setBusyId(row.id);
 
@@ -298,9 +300,11 @@ export default function PanelCandidatos() {
     }
 
     if (cerrarPedido) {
+      // Sub-estado obligatorio al cerrar: si no, queda un "Cerrado sin
+      // especificar" que no sirve para el resumen (ver PanelResumen).
       const { error: errPedido } = await supabase
         .from("pedidos_solicitudes")
-        .update({ estado: "Cerrado", fecha_respuesta: fechaCorreo })
+        .update({ estado: "Cerrado", fecha_respuesta: fechaCorreo, subestado })
         .eq("id", pedidoId);
       if (errPedido) {
         setBusyId(null);
@@ -399,8 +403,8 @@ export default function PanelCandidatos() {
                 row={row}
                 busy={busyId === row.id}
                 onDescartar={() => handleDescartar(row)}
-                onVincular={(pedidoId, etiqueta, cerrarPedido) =>
-                  handleVincular(row, pedidoId, etiqueta, cerrarPedido)
+                onVincular={(pedidoId, etiqueta, cerrarPedido, subestado) =>
+                  handleVincular(row, pedidoId, etiqueta, cerrarPedido, subestado)
                 }
               />
             ))}
@@ -714,7 +718,12 @@ function FilaRespuesta({
   row: CandidatoCorreo;
   busy: boolean;
   onDescartar: () => void;
-  onVincular: (pedidoId: string, etiqueta: string, cerrarPedido: boolean) => void;
+  onVincular: (
+    pedidoId: string,
+    etiqueta: string,
+    cerrarPedido: boolean,
+    subestado: string
+  ) => void;
 }) {
   const [expandido, setExpandido] = useState(false);
   const busqueda = row.nombre_solicitante ?? "";
@@ -729,6 +738,9 @@ function FilaRespuesta({
   // pasos (reenvío, respuesta de Nora, repregunta...) antes del cierre
   // real, así que la decisión de cerrar es explícita acá.
   const [cerrarPedido, setCerrarPedido] = useState(false);
+  // Obligatorio si se tilda "Cerrar pedido" — sin esto queda un "Cerrado
+  // sin especificar" que no sirve para el resumen (ver PanelResumen).
+  const [subestado, setSubestado] = useState("");
 
   const buscarPedidos = useCallback(async (termino: string) => {
     if (!termino.trim()) return;
@@ -768,13 +780,14 @@ function FilaRespuesta({
 
   function handleVincularClick() {
     if (!seleccionado) return;
+    if (cerrarPedido && !subestado) return;
     const etiquetaFinal = etiqueta.trim() || "Respuesta";
     const mensaje = cerrarPedido
       ? `Vas a agregar "${etiquetaFinal}" a la línea de tiempo y cerrar el pedido de "${seleccionado.nombre_solicitante}" (${fechaCorta(seleccionado.fecha)})`
       : `Vas a agregar "${etiquetaFinal}" a la línea de tiempo del pedido de "${seleccionado.nombre_solicitante}" (${fechaCorta(seleccionado.fecha)}), sin cerrarlo`;
     const confirmado = window.confirm(mensaje);
     if (!confirmado) return;
-    onVincular(seleccionado.id, etiquetaFinal, cerrarPedido);
+    onVincular(seleccionado.id, etiquetaFinal, cerrarPedido, subestado);
   }
 
   return (
@@ -859,13 +872,30 @@ function FilaRespuesta({
             />
             Cerrar pedido
           </label>
+          {cerrarPedido && (
+            <label className="flex items-center gap-1.5 text-xs text-slate-500">
+              Sub-estado
+              <select
+                className={`input w-auto ${!subestado ? "border-red-600" : ""}`}
+                value={subestado}
+                onChange={(e) => setSubestado(e.target.value)}
+              >
+                <option value="">—</option>
+                {SUBESTADOS_CERRADO.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
-          disabled={busy || !seleccionado}
+          disabled={busy || !seleccionado || (cerrarPedido && !subestado)}
           onClick={handleVincularClick}
           className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
         >
