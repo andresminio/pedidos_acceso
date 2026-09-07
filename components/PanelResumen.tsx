@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
-import { cuatrimestreDe, fechaCorta } from "@/lib/fechas";
+import { fechaCorta } from "@/lib/fechas";
 
 interface FilaResumen {
   anio: number;
@@ -40,9 +40,7 @@ export default function PanelResumen() {
 
   const hoy = useMemo(() => new Date(), []);
   const [filtroAnio, setFiltroAnio] = useState<number>(hoy.getFullYear());
-  const [filtroCuatrimestre, setFiltroCuatrimestre] = useState<number | "todos">(
-    cuatrimestreDe(hoy.getMonth() + 1)
-  );
+  const [filtroCuatrimestre, setFiltroCuatrimestre] = useState<number | "todos">("todos");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,14 +91,21 @@ export default function PanelResumen() {
     return { total, cerrados, pendientes: total - cerrados };
   }, [rowsDelPeriodo]);
 
-  // Tabla 1: cantidad por cuatrimestre del año elegido.
+  // Tabla 1: cantidad por cuatrimestre del año elegido. Si además hay un
+  // cuatrimestre puntual seleccionado en el banner, se muestra solo ese
+  // (la agrupación por cuatrimestre sigue siendo la misma, nada más que
+  // recortada al filtro).
   const tabla1 = useMemo(() => {
-    const filas = CUATRIMESTRES.map((c) => {
+    const todos = CUATRIMESTRES.map((c) => {
       const delCuatrimestre = rowsDelAnio.filter((r) => r.cuatrimestre === c);
       const cerrado = delCuatrimestre.filter((r) => esCerrado(r.estado)).length;
       const total = delCuatrimestre.length;
       return { cuatrimestre: c, cerrado, pendiente: total - cerrado, total };
     }).filter((f) => f.total > 0 || f.cuatrimestre <= 2); // no mostrar 3er vacío si nunca hay datos ahí
+    const filas =
+      filtroCuatrimestre === "todos"
+        ? todos
+        : todos.filter((f) => f.cuatrimestre === filtroCuatrimestre);
     const totales = filas.reduce(
       (acc, f) => ({
         cerrado: acc.cerrado + f.cerrado,
@@ -110,7 +115,7 @@ export default function PanelResumen() {
       { cerrado: 0, pendiente: 0, total: 0 }
     );
     return { filas, totales };
-  }, [rowsDelAnio]);
+  }, [rowsDelAnio, filtroCuatrimestre]);
 
   // Tabla 2: por estado detallado (subestado si está Cerrado) x cuatrimestre.
   const tabla2 = useMemo(() => {
@@ -174,11 +179,11 @@ export default function PanelResumen() {
     return { filas, totales };
   }, [rowsDelPeriodo]);
 
-  // Tabla 4: totales históricos por tema — a propósito NO se filtra por el
-  // banner (siempre "desde el primer año con datos a la fecha").
+  // Tabla 4 / gráfico: totales por tema del período elegido en el banner
+  // (año + cuatrimestre, igual que el resto).
   const tabla4 = useMemo(() => {
     const porCategoria = new Map<string, number>();
-    for (const r of rows) {
+    for (const r of rowsDelPeriodo) {
       const cat = r.categoria?.trim() || SIN_CATEGORIA;
       porCategoria.set(cat, (porCategoria.get(cat) ?? 0) + 1);
     }
@@ -187,14 +192,9 @@ export default function PanelResumen() {
       .sort((a, b) => b.cantidad - a.cantidad);
     const total = filas.reduce((acc, f) => acc + f.cantidad, 0);
     return { filas, total };
-  }, [rows]);
+  }, [rowsDelPeriodo]);
 
   const maxTema = tabla4.filas[0]?.cantidad ?? 0;
-
-  const anioMinimo = useMemo(
-    () => rows.reduce((min, r) => (r.anio < min ? r.anio : min), hoy.getFullYear()),
-    [rows, hoy]
-  );
 
   const etiquetaPeriodo =
     filtroCuatrimestre === "todos"
@@ -205,7 +205,7 @@ export default function PanelResumen() {
     const wb = XLSX.utils.book_new();
 
     const hoja1 = [
-      [`Cantidad de solicitudes por cuatrimestre — Año ${filtroAnio}`],
+      [`Cantidad de solicitudes por cuatrimestre — ${etiquetaPeriodo}`],
       ["Cuatrimestre", "Cerrado", "Pendiente", "Total"],
       ...tabla1.filas.map((f) => [
         NOMBRE_CUATRIMESTRE[f.cuatrimestre],
@@ -242,7 +242,7 @@ export default function PanelResumen() {
     );
 
     const hoja4 = [
-      [`Totales por tema — desde ${anioMinimo} a la fecha`],
+      [`Totales por tema — ${etiquetaPeriodo}`],
       ["Tema", "Cantidad"],
       ...tabla4.filas.map((f) => [f.tema, f.cantidad]),
       ["Total", tabla4.total],
@@ -345,8 +345,8 @@ export default function PanelResumen() {
       ) : (
         <div className="space-y-8">
           {/* Contadores del período elegido */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <TarjetaContador etiqueta={`Total — ${etiquetaPeriodo}`} valor={contadores.total} />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <TarjetaContador etiqueta="Total" valor={contadores.total} />
             <TarjetaContador
               etiqueta="Cerrados"
               valor={contadores.cerrados}
@@ -359,8 +359,8 @@ export default function PanelResumen() {
             />
           </div>
 
-          {/* Tabla 1 */}
-          <TablaResumen titulo={`1. Cantidad de solicitudes por cuatrimestre — Año ${filtroAnio}`}>
+          {/* Tabla: cantidad por cuatrimestre */}
+          <TablaResumen titulo={`Cantidad de solicitudes por cuatrimestre — ${etiquetaPeriodo}`}>
             <thead>
               <tr>
                 <Th>Cuatrimestre</Th>
@@ -385,112 +385,34 @@ export default function PanelResumen() {
             </tbody>
           </TablaResumen>
 
-          {/* Tabla 2 */}
-          <TablaResumen titulo={`2. Cantidad según estado de situación — Año ${filtroAnio}`}>
-            <thead>
-              <tr>
-                <Th>Estado</Th>
-                {CUATRIMESTRES.map((c) => (
-                  <Th key={c} align="right">
-                    {NOMBRE_CUATRIMESTRE[c]}
-                  </Th>
-                ))}
-                <Th align="right">Total</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {tabla2.filas.map((f) => (
-                <tr key={f.estado} className="border-t border-slate-800">
-                  <Td>{f.estado}</Td>
-                  {f.porCuatrimestre.map((v, i) => (
-                    <Td key={i} align="right">
-                      {v}
-                    </Td>
-                  ))}
-                  <Td align="right">{f.total}</Td>
-                </tr>
-              ))}
-              <FilaTotal
-                etiqueta="Total"
-                valores={[...tabla2.totalesPorCuatrimestre, tabla2.total]}
-              />
-            </tbody>
-          </TablaResumen>
-
-          {/* Tabla 3 */}
-          <TablaResumen titulo={`3. Solicitudes por tema y estado — ${etiquetaPeriodo}`}>
-            <thead>
-              <tr>
-                <Th>Categoría</Th>
-                <Th align="right">Cerrado</Th>
-                <Th align="right">Pendiente</Th>
-                <Th align="right">Total</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {tabla3.filas.map((f) => (
-                <tr key={f.categoria} className="border-t border-slate-800">
-                  <Td>{f.categoria}</Td>
-                  <Td align="right">{f.cerrado}</Td>
-                  <Td align="right">{f.pendiente}</Td>
-                  <Td align="right">{f.total}</Td>
-                </tr>
-              ))}
-              <FilaTotal
-                etiqueta="Total"
-                valores={[tabla3.totales.cerrado, tabla3.totales.pendiente, tabla3.totales.total]}
-              />
-            </tbody>
-          </TablaResumen>
-
-          {/* Tabla 4 + gráfico */}
+          {/* Gráfico: totales por tema */}
           <div>
             <p className="mb-3 text-sm font-semibold text-white">
-              4. Totales por tema — desde {anioMinimo} a la fecha
+              Totales por tema — {etiquetaPeriodo}
             </p>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <TablaResumen>
-                <thead>
-                  <tr>
-                    <Th>Tema</Th>
-                    <Th align="right">Cantidad</Th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tabla4.filas.map((f) => (
-                    <tr key={f.tema} className="border-t border-slate-800">
-                      <Td>{f.tema}</Td>
-                      <Td align="right">{f.cantidad}</Td>
-                    </tr>
-                  ))}
-                  <FilaTotal etiqueta="Total" valores={[tabla4.total]} />
-                </tbody>
-              </TablaResumen>
-
-              <div className="rounded-lg border border-slate-800 bg-[#12161f] p-4">
-                <div className="space-y-1.5">
-                  {tabla4.filas.map((f) => (
-                    <div key={f.tema} className="flex items-center gap-2 text-xs">
-                      <span
-                        className="w-36 shrink-0 truncate text-slate-400"
-                        title={f.tema}
-                      >
-                        {f.tema}
-                      </span>
-                      <div className="h-4 flex-1 rounded bg-slate-800">
-                        <div
-                          className="h-4 rounded bg-blue-600"
-                          style={{
-                            width: maxTema ? `${(f.cantidad / maxTema) * 100}%` : "0%",
-                          }}
-                        />
-                      </div>
-                      <span className="w-8 shrink-0 text-right text-slate-300">
-                        {f.cantidad}
-                      </span>
+            <div className="rounded-lg border border-slate-800 bg-[#12161f] p-4">
+              <div className="space-y-1.5">
+                {tabla4.filas.map((f) => (
+                  <div key={f.tema} className="flex items-center gap-2 text-xs">
+                    <span className="w-36 shrink-0 truncate text-slate-400" title={f.tema}>
+                      {f.tema}
+                    </span>
+                    <div className="h-4 flex-1 rounded bg-slate-800">
+                      <div
+                        className="h-4 rounded bg-blue-600"
+                        style={{
+                          width: maxTema ? `${(f.cantidad / maxTema) * 100}%` : "0%",
+                        }}
+                      />
                     </div>
-                  ))}
-                </div>
+                    <span className="w-8 shrink-0 text-right text-slate-300">
+                      {f.cantidad}
+                    </span>
+                  </div>
+                ))}
+                {tabla4.filas.length === 0 && (
+                  <p className="text-sm text-slate-500">Sin datos para este período.</p>
+                )}
               </div>
             </div>
           </div>
@@ -510,9 +432,9 @@ function TarjetaContador({
   color?: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-800 bg-[#12161f] px-4 py-3">
-      <p className="text-xs text-slate-500">{etiqueta}</p>
-      <p className={`text-2xl font-semibold ${color}`}>{valor}</p>
+    <div className="rounded-lg border border-slate-800 bg-[#12161f] px-6 py-5">
+      <p className="text-sm text-slate-500">{etiqueta}</p>
+      <p className={`text-5xl font-semibold ${color}`}>{valor}</p>
     </div>
   );
 }
