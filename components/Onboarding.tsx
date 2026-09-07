@@ -114,10 +114,14 @@ export default function Onboarding() {
       <button
         type="button"
         onClick={() => setFase("bienvenida")}
-        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-950/40 hover:bg-blue-500"
+        className="group fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-blue-600 px-2.5 text-white shadow-lg shadow-blue-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-blue-500 hover:px-4"
       >
-        <IconoBot />
-        ¿Cómo funciona esto?
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center">
+          <IconoBot />
+        </span>
+        <span className="ml-0 max-w-0 overflow-hidden whitespace-nowrap text-sm font-medium opacity-0 transition-all duration-300 ease-out group-hover:ml-2 group-hover:max-w-xs group-hover:opacity-100">
+          ¿Cómo funciona esto?
+        </span>
       </button>
 
       {fase !== "cerrado" && (
