@@ -143,8 +143,11 @@ export default function PanelSolicitudes() {
     });
   }
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    // Igual que en /revision: el refresco automático no debe mostrar el
+    // spinner ni desmontar la tabla — eso era lo que hacía "parpadear" la
+    // pantalla cada 30s. Solo la carga inicial usa el estado de loading.
+    if (!silent) setLoading(true);
     const [{ data, error }, correoRes, eventosRes] = await Promise.all([
       supabase.from("pedidos_solicitudes").select("*").order("fecha", { ascending: false }),
       supabase
@@ -185,7 +188,7 @@ export default function PanelSolicitudes() {
   // editando: el formulario de edición guarda su propio estado local al
   // abrirse y no se resetea con cada refresco de fondo.
   useEffect(() => {
-    const id = setInterval(load, 30_000);
+    const id = setInterval(() => load(true), 30_000);
     return () => clearInterval(id);
   }, [load]);
 
