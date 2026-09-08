@@ -282,7 +282,7 @@ export default function PanelResumen() {
     );
 
     const hoja4 = [
-      ["Totales por tema — histórico completo (desde el inicio)"],
+      ["Totales por tema — histórico completo (desde 2019)"],
       ["Tema", "Cantidad"],
       ...totalesTemaHistorico.filas.map((f) => [f.tema, f.cantidad]),
       ["Total", totalesTemaHistorico.total],
