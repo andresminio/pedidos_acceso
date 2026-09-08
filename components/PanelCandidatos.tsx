@@ -108,8 +108,11 @@ export default function PanelCandidatos() {
     []
   );
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    // El refresco automático (cada 30s) no debe mostrar "Cargando…" ni
+    // desmontar la lista: eso es lo que hacía que la pantalla "saltara" y
+    // reacomodara todo cada tanto. Solo la carga inicial usa el spinner.
+    if (!silent) setLoading(true);
     // Sin filtrar por es_pedido_acceso: "pendiente" incluye tanto
     // candidatos a pedido nuevo como respuestas para vincular (se separan
     // más abajo con candidatosPedido/candidatosRespuesta).
@@ -151,7 +154,7 @@ export default function PanelCandidatos() {
   // (Programador de tareas), así que sin esto la página se queda con lo
   // que había al abrirla hasta que alguien la recarga a mano.
   useEffect(() => {
-    const id = setInterval(load, 30_000);
+    const id = setInterval(() => load(true), 30_000);
     return () => clearInterval(id);
   }, [load]);
 
