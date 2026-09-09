@@ -77,6 +77,7 @@ class MailMessage:
     uid: str
     fecha: datetime
     remitente: str
+    destinatario: str
     asunto: str
     cuerpo: str
     cuerpo_html: str | None
@@ -217,6 +218,7 @@ def fetch_new_messages(
                     uid=uid,
                     fecha=fecha,
                     remitente=_decode(msg.get("From")),
+                    destinatario=_decode(msg.get("To")),
                     asunto=_decode(msg.get("Subject")),
                     cuerpo=body,
                     cuerpo_html=body_html,

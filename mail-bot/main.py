@@ -112,6 +112,7 @@ def main() -> int:
                 "email_uid": msg.uid,
                 "fecha_correo": msg.fecha.isoformat(),
                 "remitente": msg.remitente,
+                "destinatario": msg.destinatario,
                 "asunto": msg.asunto,
                 "cuerpo_resumen": msg.cuerpo[:2000],
                 "cuerpo_html": msg.cuerpo_html,
