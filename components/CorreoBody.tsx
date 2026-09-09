@@ -16,8 +16,6 @@ const TAGS_PERMITIDOS = [
 ];
 const ATRIBUTOS_PERMITIDOS = ["href", "target", "rel"];
 
-const ALTO_COLAPSADO = 128; // px — bastante para ver de qué se trata sin abrir
-
 function iniciales(remitente: string): string {
   const nombre = remitente.split("<")[0].trim() || remitente;
   const partes = nombre.split(/\s+/).filter(Boolean);
@@ -31,7 +29,7 @@ function iniciales(remitente: string): string {
 // el contenido. Si hay HTML original (cuerpo_html) lo renderiza saneado
 // con dompurify; si no (correos procesados antes de sumar esa columna, o
 // que nunca tuvieron parte HTML), cae al texto plano de siempre, pero sin
-// la itálica/celeste de antes. Colapsado por defecto — click para expandir.
+// la itálica/celeste de antes. Se muestra completo, sin colapsar.
 export default function CorreoBody({
   remitente,
   etiqueta = "Correo",
@@ -43,8 +41,6 @@ export default function CorreoBody({
   html?: string | null;
   texto?: string | null;
 }) {
-  const [expandido, setExpandido] = useState(false);
-
   // dompurify necesita el DOM del navegador (no corre en el render de
   // servidor de Next) — se sanea recién al montar, en el cliente. Hasta
   // entonces (y para los correos sin cuerpo_html) se muestra el texto
@@ -80,16 +76,7 @@ export default function CorreoBody({
       </span>
       <div className="min-w-0 flex-1">
         <p className="mb-1 text-xs text-slate-500">{etiqueta}</p>
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => setExpandido((v) => !v)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") setExpandido((v) => !v);
-          }}
-          className="relative cursor-pointer overflow-hidden rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200 transition-[max-height] duration-200"
-          style={{ maxHeight: expandido ? 3000 : ALTO_COLAPSADO }}
-        >
+        <div className="rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200">
           {htmlSaneado ? (
             <div
               className="correo-html"
@@ -98,17 +85,7 @@ export default function CorreoBody({
           ) : (
             <p className="whitespace-pre-line">{textoPlano}</p>
           )}
-          {!expandido && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-9 bg-gradient-to-t from-[#171c26] to-transparent" />
-          )}
         </div>
-        <button
-          type="button"
-          onClick={() => setExpandido((v) => !v)}
-          className="mt-1 text-xs font-medium text-blue-400 hover:text-blue-300"
-        >
-          {expandido ? "Ver menos" : "Ver correo completo"}
-        </button>
       </div>
     </div>
   );
