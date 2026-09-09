@@ -1236,7 +1236,7 @@ function PopupEventoPedido({
       onClick={onCerrar}
     >
       <div
-        className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-lg"
+        className="max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-start justify-between gap-2">
