@@ -139,6 +139,11 @@ export interface CandidatoCorreo {
   remitente: string;
   asunto: string | null;
   cuerpo_resumen: string | null;
+  // HTML original del correo (si el bot lo pudo capturar) — se sanea con
+  // dompurify antes de renderizarlo, ver components/CorreoBody.tsx. Los
+  // correos procesados antes de sumar esta columna quedan en null y se
+  // muestran con cuerpo_resumen (texto plano) como siempre.
+  cuerpo_html: string | null;
   es_pedido_acceso: boolean;
   es_respuesta_pedido: boolean;
   // Sugerencia de la IA sobre qué tipo de evento es este correo dentro del
@@ -182,6 +187,7 @@ export interface PedidoEvento {
   fecha: string; // date ISO (yyyy-mm-dd)
   etiqueta: string;
   cuerpo: string | null;
+  cuerpo_html: string | null;
   candidato_correo_id: string | null;
   creado_en: string;
 }

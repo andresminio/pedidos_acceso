@@ -10,12 +10,12 @@ import {
   cargarSubcategorias,
 } from "@/lib/categorias";
 import { anioCuatrimestreDeFecha, fechaCorta } from "@/lib/fechas";
-import { textoCompacto } from "@/lib/texto";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { PedidoEvento, Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
 import SyncStatus from "@/components/SyncStatus";
 import IconoIA from "@/components/IconoIA";
+import CorreoBody from "@/components/CorreoBody";
 
 const AGREGAR_CATEGORIA = "__agregar_categoria__";
 
@@ -532,6 +532,7 @@ function FilaSolicitudEdicion({
   // contexto). Se busca por candidatos_correo.pedido_id = este pedido.
   const [mailOrigen, setMailOrigen] = useState<{
     cuerpo_resumen: string | null;
+    cuerpo_html: string | null;
     asunto: string | null;
     remitente: string;
   } | null>(null);
@@ -559,7 +560,7 @@ function FilaSolicitudEdicion({
     // con más de una fila).
     supabase
       .from("candidatos_correo")
-      .select("cuerpo_resumen, asunto, remitente")
+      .select("cuerpo_resumen, cuerpo_html, asunto, remitente")
       .eq("pedido_id", row.id)
       .eq("es_respuesta_pedido", false)
       .maybeSingle()
@@ -1197,6 +1198,7 @@ function PopupEventoPedido({
   abierto: PedidoEvento | "recepcion";
   mailOrigen: {
     cuerpo_resumen: string | null;
+    cuerpo_html: string | null;
     asunto: string | null;
     remitente: string;
   } | null;
@@ -1318,11 +1320,19 @@ function PopupEventoPedido({
           </div>
         ) : (
           <>
-            <blockquote className="whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-3 text-sm italic leading-relaxed text-slate-400">
-              {abierto === "recepcion"
-                ? textoCompacto(mailOrigen?.cuerpo_resumen || row.solicitud)
-                : textoCompacto(abierto.cuerpo || "(sin texto)")}
-            </blockquote>
+            <CorreoBody
+              remitente={
+                abierto === "recepcion"
+                  ? mailOrigen?.remitente || row.nombre_solicitante
+                  : abierto.etiqueta
+              }
+              html={abierto === "recepcion" ? mailOrigen?.cuerpo_html : abierto.cuerpo_html}
+              texto={
+                abierto === "recepcion"
+                  ? mailOrigen?.cuerpo_resumen || row.solicitud
+                  : abierto.cuerpo
+              }
+            />
             {abierto !== "recepcion" && (
               <div className="mt-3 flex justify-end">
                 <button

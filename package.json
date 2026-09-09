@@ -15,7 +15,8 @@
     "@supabase/supabase-js": "^2.45.4",
     "googleapis": "^144.0.0",
     "web-push": "^3.6.7",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "dompurify": "^3.2.0"
   },
   "devDependencies": {
     "typescript": "^5.6.2",
@@ -23,6 +24,7 @@
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
     "@types/web-push": "^3.6.4",
+    "@types/dompurify": "^3.0.5",
     "tailwindcss": "^4.0.0",
     "@tailwindcss/postcss": "^4.0.0",
     "eslint": "^9.12.0",

@@ -63,4 +63,44 @@ body {
     margin-top: 0;
     padding-top: 0;
   }
+
+  /* Contenido HTML saneado de un correo (ver components/CorreoBody.tsx) —
+     se ignoran los estilos inline del mail (dompurify los saca), así que
+     acá se define cómo se ven sus etiquetas dentro del tema oscuro. */
+  .correo-html {
+    color: var(--foreground);
+    font-style: normal;
+  }
+
+  .correo-html p,
+  .correo-html div,
+  .correo-html table {
+    margin: 0 0 0.6em 0;
+  }
+
+  .correo-html p:last-child,
+  .correo-html div:last-child {
+    margin-bottom: 0;
+  }
+
+  .correo-html a {
+    color: #60a5fa;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .correo-html ul,
+  .correo-html ol {
+    margin: 0 0 0.6em 1.25em;
+  }
+
+  .correo-html blockquote {
+    border-left: 2px solid var(--border);
+    padding-left: 0.75em;
+    color: #94a3b8;
+  }
+
+  .correo-html img {
+    max-width: 100%;
+  }
 }

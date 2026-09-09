@@ -12,6 +12,7 @@ import { SUBESTADOS_CERRADO } from "@/lib/types";
 import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
 import { textoCompacto } from "@/lib/texto";
 import { fechaCorta } from "@/lib/fechas";
+import CorreoBody from "@/components/CorreoBody";
 
 const AGREGAR_CATEGORIA = "__agregar_categoria__";
 // El botón "Revisar correo ahora" (BotonRevisarCorreo) quedó descartado:
@@ -26,31 +27,6 @@ function anioCuatrimestre(fechaISO: string): { anio: number; cuatrimestre: 1 | 2
   const mes = d.getMonth() + 1; // 1-12
   const cuatrimestre: 1 | 2 | 3 = mes <= 4 ? 1 : mes <= 8 ? 2 : 3;
   return { anio: d.getFullYear(), cuatrimestre };
-}
-
-const MAX_LINEAS_PREVIEW = 4;
-const MAX_CHARS_PREVIEW = 240;
-
-// Colapsa 2+ renglones en blanco seguidos a uno solo, para que la firma o
-// los espaciados de cada mail no inflen el alto del box sin aportar info.
-// Normalizamos \r\n / \r sueltos a \n primero: muchos mails vienen con
-// saltos de línea estilo Windows, y con \r de por medio el patrón de
-// líneas en blanco no matcheaba.
-function vistaPreview(texto: string): { texto: string; truncado: boolean } {
-  const compacto = textoCompacto(texto);
-  const lineas = compacto.split("\n");
-  let recorte = compacto;
-  let truncado = false;
-
-  if (lineas.length > MAX_LINEAS_PREVIEW) {
-    recorte = lineas.slice(0, MAX_LINEAS_PREVIEW).join("\n");
-    truncado = true;
-  }
-  if (recorte.length > MAX_CHARS_PREVIEW) {
-    recorte = recorte.slice(0, MAX_CHARS_PREVIEW);
-    truncado = true;
-  }
-  return { texto: truncado ? recorte + "…" : recorte, truncado };
 }
 
 // Cuando Gemini no pudo inferir nombre_solicitante (típicamente porque
@@ -294,6 +270,7 @@ export default function PanelCandidatos() {
       fecha: fechaCorreo,
       etiqueta,
       cuerpo: row.cuerpo_resumen,
+      cuerpo_html: row.cuerpo_html,
       candidato_correo_id: row.id,
     });
 
@@ -486,7 +463,6 @@ function FilaCandidato({
   const [nuevaCategoria, setNuevaCategoria] = useState(false);
   const [subcategoria, setSubcategoria] = useState(row.subcategoria_propuesta ?? "");
   const [subcategorias, setSubcategorias] = useState<string[]>([]);
-  const [verCompleto, setVerCompleto] = useState(false);
   const citaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -515,17 +491,6 @@ function FilaCandidato({
     const { error } = await agregarCategoria(limpio);
     if (error) console.error("No se pudo guardar la categoría nueva:", error);
   }
-
-  useEffect(() => {
-    if (!verCompleto) return;
-    function handleClickFuera(e: MouseEvent) {
-      if (citaRef.current && !citaRef.current.contains(e.target as Node)) {
-        setVerCompleto(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickFuera);
-    return () => document.removeEventListener("mousedown", handleClickFuera);
-  }, [verCompleto]);
 
   function submitCargar() {
     const { anio, cuatrimestre } = anioCuatrimestre(fecha);
@@ -671,26 +636,16 @@ function FilaCandidato({
         />
       </label>
 
-      {row.cuerpo_resumen &&
-        (() => {
-          const preview = vistaPreview(row.cuerpo_resumen);
-          return (
-            <div ref={citaRef} className="flex flex-col gap-1 text-xs text-slate-500">
-              Correo recibido
-              <blockquote
-                onClick={() => {
-                  if (window.getSelection()?.toString()) return;
-                  if (preview.truncado) setVerCompleto((v) => !v);
-                }}
-                className={`whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-sm italic text-slate-400 ${
-                  preview.truncado ? "cursor-pointer" : ""
-                }`}
-              >
-                {verCompleto ? textoCompacto(row.cuerpo_resumen) : preview.texto}
-              </blockquote>
-            </div>
-          );
-        })()}
+      {row.cuerpo_resumen && (
+        <div ref={citaRef}>
+          <CorreoBody
+            remitente={row.remitente}
+            etiqueta="Correo recibido"
+            html={row.cuerpo_html}
+            texto={row.cuerpo_resumen}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -734,7 +689,6 @@ function FilaRespuesta({
     subestado: string
   ) => void;
 }) {
-  const [expandido, setExpandido] = useState(false);
   const busqueda = row.nombre_solicitante ?? "";
   const [terminoBusqueda, setTerminoBusqueda] = useState(busqueda);
   const [buscando, setBuscando] = useState(false);
@@ -800,6 +754,19 @@ function FilaRespuesta({
     buscarPedidos(terminoBusqueda);
   }
 
+  // Si el pedido elegido ya está cerrado, "Cerrar pedido" es redundante
+  // (esto es una repregunta sobre algo ya resuelto) — no tiene sentido
+  // ofrecer la opción, así que se oculta y se limpia cualquier selección
+  // previa para no arrastrar un cierre que ya no aplica.
+  const pedidoYaCerrado = seleccionado?.estado === "Cerrado";
+  useEffect(() => {
+    if (pedidoYaCerrado) {
+      setCerrarPedido(false);
+      setSubestado("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pedidoYaCerrado]);
+
   const tieneCuerpo = !!row.cuerpo_resumen?.trim();
 
   function handleDescartarClick() {
@@ -836,20 +803,13 @@ function FilaRespuesta({
       )}
 
       {tieneCuerpo && (
-        <div className="mb-4 flex flex-col gap-1 text-xs text-slate-500">
-          Correo recibido
-          <blockquote
-            onClick={() => {
-              if (window.getSelection()?.toString()) return;
-              setExpandido((v) => !v);
-            }}
-            className="cursor-pointer whitespace-pre-line rounded-md border border-slate-800 bg-[#0e1219] px-3 py-3 text-sm italic leading-relaxed text-slate-400"
-          >
-            {expandido
-              ? textoCompacto(row.cuerpo_resumen!)
-              : textoCompacto(row.cuerpo_resumen!).slice(0, 240)}
-            {!expandido && row.cuerpo_resumen!.length > 240 ? "…" : ""}
-          </blockquote>
+        <div className="mb-4">
+          <CorreoBody
+            remitente={row.remitente}
+            etiqueta="Correo recibido"
+            html={row.cuerpo_html}
+            texto={row.cuerpo_resumen}
+          />
         </div>
       )}
 
@@ -916,14 +876,25 @@ function FilaRespuesta({
               placeholder="Ej: Respuesta de Nora"
             />
           </label>
-          <label className="flex items-center gap-1.5 text-xs text-slate-400">
-            <input
-              type="checkbox"
-              checked={cerrarPedido}
-              onChange={(e) => setCerrarPedido(e.target.checked)}
-            />
-            Cerrar pedido
-          </label>
+          {!pedidoYaCerrado && (
+            <button
+              type="button"
+              onClick={() => setCerrarPedido((v) => !v)}
+              aria-pressed={cerrarPedido}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                cerrarPedido
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+              }`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  cerrarPedido ? "bg-white" : "bg-slate-500"
+                }`}
+              />
+              Cerrar pedido
+            </button>
+          )}
           {cerrarPedido && (
             <label className="flex items-center gap-1.5 text-xs text-slate-500">
               Sub-estado

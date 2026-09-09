@@ -114,6 +114,7 @@ def main() -> int:
                 "remitente": msg.remitente,
                 "asunto": msg.asunto,
                 "cuerpo_resumen": msg.cuerpo[:2000],
+                "cuerpo_html": msg.cuerpo_html,
                 "es_pedido_acceso": clasif.es_pedido_acceso,
                 "es_respuesta_pedido": clasif.es_respuesta_pedido,
                 "etiqueta_evento": clasif.etiqueta_evento,

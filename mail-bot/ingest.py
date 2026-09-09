@@ -17,6 +17,7 @@ from email.header import decode_header
 from email.utils import parsedate_to_datetime
 
 MAX_BODY_CHARS = 4000  # tope para no mandar cuerpos gigantes a Gemini
+MAX_HTML_CHARS = 20_000  # el HTML es solo para mostrar bonito, no va a Gemini
 
 # Banner que el gateway de seguridad del organismo agrega a los mails
 # externos ("Seguridad Informática le informa que este mail... PHISHING...").
@@ -78,6 +79,7 @@ class MailMessage:
     remitente: str
     asunto: str
     cuerpo: str
+    cuerpo_html: str | None
     tiene_adjuntos: bool
 
 
@@ -94,7 +96,7 @@ def _decode(value: str | None) -> str:
     return "".join(out).strip()
 
 
-def _extract_body(msg: email.message.Message) -> tuple[str, bool]:
+def _extract_body(msg: email.message.Message) -> tuple[str, str | None, bool]:
     tiene_adjuntos = False
     body = ""
     body_html = ""  # fallback: si no hay text/plain, se convierte esto
@@ -137,7 +139,17 @@ def _extract_body(msg: email.message.Message) -> tuple[str, bool]:
         body = _html_a_texto(body_html)
 
     body = _sacar_banner_seguridad(body)
-    return body.strip()[:MAX_BODY_CHARS], tiene_adjuntos
+
+    # El HTML se guarda aparte (sin tocar sus etiquetas) para poder
+    # mostrar el correo formateado en el panel — el saneado real (sacar
+    # <script>/<style>, estilos inline, etc.) se hace del lado del
+    # frontend con dompurify antes de renderizarlo, acá solo se saca el
+    # banner de seguridad como mejor esfuerzo.
+    html_final: str | None = None
+    if body_html.strip():
+        html_final = _sacar_banner_seguridad(body_html).strip()[:MAX_HTML_CHARS] or None
+
+    return body.strip()[:MAX_BODY_CHARS], html_final, tiene_adjuntos
 
 
 def fetch_new_messages(
@@ -198,7 +210,7 @@ def fetch_new_messages(
             except Exception:
                 fecha = datetime.utcnow()
 
-            body, tiene_adjuntos = _extract_body(msg)
+            body, body_html, tiene_adjuntos = _extract_body(msg)
 
             messages.append(
                 MailMessage(
@@ -207,6 +219,7 @@ def fetch_new_messages(
                     remitente=_decode(msg.get("From")),
                     asunto=_decode(msg.get("Subject")),
                     cuerpo=body,
+                    cuerpo_html=body_html,
                     tiene_adjuntos=tiene_adjuntos,
                 )
             )
