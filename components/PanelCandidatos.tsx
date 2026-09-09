@@ -14,6 +14,13 @@ import { textoCompacto } from "@/lib/texto";
 import { fechaCorta } from "@/lib/fechas";
 import CorreoBody from "@/components/CorreoBody";
 
+// Guarda (o borra, si texto es null) la edición manual de "qué mostrar"
+// para un correo — ver botón "Editar mensaje" en CorreoBody. Nunca toca el
+// correo original (cuerpo_resumen/cuerpo_html), solo esta columna aparte.
+async function guardarCuerpoEditado(id: string, texto: string | null) {
+  await supabase.from("candidatos_correo").update({ cuerpo_editado: texto }).eq("id", id);
+}
+
 const AGREGAR_CATEGORIA = "__agregar_categoria__";
 // El botón "Revisar correo ahora" (BotonRevisarCorreo) quedó descartado:
 // se optó por que mail-bot/main.py corra solo, programado cada 2hs con
@@ -271,6 +278,9 @@ export default function PanelCandidatos() {
       etiqueta,
       cuerpo: row.cuerpo_resumen,
       cuerpo_html: row.cuerpo_html,
+      remitente: row.remitente,
+      destinatario: row.destinatario,
+      asunto: row.asunto,
       candidato_correo_id: row.id,
     });
 
@@ -640,9 +650,14 @@ function FilaCandidato({
         <div ref={citaRef}>
           <CorreoBody
             remitente={row.remitente}
+            destinatario={row.destinatario}
+            fecha={fechaCortaHora(row.fecha_correo)}
+            asunto={row.asunto}
             etiqueta="Correo recibido"
             html={row.cuerpo_html}
             texto={row.cuerpo_resumen}
+            cuerpoEditado={row.cuerpo_editado}
+            onGuardarEdicion={(texto) => guardarCuerpoEditado(row.id, texto)}
           />
         </div>
       )}
@@ -806,9 +821,14 @@ function FilaRespuesta({
         <div className="mb-4">
           <CorreoBody
             remitente={row.remitente}
+            destinatario={row.destinatario}
+            fecha={fechaCortaHora(row.fecha_correo)}
+            asunto={row.asunto}
             etiqueta="Correo recibido"
             html={row.cuerpo_html}
             texto={row.cuerpo_resumen}
+            cuerpoEditado={row.cuerpo_editado}
+            onGuardarEdicion={(texto) => guardarCuerpoEditado(row.id, texto)}
           />
         </div>
       )}

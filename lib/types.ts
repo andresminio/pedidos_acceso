@@ -137,6 +137,9 @@ export interface CandidatoCorreo {
   email_uid: string;
   fecha_correo: string; // timestamptz ISO
   remitente: string;
+  // Destinatario ("To" del correo) — solo disponible para correos leídos
+  // después de sumar esta columna; antes queda en null.
+  destinatario: string | null;
   asunto: string | null;
   cuerpo_resumen: string | null;
   // HTML original del correo (si el bot lo pudo capturar) — se sanea con
@@ -144,6 +147,10 @@ export interface CandidatoCorreo {
   // correos procesados antes de sumar esta columna quedan en null y se
   // muestran con cuerpo_resumen (texto plano) como siempre.
   cuerpo_html: string | null;
+  // Versión editada a mano de qué mostrar como cuerpo (ver "Editar
+  // mensaje" en CorreoBody) — cuando está presente, pisa el corte
+  // automático de la cadena reenviada. El correo original nunca se toca.
+  cuerpo_editado: string | null;
   es_pedido_acceso: boolean;
   es_respuesta_pedido: boolean;
   // Sugerencia de la IA sobre qué tipo de evento es este correo dentro del
@@ -188,6 +195,17 @@ export interface PedidoEvento {
   etiqueta: string;
   cuerpo: string | null;
   cuerpo_html: string | null;
+  // Versión editada a mano del cuerpo a mostrar — ver cuerpo_editado en
+  // CandidatoCorreo, mismo criterio.
+  cuerpo_editado: string | null;
+  // Copiados del correo original al vincular (candidatos_correo) para que
+  // la línea de tiempo pueda mostrar De/Para/Asunto sin tener que ir a
+  // buscar esa fila (que además puede no seguir apuntando a este evento
+  // si el correo se descarta/reasigna después). Quedan en null para
+  // eventos que no vienen de un correo (ej. el borrador de IA).
+  remitente: string | null;
+  destinatario: string | null;
+  asunto: string | null;
   candidato_correo_id: string | null;
   creado_en: string;
 }

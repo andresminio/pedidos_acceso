@@ -531,10 +531,14 @@ function FilaSolicitudEdicion({
   // viene de un correo importado (ahí sí tenemos el mail original como
   // contexto). Se busca por candidatos_correo.pedido_id = este pedido.
   const [mailOrigen, setMailOrigen] = useState<{
+    id: string;
     cuerpo_resumen: string | null;
     cuerpo_html: string | null;
+    cuerpo_editado: string | null;
     asunto: string | null;
     remitente: string;
+    destinatario: string | null;
+    fecha_correo: string;
   } | null>(null);
   const [generandoRespuesta, setGenerandoRespuesta] = useState(false);
   const [errorRespuestaIA, setErrorRespuestaIA] = useState<string | null>(null);
@@ -560,7 +564,7 @@ function FilaSolicitudEdicion({
     // con más de una fila).
     supabase
       .from("candidatos_correo")
-      .select("cuerpo_resumen, cuerpo_html, asunto, remitente")
+      .select("id, cuerpo_resumen, cuerpo_html, cuerpo_editado, asunto, remitente, destinatario, fecha_correo")
       .eq("pedido_id", row.id)
       .eq("es_respuesta_pedido", false)
       .maybeSingle()
@@ -758,6 +762,46 @@ function FilaSolicitudEdicion({
     setAbierto((prev) =>
       prev && prev !== "recepcion" && prev.id === evento.id
         ? { ...prev, etiqueta: limpia }
+        : prev
+    );
+  }
+
+  // Guarda (o borra, si texto es null) la versión editada a mano de "qué
+  // mostrar" para el correo abierto en el popup — ver botón "Editar
+  // mensaje" en CorreoBody. Nunca toca el correo original; "recepcion" es
+  // el correo en candidatos_correo (mailOrigen), cualquier otro caso es un
+  // punto de pedido_eventos.
+  async function handleGuardarCuerpoEditado(
+    destino: PedidoEvento | "recepcion",
+    texto: string | null
+  ) {
+    if (destino === "recepcion") {
+      if (!mailOrigen) return;
+      const { error } = await supabase
+        .from("candidatos_correo")
+        .update({ cuerpo_editado: texto })
+        .eq("id", mailOrigen.id);
+      if (error) {
+        console.error("No se pudo guardar la edición del correo:", error.message);
+        return;
+      }
+      setMailOrigen((prev) => (prev ? { ...prev, cuerpo_editado: texto } : prev));
+      return;
+    }
+    const { error } = await supabase
+      .from("pedido_eventos")
+      .update({ cuerpo_editado: texto })
+      .eq("id", destino.id);
+    if (error) {
+      console.error("No se pudo guardar la edición del evento:", error.message);
+      return;
+    }
+    setEventos((prev) =>
+      prev.map((e) => (e.id === destino.id ? { ...e, cuerpo_editado: texto } : e))
+    );
+    setAbierto((prev) =>
+      prev && prev !== "recepcion" && prev.id === destino.id
+        ? { ...prev, cuerpo_editado: texto }
         : prev
     );
   }
@@ -996,6 +1040,7 @@ function FilaSolicitudEdicion({
             onGuardarBorrador={handleGuardarBorrador}
             onSacarBorrador={handleSacarBorrador}
             onRenombrar={handleRenombrarEvento}
+            onGuardarEdicionCuerpo={(texto) => handleGuardarCuerpoEditado(abierto, texto)}
             onDesvincular={(evento) => {
               handleDesvincularEvento(evento);
               setAbierto(null);
@@ -1191,6 +1236,7 @@ function PopupEventoPedido({
   onGuardarBorrador,
   onSacarBorrador,
   onRenombrar,
+  onGuardarEdicionCuerpo,
   onDesvincular,
   onCerrar,
 }: {
@@ -1199,8 +1245,11 @@ function PopupEventoPedido({
   mailOrigen: {
     cuerpo_resumen: string | null;
     cuerpo_html: string | null;
+    cuerpo_editado: string | null;
     asunto: string | null;
     remitente: string;
+    destinatario: string | null;
+    fecha_correo: string;
   } | null;
   respuestaIA: string;
   onRespuestaIAChange: (texto: string) => void;
@@ -1212,6 +1261,7 @@ function PopupEventoPedido({
   onGuardarBorrador: () => void;
   onSacarBorrador: () => void;
   onRenombrar: (evento: PedidoEvento, nuevaEtiqueta: string) => void;
+  onGuardarEdicionCuerpo: (texto: string | null) => void | Promise<void>;
   onDesvincular: (evento: PedidoEvento) => void;
   onCerrar: () => void;
 }) {
@@ -1324,14 +1374,27 @@ function PopupEventoPedido({
               remitente={
                 abierto === "recepcion"
                   ? mailOrigen?.remitente || row.nombre_solicitante
-                  : abierto.etiqueta
+                  : abierto.remitente || abierto.etiqueta
               }
+              destinatario={
+                abierto === "recepcion" ? mailOrigen?.destinatario : abierto.destinatario
+              }
+              fecha={
+                abierto === "recepcion"
+                  ? mailOrigen && fechaCorta(mailOrigen.fecha_correo.slice(0, 10))
+                  : fechaCorta(abierto.fecha)
+              }
+              asunto={abierto === "recepcion" ? mailOrigen?.asunto : abierto.asunto}
               html={abierto === "recepcion" ? mailOrigen?.cuerpo_html : abierto.cuerpo_html}
               texto={
                 abierto === "recepcion"
                   ? mailOrigen?.cuerpo_resumen || row.solicitud
                   : abierto.cuerpo
               }
+              cuerpoEditado={
+                abierto === "recepcion" ? mailOrigen?.cuerpo_editado : abierto.cuerpo_editado
+              }
+              onGuardarEdicion={onGuardarEdicionCuerpo}
             />
             {abierto !== "recepcion" && (
               <div className="mt-3 flex justify-end">
