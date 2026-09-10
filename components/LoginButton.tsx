@@ -3,6 +3,16 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 
+function IconoOjo({ tachado }: { tachado: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-5 w-5">
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="2.6" />
+      {tachado && <path d="M4 20 20 4" strokeLinecap="round" />}
+    </svg>
+  );
+}
+
 function IconoCandado({ abierto }: { abierto: boolean }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-6 w-6">
@@ -24,6 +34,7 @@ export default function LoginButton() {
   const [abierto, setAbierto] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mostrarPassword, setMostrarPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -99,13 +110,23 @@ export default function LoginButton() {
             </label>
             <label className="flex flex-col gap-1 text-xs text-slate-400">
               Contraseña
-              <input
-                type="password"
-                required
-                className="input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  type={mostrarPassword ? "text" : "password"}
+                  required
+                  className="input pr-9"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarPassword((v) => !v)}
+                  aria-label={mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                >
+                  <IconoOjo tachado={mostrarPassword} />
+                </button>
+              </div>
             </label>
             {error && <p className="text-xs text-red-400">{error}</p>}
             <div className="mt-1 flex justify-end gap-2">

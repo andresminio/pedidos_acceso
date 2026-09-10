@@ -1360,27 +1360,35 @@ function PopupEventoPedido({
         </div>
 
         {esBorrador ? (
-          puedeEditar ? (
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span title={puedeEditar ? undefined : "Ingresá para poder usar esta opción"}>
                 <button
                   type="button"
-                  disabled={generandoRespuesta}
+                  disabled={generandoRespuesta || !puedeEditar}
                   onClick={onGenerarRespuesta}
                   className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
                 >
                   <IconoIA />
                   {generandoRespuesta ? "Generando…" : "Volver a generar con IA"}
                 </button>
-                {errorRespuestaIA && (
-                  <span className="text-xs text-red-400">{errorRespuestaIA}</span>
-                )}
-              </div>
+              </span>
+              {errorRespuestaIA && (
+                <span className="text-xs text-red-400">{errorRespuestaIA}</span>
+              )}
+            </div>
+            {puedeEditar ? (
               <textarea
                 className="input min-h-48"
                 value={respuestaIA}
                 onChange={(e) => onRespuestaIAChange(e.target.value)}
               />
+            ) : (
+              <p className="whitespace-pre-line rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200">
+                {respuestaIA || "(sin texto)"}
+              </p>
+            )}
+            {puedeEditar && (
               <div className="flex items-center justify-between gap-2">
                 <button
                   type="button"
@@ -1399,12 +1407,8 @@ function PopupEventoPedido({
                   {guardandoBorrador ? "Guardando…" : "Guardar"}
                 </button>
               </div>
-            </div>
-          ) : (
-            <p className="whitespace-pre-line rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200">
-              {respuestaIA || "(sin texto)"}
-            </p>
-          )
+            )}
+          </div>
         ) : (
           <>
             <CorreoBody
@@ -1437,20 +1441,21 @@ function PopupEventoPedido({
               <div className="mt-4 flex flex-col gap-3 border-t border-slate-800 pt-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-400">Modelo de respuesta</span>
-                  <button
-                    type="button"
-                    disabled={generandoRespuesta || !puedeEditar}
-                    onClick={onGenerarRespuesta}
-                    title={puedeEditar ? undefined : "Ingresá para poder generar con IA"}
-                    className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-                  >
-                    <IconoIA />
-                    {generandoRespuesta
-                      ? "Generando…"
-                      : respuestaIA
-                        ? "Volver a generar con IA"
-                        : "Generar respuesta con IA"}
-                  </button>
+                  <span title={puedeEditar ? undefined : "Ingresá para poder usar esta opción"}>
+                    <button
+                      type="button"
+                      disabled={generandoRespuesta || !puedeEditar}
+                      onClick={onGenerarRespuesta}
+                      className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      <IconoIA />
+                      {generandoRespuesta
+                        ? "Generando…"
+                        : respuestaIA
+                          ? "Volver a generar con IA"
+                          : "Generar respuesta con IA"}
+                    </button>
+                  </span>
                   {errorRespuestaIA && (
                     <span className="text-xs text-red-400">{errorRespuestaIA}</span>
                   )}
