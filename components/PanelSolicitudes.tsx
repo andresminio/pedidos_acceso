@@ -1106,15 +1106,16 @@ function FilaSolicitudEdicion({
             que se guarda un proyecto — una vez que existe el punto
             "Proyecto de respuesta de UEEDA" en la línea de tiempo, se edita
             desde ahí (popup), no acá abajo. */}
-        {puedeEditar && mailOrigen && eventos.length === 0 && (
+        {mailOrigen && eventos.length === 0 && (
           <div className="mt-3 flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400">Modelo de respuesta</span>
                 <button
                   type="button"
-                  disabled={generandoRespuesta}
+                  disabled={generandoRespuesta || !puedeEditar}
                   onClick={handleGenerarRespuesta}
+                  title={puedeEditar ? undefined : "Ingresá para poder generar con IA"}
                   className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
                 >
                   <IconoIA />
@@ -1125,11 +1126,17 @@ function FilaSolicitudEdicion({
                 )}
               </div>
               {respuestaIA && (
-                <textarea
-                  className="input min-h-48"
-                  value={respuestaIA}
-                  onChange={(e) => setRespuestaIA(e.target.value)}
-                />
+                puedeEditar ? (
+                  <textarea
+                    className="input min-h-48"
+                    value={respuestaIA}
+                    onChange={(e) => setRespuestaIA(e.target.value)}
+                  />
+                ) : (
+                  <p className="whitespace-pre-line rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200">
+                    {respuestaIA}
+                  </p>
+                )
               )}
             </div>
           </div>

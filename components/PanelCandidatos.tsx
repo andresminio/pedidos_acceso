@@ -868,134 +868,136 @@ function FilaRespuesta({
         </div>
       )}
 
-      <p className="text-xs text-slate-500">
-        {buscando ? "Buscando pedido…" : "Pedidos candidatos a vincular"}
-      </p>
+      {puedeEditar && (
+        <>
+          <p className="text-xs text-slate-500">
+            {buscando ? "Buscando pedido…" : "Pedidos candidatos a vincular"}
+          </p>
 
-      <div className="mt-2 flex items-center gap-2">
-        <input
-          className="input w-64"
-          value={terminoBusqueda}
-          onChange={(e) => setTerminoBusqueda(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleBuscarManual();
-          }}
-          placeholder="Buscar por apellido del solicitante…"
-        />
-        <button
-          type="button"
-          onClick={handleBuscarManual}
-          disabled={buscando || !terminoBusqueda.trim()}
-          className="rounded-md border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-        >
-          Buscar
-        </button>
-      </div>
-
-      {buscado && !buscando && resultados.length === 0 && (
-        <p className="mt-2 text-xs text-slate-500">
-          No se encontraron pedidos de {row.nombre_solicitante ?? "este solicitante"}.
-        </p>
-      )}
-
-      {resultados.length > 0 && (
-        <div className="mt-2 flex flex-col gap-1">
-          {resultados.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setSeleccionado(p)}
-              className={`rounded-md border px-3 py-2 text-left text-xs ${
-                seleccionado?.id === p.id
-                  ? "border-blue-600 bg-blue-950/30 text-white"
-                  : "border-slate-800 text-slate-300 hover:bg-slate-800"
-              }`}
-            >
-              <span className="font-medium">{p.nombre_solicitante}</span>
-              {" · "}
-              {fechaCorta(p.fecha)} · {p.estado}
-              <span className="block truncate text-slate-500">{p.solicitud}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {seleccionado && (
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-1.5 text-xs text-slate-500">
-            Etiqueta
+          <div className="mt-2 flex items-center gap-2">
             <input
-              className="input w-56"
-              value={etiqueta}
-              onChange={(e) => setEtiqueta(e.target.value)}
-              placeholder="Ej: Respuesta de Nora"
+              className="input w-64"
+              value={terminoBusqueda}
+              onChange={(e) => setTerminoBusqueda(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleBuscarManual();
+              }}
+              placeholder="Buscar por apellido del solicitante…"
             />
-          </label>
-          {!pedidoYaCerrado && (
             <button
               type="button"
-              onClick={() => setCerrarPedido((v) => !v)}
-              aria-pressed={cerrarPedido}
-              className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                cerrarPedido
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:bg-slate-700"
-              }`}
+              onClick={handleBuscarManual}
+              disabled={buscando || !terminoBusqueda.trim()}
+              className="rounded-md border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
             >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  cerrarPedido ? "bg-white" : "bg-slate-500"
-                }`}
-              />
-              Cerrar pedido
+              Buscar
             </button>
-          )}
-          {cerrarPedido && (
-            <label className="flex items-center gap-1.5 text-xs text-slate-500">
-              Sub-estado
-              <select
-                className={`input w-auto ${!subestado ? "border-red-600" : ""}`}
-                value={subestado}
-                onChange={(e) => setSubestado(e.target.value)}
-              >
-                <option value="">—</option>
-                {SUBESTADOS_CERRADO.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
-      )}
+          </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={busy || !puedeEditar || !seleccionado || (cerrarPedido && !subestado)}
-          onClick={handleVincularClick}
-          title={puedeEditar ? undefined : "Ingresá para poder vincular"}
-          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-        >
-          Vincular
-        </button>
-        <button
-          type="button"
-          disabled={busy || !puedeEditar}
-          onClick={handleDescartarClick}
-          title={puedeEditar ? undefined : "Ingresá para poder descartar"}
-          className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-        >
-          Descartar
-        </button>
-        {seleccionado && (
-          <span className="text-xs text-slate-500">
-            Se agrega a la línea de tiempo del pedido de {seleccionado.nombre_solicitante} (
-            {fechaCorta(seleccionado.fecha)}){cerrarPedido ? " y lo cierra." : "."}
-          </span>
-        )}
-      </div>
+          {buscado && !buscando && resultados.length === 0 && (
+            <p className="mt-2 text-xs text-slate-500">
+              No se encontraron pedidos de {row.nombre_solicitante ?? "este solicitante"}.
+            </p>
+          )}
+
+          {resultados.length > 0 && (
+            <div className="mt-2 flex flex-col gap-1">
+              {resultados.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setSeleccionado(p)}
+                  className={`rounded-md border px-3 py-2 text-left text-xs ${
+                    seleccionado?.id === p.id
+                      ? "border-blue-600 bg-blue-950/30 text-white"
+                      : "border-slate-800 text-slate-300 hover:bg-slate-800"
+                  }`}
+                >
+                  <span className="font-medium">{p.nombre_solicitante}</span>
+                  {" · "}
+                  {fechaCorta(p.fecha)} · {p.estado}
+                  <span className="block truncate text-slate-500">{p.solicitud}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {seleccionado && (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-slate-500">
+                Etiqueta
+                <input
+                  className="input w-56"
+                  value={etiqueta}
+                  onChange={(e) => setEtiqueta(e.target.value)}
+                  placeholder="Ej: Respuesta de Nora"
+                />
+              </label>
+              {!pedidoYaCerrado && (
+                <button
+                  type="button"
+                  onClick={() => setCerrarPedido((v) => !v)}
+                  aria-pressed={cerrarPedido}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    cerrarPedido
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      cerrarPedido ? "bg-white" : "bg-slate-500"
+                    }`}
+                  />
+                  Cerrar pedido
+                </button>
+              )}
+              {cerrarPedido && (
+                <label className="flex items-center gap-1.5 text-xs text-slate-500">
+                  Sub-estado
+                  <select
+                    className={`input w-auto ${!subestado ? "border-red-600" : ""}`}
+                    value={subestado}
+                    onChange={(e) => setSubestado(e.target.value)}
+                  >
+                    <option value="">—</option>
+                    {SUBESTADOS_CERRADO.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+          )}
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={busy || !seleccionado || (cerrarPedido && !subestado)}
+              onClick={handleVincularClick}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            >
+              Vincular
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={handleDescartarClick}
+              className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Descartar
+            </button>
+            {seleccionado && (
+              <span className="text-xs text-slate-500">
+                Se agrega a la línea de tiempo del pedido de {seleccionado.nombre_solicitante} (
+                {fechaCorta(seleccionado.fecha)}){cerrarPedido ? " y lo cierra." : "."}
+              </span>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -1049,34 +1051,28 @@ function FilaDescartado({
             <div className="mt-1 italic text-slate-600">IA: {row.confianza_ia}</div>
           )}
         </div>
-        <div className="flex shrink-0 gap-2">
-          <button
-            type="button"
-            disabled={busy || !puedeEditar}
-            onClick={onPasarARevision}
-            title={
-              puedeEditar
-                ? "Tratarlo como un pedido de acceso nuevo, todavía no registrado"
-                : "Ingresá para poder hacer esto"
-            }
-            className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-          >
-            Pasar a revisión
-          </button>
-          <button
-            type="button"
-            disabled={busy || !puedeEditar}
-            onClick={onPasarAVincular}
-            title={
-              puedeEditar
-                ? 'Es una respuesta o repregunta sobre un pedido ya cargado — pasarlo a "Respuestas para vincular"'
-                : "Ingresá para poder hacer esto"
-            }
-            className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-          >
-            Pasar a vincular
-          </button>
-        </div>
+        {puedeEditar && (
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onPasarARevision}
+              title="Tratarlo como un pedido de acceso nuevo, todavía no registrado"
+              className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Pasar a revisión
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onPasarAVincular}
+              title='Es una respuesta o repregunta sobre un pedido ya cargado — pasarlo a "Respuestas para vincular"'
+              className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Pasar a vincular
+            </button>
+          </div>
+        )}
       </div>
       {expandido && tieneCuerpo && (
         <>

@@ -84,10 +84,10 @@ export default function LoginButton() {
           >
             <h2 className="text-lg font-semibold text-white">Ingresar</h2>
             <p className="text-sm text-slate-400">
-              Con el usuario de UEEDA para poder cargar y editar pedidos.
+              Ingresá con el correo institucional de Datos Abiertos para poder editar.
             </p>
             <label className="flex flex-col gap-1 text-xs text-slate-400">
-              Email
+              Webmail PJN
               <input
                 type="email"
                 required
