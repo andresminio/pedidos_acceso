@@ -393,7 +393,7 @@ export default function PanelSolicitudes() {
                 colsVisibles={colsVisibles}
                 editando={row.id === editandoId}
                 puedeEditar={isLoggedIn}
-                onAbrir={() => isLoggedIn && setEditandoId(row.id)}
+                onAbrir={() => setEditandoId(row.id)}
                 onCerrarEdicion={() => setEditandoId(null)}
                 tieneCorreo={pedidosConCorreo.has(row.id) && !pedidosConRespuesta.has(row.id)}
                 tieneRespuesta={pedidosConRespuesta.has(row.id)}
@@ -478,10 +478,8 @@ function FilaSolicitud({
       {!editando && (
         <tr
           onDoubleClick={onAbrir}
-          title={puedeEditar ? "Doble click para editar" : "Ingresá para poder editar"}
-          className={`align-top text-slate-300 hover:bg-white/[0.02] ${
-            puedeEditar ? "cursor-pointer" : ""
-          }`}
+          title={puedeEditar ? "Doble click para editar" : "Doble click para ver el detalle"}
+          className="cursor-pointer align-top text-slate-300 hover:bg-white/[0.02]"
         >
           {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
             <td key={c.key} className="px-3 py-2">
@@ -890,6 +888,7 @@ function FilaSolicitudEdicion({
             <input
               className="input"
               value={nombreSolicitante}
+              disabled={!puedeEditar}
               onChange={(e) => setNombreSolicitante(e.target.value)}
             />
           </label>
@@ -912,6 +911,7 @@ function FilaSolicitudEdicion({
               <select
                 className="input"
                 value={categoria}
+                disabled={!puedeEditar}
                 onChange={(e) => handleCategoriaChange(e.target.value)}
               >
                 <option value="">—</option>
@@ -946,6 +946,7 @@ function FilaSolicitudEdicion({
               list={`subcategoria-sugerencias-edicion-${row.id}`}
               className="input"
               value={subcategoria}
+              disabled={!puedeEditar}
               onChange={(e) => setSubcategoria(e.target.value)}
             />
             <datalist id={`subcategoria-sugerencias-edicion-${row.id}`}>
@@ -960,6 +961,7 @@ function FilaSolicitudEdicion({
               type="date"
               className="input"
               value={fecha}
+              disabled={!puedeEditar}
               onChange={(e) => setFecha(e.target.value)}
             />
           </label>
@@ -970,6 +972,7 @@ function FilaSolicitudEdicion({
           <textarea
             className="input min-h-16"
             value={solicitud}
+            disabled={!puedeEditar}
             onChange={(e) => setSolicitud(e.target.value)}
           />
         </label>
@@ -980,6 +983,7 @@ function FilaSolicitudEdicion({
             <select
               className="input"
               value={estado}
+              disabled={!puedeEditar}
               onChange={(e) => setEstado(e.target.value)}
             >
               {ESTADOS.map((e) => (
@@ -996,7 +1000,7 @@ function FilaSolicitudEdicion({
                 errorSubestado ? "border-red-600" : ""
               }`}
               value={subestado}
-              disabled={estado !== "Cerrado"}
+              disabled={!puedeEditar || estado !== "Cerrado"}
               onChange={(e) => setSubestado(e.target.value)}
             >
               <option value="">—</option>
@@ -1016,6 +1020,7 @@ function FilaSolicitudEdicion({
               type="date"
               className={`input ${errorFechaRespuesta ? "border-red-600" : ""}`}
               value={fechaRespuesta}
+              disabled={!puedeEditar}
               onChange={(e) => setFechaRespuesta(e.target.value)}
             />
             {errorFechaRespuesta && (
@@ -1027,6 +1032,7 @@ function FilaSolicitudEdicion({
             <input
               className="input"
               value={observaciones}
+              disabled={!puedeEditar}
               onChange={(e) => setObservaciones(e.target.value)}
             />
           </label>
@@ -1073,8 +1079,9 @@ function FilaSolicitudEdicion({
                 <span className="text-xs text-slate-400">Modelo de respuesta</span>
                 <button
                   type="button"
-                  disabled={generandoRespuesta}
+                  disabled={!puedeEditar || generandoRespuesta}
                   onClick={handleGenerarRespuesta}
+                  title={puedeEditar ? undefined : "Ingresá para poder hacer esto"}
                   className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
                 >
                   <IconoIA />
@@ -1088,6 +1095,7 @@ function FilaSolicitudEdicion({
                 <textarea
                   className="input min-h-48"
                   value={respuestaIA}
+                  disabled={!puedeEditar}
                   onChange={(e) => setRespuestaIA(e.target.value)}
                 />
               )}
