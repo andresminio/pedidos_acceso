@@ -229,7 +229,7 @@ const PASOS_VISUALIZACION: Paso[] = [
   {
     titulo: "¿Sos del equipo de UEEDA?",
     texto:
-      'Cargar pedidos nuevos, vincular respuestas o editar cualquier dato es solo para el equipo. Si te corresponde, iniciá sesión con el botón "Ingresá para editar" (el candado, abajo a la derecha).',
+      "Iniciá sesión con el botón del candado (abajo a la derecha) para poder cargar pedidos nuevos, generar respuestas con IA, vincular respuestas o editar cualquier dato.",
     Icono: IconoCandado,
   },
 ];
