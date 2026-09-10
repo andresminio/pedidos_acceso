@@ -535,26 +535,26 @@ function FilaCandidato({
         <p className="text-xs text-slate-500">
           correo · {fechaCortaHora(row.fecha_correo)} · de {row.remitente}
         </p>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            disabled={busy || !puedeEditar || !nombre || !solicitud || !categoria}
-            onClick={submitCargar}
-            title={puedeEditar ? undefined : "Ingresá para poder cargar pedidos"}
-            className="whitespace-nowrap rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-          >
-            Cargar como pedido
-          </button>
-          <button
-            type="button"
-            disabled={busy || !puedeEditar}
-            onClick={onDescartar}
-            title={puedeEditar ? undefined : "Ingresá para poder descartar"}
-            className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-          >
-            Descartar
-          </button>
-        </div>
+        {puedeEditar && (
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              disabled={busy || !nombre || !solicitud || !categoria}
+              onClick={submitCargar}
+              className="whitespace-nowrap rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            >
+              Cargar como pedido
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onDescartar}
+              className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+            >
+              Descartar
+            </button>
+          </div>
+        )}
       </div>
 
       <h3 className="mb-1 font-semibold text-white">{row.asunto}</h3>
@@ -566,15 +566,21 @@ function FilaCandidato({
       <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <label className="flex flex-col gap-1 text-xs text-slate-500">
           Solicitante
-          <input
-            className="input"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-          />
+          {puedeEditar ? (
+            <input
+              className="input"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+            />
+          ) : (
+            <p className="text-sm text-slate-200">{nombre || "—"}</p>
+          )}
         </label>
         <label className="flex flex-col gap-1 text-xs text-slate-500">
           Categoría
-          {nuevaCategoria ? (
+          {!puedeEditar ? (
+            <p className="text-sm text-slate-200">{categoria || "—"}</p>
+          ) : nuevaCategoria ? (
             <input
               autoFocus
               placeholder="Nombre de la categoría"
@@ -623,36 +629,50 @@ function FilaCandidato({
         </label>
         <label className="flex flex-col gap-1 text-xs text-slate-500">
           Subcategoría
-          <input
-            list={`subcategoria-sugerencias-${row.id}`}
-            className="input"
-            value={subcategoria}
-            onChange={(e) => setSubcategoria(e.target.value)}
-          />
-          <datalist id={`subcategoria-sugerencias-${row.id}`}>
-            {subcategorias.map((s) => (
-              <option key={s} value={s} />
-            ))}
-          </datalist>
+          {puedeEditar ? (
+            <>
+              <input
+                list={`subcategoria-sugerencias-${row.id}`}
+                className="input"
+                value={subcategoria}
+                onChange={(e) => setSubcategoria(e.target.value)}
+              />
+              <datalist id={`subcategoria-sugerencias-${row.id}`}>
+                {subcategorias.map((s) => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
+            </>
+          ) : (
+            <p className="text-sm text-slate-200">{subcategoria || "—"}</p>
+          )}
         </label>
         <label className="flex flex-col gap-1 text-xs text-slate-500">
           Fecha del mail
-          <input
-            type="date"
-            className="input"
-            value={fecha}
-            onChange={(e) => setFecha(e.target.value)}
-          />
+          {puedeEditar ? (
+            <input
+              type="date"
+              className="input"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+            />
+          ) : (
+            <p className="text-sm text-slate-200">{fechaCorta(fecha)}</p>
+          )}
         </label>
       </div>
 
       <label className="mb-3 flex flex-col gap-1 text-xs text-slate-500">
         Solicitud
-        <textarea
-          className="input min-h-16"
-          value={solicitud}
-          onChange={(e) => setSolicitud(e.target.value)}
-        />
+        {puedeEditar ? (
+          <textarea
+            className="input min-h-16"
+            value={solicitud}
+            onChange={(e) => setSolicitud(e.target.value)}
+          />
+        ) : (
+          <p className="whitespace-pre-line text-sm text-slate-200">{solicitud || "—"}</p>
+        )}
       </label>
 
       {row.cuerpo_resumen && (

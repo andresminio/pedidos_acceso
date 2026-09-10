@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ReactElement } from "react";
+import { useAuth } from "@/lib/auth";
 
 // Recorrido guiado (popup, tipo wizard) para compañeros que recién
 // arrancan a usar la app. No se abre solo — queda disponible como botón
@@ -104,7 +105,27 @@ function IconoListo() {
   );
 }
 
-const PASOS: Paso[] = [
+function IconoOjo() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="2.6" />
+    </svg>
+  );
+}
+
+function IconoCandado() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
+      <rect x="5" y="11" width="14" height="9" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Recorrido para quien YA inició sesión: todos los pasos, con las
+// acciones de carga/edición tal como funcionan.
+const PASOS_EDICION: Paso[] = [
   {
     titulo: "¿Qué es MaryBot?",
     texto:
@@ -144,17 +165,43 @@ const PASOS: Paso[] = [
   {
     titulo: "¡Listo!",
     texto:
-      'Eso es todo para arrancar. Si algo se descartó por error, desde "Ver descartados" se puede recuperar o pasar directo a "Respuestas para vincular".',
+      'Eso es todo para arrancar. Si algo se descartó por error, desde "Ver descartados" se puede recuperar o pasar directo a "Respuestas para vincular". Y si alguna vez ves todo en modo solo lectura, es porque se cerró la sesión — volvé a entrar con el candado de abajo a la derecha.',
     Icono: IconoListo,
   },
 ];
 
-type Fase = "cerrado" | "bienvenida" | number; // number = índice en PASOS
+// Recorrido para quien NO inició sesión: simplificado, sin los pasos de
+// carga/edición (que no puede hacer) — solo qué es MaryBot y qué puede
+// consultar.
+const PASOS_VISUALIZACION: Paso[] = [
+  {
+    titulo: "¿Qué es MaryBot?",
+    texto:
+      'MaryBot revisa el correo institucional cada cierto tiempo y clasifica automáticamente cada mail en tres categorías: un pedido de acceso nuevo, una respuesta/repregunta sobre un pedido que ya existe, o un mail no relacionado con pedidos de acceso. Nunca carga ni cierra nada por su cuenta — todo pasa por una persona antes de quedar registrado.',
+    Icono: IconoBot,
+  },
+  {
+    titulo: "Podés consultar todo",
+    texto:
+      'Sin necesidad de iniciar sesión podés ver todos los pedidos cargados, su categoría y estado, la línea de tiempo completa de cada uno (correos, respuestas, repreguntas) y la pestaña "Resumen" con estadísticas y un Excel descargable.',
+    Icono: IconoOjo,
+  },
+  {
+    titulo: "¿Sos del equipo de UEEDA?",
+    texto:
+      'Cargar pedidos nuevos, vincular respuestas o editar cualquier dato es solo para el equipo. Si te corresponde, iniciá sesión con el botón "Ingresá para editar" (el candado, abajo a la derecha).',
+    Icono: IconoCandado,
+  },
+];
+
+type Fase = "cerrado" | "bienvenida" | number; // number = índice en el array de pasos
 
 export default function Onboarding() {
   // Sin auto-apertura: el recorrido solo se abre cuando alguien lo pide
   // desde el botón flotante — nada de popups sorpresa al entrar.
   const [fase, setFase] = useState<Fase>("cerrado");
+  const { isLoggedIn } = useAuth();
+  const PASOS = isLoggedIn ? PASOS_EDICION : PASOS_VISUALIZACION;
 
   function cerrar() {
     setFase("cerrado");

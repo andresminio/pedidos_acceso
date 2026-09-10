@@ -885,16 +885,21 @@ function FilaSolicitudEdicion({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Solicitante
-            <input
-              className="input"
-              value={nombreSolicitante}
-              disabled={!puedeEditar}
-              onChange={(e) => setNombreSolicitante(e.target.value)}
-            />
+            {puedeEditar ? (
+              <input
+                className="input"
+                value={nombreSolicitante}
+                onChange={(e) => setNombreSolicitante(e.target.value)}
+              />
+            ) : (
+              <p className="text-sm text-slate-200">{nombreSolicitante || "—"}</p>
+            )}
           </label>
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Categoría
-            {nuevaCategoria ? (
+            {!puedeEditar ? (
+              <p className="text-sm text-slate-200">{categoria || "—"}</p>
+            ) : nuevaCategoria ? (
               <input
                 autoFocus
                 placeholder="Nombre de la categoría"
@@ -911,7 +916,6 @@ function FilaSolicitudEdicion({
               <select
                 className="input"
                 value={categoria}
-                disabled={!puedeEditar}
                 onChange={(e) => handleCategoriaChange(e.target.value)}
               >
                 <option value="">—</option>
@@ -942,99 +946,129 @@ function FilaSolicitudEdicion({
           </label>
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Subcategoría
-            <input
-              list={`subcategoria-sugerencias-edicion-${row.id}`}
-              className="input"
-              value={subcategoria}
-              disabled={!puedeEditar}
-              onChange={(e) => setSubcategoria(e.target.value)}
-            />
-            <datalist id={`subcategoria-sugerencias-edicion-${row.id}`}>
-              {subcategorias.map((s) => (
-                <option key={s} value={s} />
-              ))}
-            </datalist>
+            {puedeEditar ? (
+              <>
+                <input
+                  list={`subcategoria-sugerencias-edicion-${row.id}`}
+                  className="input"
+                  value={subcategoria}
+                  onChange={(e) => setSubcategoria(e.target.value)}
+                />
+                <datalist id={`subcategoria-sugerencias-edicion-${row.id}`}>
+                  {subcategorias.map((s) => (
+                    <option key={s} value={s} />
+                  ))}
+                </datalist>
+              </>
+            ) : (
+              <p className="text-sm text-slate-200">{subcategoria || "—"}</p>
+            )}
           </label>
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Fecha
-            <input
-              type="date"
-              className="input"
-              value={fecha}
-              disabled={!puedeEditar}
-              onChange={(e) => setFecha(e.target.value)}
-            />
+            {puedeEditar ? (
+              <input
+                type="date"
+                className="input"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+              />
+            ) : (
+              <p className="text-sm text-slate-200">{fechaCorta(fecha)}</p>
+            )}
           </label>
         </div>
 
         <label className="mt-3 flex flex-col gap-1 text-xs text-slate-400">
           Solicitud
-          <textarea
-            className="input min-h-16"
-            value={solicitud}
-            disabled={!puedeEditar}
-            onChange={(e) => setSolicitud(e.target.value)}
-          />
+          {puedeEditar ? (
+            <textarea
+              className="input min-h-16"
+              value={solicitud}
+              onChange={(e) => setSolicitud(e.target.value)}
+            />
+          ) : (
+            <p className="whitespace-pre-line text-sm text-slate-200">{solicitud || "—"}</p>
+          )}
         </label>
 
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Estado
-            <select
-              className="input"
-              value={estado}
-              disabled={!puedeEditar}
-              onChange={(e) => setEstado(e.target.value)}
-            >
-              {ESTADOS.map((e) => (
-                <option key={e} value={e}>
-                  {e}
-                </option>
-              ))}
-            </select>
+            {puedeEditar ? (
+              <select
+                className="input"
+                value={estado}
+                onChange={(e) => setEstado(e.target.value)}
+              >
+                {ESTADOS.map((e) => (
+                  <option key={e} value={e}>
+                    {e}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div>
+                <PillEstado estado={estado} />
+              </div>
+            )}
           </label>
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Sub-estado
-            <select
-              className={`input disabled:cursor-not-allowed disabled:opacity-40 ${
-                errorSubestado ? "border-red-600" : ""
-              }`}
-              value={subestado}
-              disabled={!puedeEditar || estado !== "Cerrado"}
-              onChange={(e) => setSubestado(e.target.value)}
-            >
-              <option value="">—</option>
-              {SUBESTADOS_CERRADO.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-            {errorSubestado && (
-              <span className="text-xs text-red-400">{errorSubestado}</span>
+            {puedeEditar ? (
+              <>
+                <select
+                  className={`input disabled:cursor-not-allowed disabled:opacity-40 ${
+                    errorSubestado ? "border-red-600" : ""
+                  }`}
+                  value={subestado}
+                  disabled={estado !== "Cerrado"}
+                  onChange={(e) => setSubestado(e.target.value)}
+                >
+                  <option value="">—</option>
+                  {SUBESTADOS_CERRADO.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+                {errorSubestado && (
+                  <span className="text-xs text-red-400">{errorSubestado}</span>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-200">{subestado || "—"}</p>
             )}
           </label>
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             F. respuesta
-            <input
-              type="date"
-              className={`input ${errorFechaRespuesta ? "border-red-600" : ""}`}
-              value={fechaRespuesta}
-              disabled={!puedeEditar}
-              onChange={(e) => setFechaRespuesta(e.target.value)}
-            />
-            {errorFechaRespuesta && (
-              <span className="text-xs text-red-400">{errorFechaRespuesta}</span>
+            {puedeEditar ? (
+              <>
+                <input
+                  type="date"
+                  className={`input ${errorFechaRespuesta ? "border-red-600" : ""}`}
+                  value={fechaRespuesta}
+                  onChange={(e) => setFechaRespuesta(e.target.value)}
+                />
+                {errorFechaRespuesta && (
+                  <span className="text-xs text-red-400">{errorFechaRespuesta}</span>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-slate-200">{fechaCorta(fechaRespuesta)}</p>
             )}
           </label>
           <label className="flex flex-col gap-1 text-xs text-slate-400">
             Observaciones
-            <input
-              className="input"
-              value={observaciones}
-              disabled={!puedeEditar}
-              onChange={(e) => setObservaciones(e.target.value)}
-            />
+            {puedeEditar ? (
+              <input
+                className="input"
+                value={observaciones}
+                onChange={(e) => setObservaciones(e.target.value)}
+              />
+            ) : (
+              <p className="text-sm text-slate-200">{observaciones || "—"}</p>
+            )}
           </label>
         </div>
 
@@ -1072,16 +1106,15 @@ function FilaSolicitudEdicion({
             que se guarda un proyecto — una vez que existe el punto
             "Proyecto de respuesta de UEEDA" en la línea de tiempo, se edita
             desde ahí (popup), no acá abajo. */}
-        {mailOrigen && eventos.length === 0 && (
+        {puedeEditar && mailOrigen && eventos.length === 0 && (
           <div className="mt-3 flex flex-col gap-3">
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400">Modelo de respuesta</span>
                 <button
                   type="button"
-                  disabled={!puedeEditar || generandoRespuesta}
+                  disabled={generandoRespuesta}
                   onClick={handleGenerarRespuesta}
-                  title={puedeEditar ? undefined : "Ingresá para poder hacer esto"}
                   className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
                 >
                   <IconoIA />
@@ -1095,7 +1128,6 @@ function FilaSolicitudEdicion({
                 <textarea
                   className="input min-h-48"
                   value={respuestaIA}
-                  disabled={!puedeEditar}
                   onChange={(e) => setRespuestaIA(e.target.value)}
                 />
               )}
@@ -1111,33 +1143,36 @@ function FilaSolicitudEdicion({
               onClick={onCerrar}
               className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
             >
-              Cancelar
+              {puedeEditar ? "Cancelar" : "Cerrar"}
             </button>
+            {puedeEditar && (
+              <button
+                type="button"
+                disabled={
+                  guardando ||
+                  eliminando ||
+                  !nombreSolicitante ||
+                  !solicitud ||
+                  !!errorFechaRespuesta ||
+                  !!errorSubestado
+                }
+                onClick={handleGuardar}
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50"
+              >
+                Guardar
+              </button>
+            )}
+          </div>
+          {puedeEditar && (
             <button
               type="button"
-              disabled={
-                !puedeEditar ||
-                guardando ||
-                eliminando ||
-                !nombreSolicitante ||
-                !solicitud ||
-                !!errorFechaRespuesta ||
-                !!errorSubestado
-              }
-              onClick={handleGuardar}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50"
+              disabled={guardando || eliminando}
+              onClick={handleEliminar}
+              className="rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400 hover:bg-red-950/50 disabled:opacity-50"
             >
-              Guardar
+              {eliminando ? "Eliminando…" : "Eliminar"}
             </button>
-          </div>
-          <button
-            type="button"
-            disabled={!puedeEditar || guardando || eliminando}
-            onClick={handleEliminar}
-            className="rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400 hover:bg-red-950/50 disabled:opacity-50"
-          >
-            {eliminando ? "Eliminando…" : "Eliminar"}
-          </button>
+          )}
         </div>
       </td>
     </tr>
@@ -1353,49 +1388,51 @@ function PopupEventoPedido({
         </div>
 
         {esBorrador ? (
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={!puedeEditar || generandoRespuesta}
-                onClick={onGenerarRespuesta}
-                title={puedeEditar ? undefined : "Ingresá para poder hacer esto"}
-                className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-              >
-                <IconoIA />
-                {generandoRespuesta ? "Generando…" : "Volver a generar con IA"}
-              </button>
-              {errorRespuestaIA && (
-                <span className="text-xs text-red-400">{errorRespuestaIA}</span>
-              )}
+          puedeEditar ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={generandoRespuesta}
+                  onClick={onGenerarRespuesta}
+                  className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                >
+                  <IconoIA />
+                  {generandoRespuesta ? "Generando…" : "Volver a generar con IA"}
+                </button>
+                {errorRespuestaIA && (
+                  <span className="text-xs text-red-400">{errorRespuestaIA}</span>
+                )}
+              </div>
+              <textarea
+                className="input min-h-48"
+                value={respuestaIA}
+                onChange={(e) => onRespuestaIAChange(e.target.value)}
+              />
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  disabled={guardandoBorrador}
+                  onClick={onSacarBorrador}
+                  className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
+                >
+                  Sacar de la línea de tiempo
+                </button>
+                <button
+                  type="button"
+                  disabled={guardandoBorrador}
+                  onClick={onGuardarBorrador}
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                >
+                  {guardandoBorrador ? "Guardando…" : "Guardar"}
+                </button>
+              </div>
             </div>
-            <textarea
-              className="input min-h-48"
-              value={respuestaIA}
-              disabled={!puedeEditar}
-              onChange={(e) => onRespuestaIAChange(e.target.value)}
-            />
-            <div className="flex items-center justify-between gap-2">
-              <button
-                type="button"
-                disabled={!puedeEditar || guardandoBorrador}
-                onClick={onSacarBorrador}
-                title={puedeEditar ? undefined : "Ingresá para poder hacer esto"}
-                className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
-              >
-                Sacar de la línea de tiempo
-              </button>
-              <button
-                type="button"
-                disabled={!puedeEditar || guardandoBorrador}
-                onClick={onGuardarBorrador}
-                title={puedeEditar ? undefined : "Ingresá para poder hacer esto"}
-                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-              >
-                {guardandoBorrador ? "Guardando…" : "Guardar"}
-              </button>
-            </div>
-          </div>
+          ) : (
+            <p className="whitespace-pre-line rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200">
+              {respuestaIA || "(sin texto)"}
+            </p>
+          )
         ) : (
           <>
             <CorreoBody
@@ -1424,13 +1461,12 @@ function PopupEventoPedido({
               }
               onGuardarEdicion={onGuardarEdicionCuerpo}
             />
-            {abierto !== "recepcion" && (
+            {puedeEditar && abierto !== "recepcion" && (
               <div className="mt-3 flex justify-end">
                 <button
                   type="button"
-                  disabled={!puedeEditar || desvinculandoId === abierto.id}
+                  disabled={desvinculandoId === abierto.id}
                   onClick={() => onDesvincular(abierto)}
-                  title={puedeEditar ? undefined : "Ingresá para poder hacer esto"}
                   className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
                 >
                   {desvinculandoId === abierto.id ? "Desvinculando…" : "Desvincular"}
