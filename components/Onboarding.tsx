@@ -105,11 +105,21 @@ function IconoListo() {
   );
 }
 
-function IconoOjo() {
+function IconoPropuesta() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
-      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="12" cy="12" r="2.6" />
+      <rect x="5" y="4" width="14" height="16" rx="2" strokeDasharray="3 2.5" strokeLinecap="round" />
+      <path d="M8.5 9.5h7M8.5 13h5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconoConfirmar() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} className="h-7 w-7">
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15.5 12.5l2 2 3.5-4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -170,21 +180,51 @@ const PASOS_EDICION: Paso[] = [
   },
 ];
 
-// Recorrido para quien NO inició sesión: simplificado, sin los pasos de
-// carga/edición (que no puede hacer) — solo qué es MaryBot y qué puede
-// consultar.
+// Recorrido para quien NO inició sesión: explica el proceso completo de
+// MaryBot paso a paso (de punta a punta), ya que es la versión que va a
+// ver la mayor parte de la gente que entra al panel.
 const PASOS_VISUALIZACION: Paso[] = [
   {
     titulo: "¿Qué es MaryBot?",
     texto:
-      'MaryBot revisa el correo institucional cada cierto tiempo y clasifica automáticamente cada mail en tres categorías: un pedido de acceso nuevo, una respuesta/repregunta sobre un pedido que ya existe, o un mail no relacionado con pedidos de acceso. Nunca carga ni cierra nada por su cuenta — todo pasa por una persona antes de quedar registrado.',
+      "Es un asistente digital que lee ese correo por nosotros, todo el tiempo, sin cansarse. No decide nada por su cuenta: se limita a ordenar y proponer. La IA genera propuestas y una persona valida las acciones antes de su ejecución.",
     Icono: IconoBot,
   },
   {
-    titulo: "Podés consultar todo",
+    titulo: "Llega un correo",
     texto:
-      'Sin necesidad de iniciar sesión podés ver todos los pedidos cargados, su categoría y estado, la línea de tiempo completa de cada uno (correos, respuestas, repreguntas) y la pestaña "Resumen" con estadísticas y un Excel descargable.',
-    Icono: IconoOjo,
+      "El bot revisa la casilla institucional de forma automática, cada cierto tiempo, buscando mensajes nuevos.",
+    Icono: IconoBandeja,
+  },
+  {
+    titulo: "Lo lee y lo entiende",
+    texto:
+      "Con inteligencia artificial, MaryBot analiza el contenido del correo y lo clasifica en una de tres categorías: un pedido de acceso nuevo, una respuesta o repregunta sobre un pedido que ya existe, o un mensaje que no tiene relación con pedidos de acceso.",
+    Icono: IconoBot,
+  },
+  {
+    titulo: "Lo deja propuesto, nunca cargado",
+    texto:
+      "El correo aparece en el panel de revisión con los datos ya completados (quién pregunta, sobre qué tema, de qué fecha). Nada queda registrado todavía.",
+    Icono: IconoPropuesta,
+  },
+  {
+    titulo: "Una persona confirma",
+    texto:
+      "Un integrante del equipo revisa la propuesta, corrige lo que haga falta y confirma: carga el pedido nuevo, o vincula la respuesta con el pedido correspondiente. MaryBot nunca cierra ni carga nada por sí solo.",
+    Icono: IconoConfirmar,
+  },
+  {
+    titulo: "Queda todo ordenado",
+    texto:
+      "Cada pedido guarda su propia línea de tiempo: la recepción, cada respuesta, cada repregunta, cada paso intermedio. Con un click se puede ver el historial completo de cualquier pedido, de punta a punta.",
+    Icono: IconoLineaTiempo,
+  },
+  {
+    titulo: "Un panel de resumen",
+    texto:
+      "Muestra, en cualquier momento, cuántos pedidos hay, cuántos están cerrados, cuántos pendientes, y por qué tema — con un Excel descargable listo para reportar.",
+    Icono: IconoResumen,
   },
   {
     titulo: "¿Sos del equipo de UEEDA?",
