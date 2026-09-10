@@ -13,6 +13,7 @@ import type { CandidatoCorreo, SolicitudInput } from "@/lib/types";
 import { textoCompacto } from "@/lib/texto";
 import { fechaCorta } from "@/lib/fechas";
 import CorreoBody from "@/components/CorreoBody";
+import { useAuth } from "@/lib/auth";
 
 // Guarda (o borra, si texto es null) la edición manual de "qué mostrar"
 // para un correo — ver botón "Editar mensaje" en CorreoBody. Nunca toca el
@@ -70,6 +71,7 @@ function fechaCortaHora(iso: string): string {
 }
 
 export default function PanelCandidatos() {
+  const { isLoggedIn } = useAuth();
   const [rows, setRows] = useState<CandidatoCorreo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -374,6 +376,7 @@ export default function PanelCandidatos() {
             key={row.id}
             row={row}
             busy={busyId === row.id}
+            puedeEditar={isLoggedIn}
             categorias={categorias}
             onNuevaCategoria={(c) => setCategorias((prev) => [...new Set([...prev, c])].sort((a, b) => a.localeCompare(b, "es")))}
             onDescartar={() => handleDescartar(row)}
@@ -398,6 +401,7 @@ export default function PanelCandidatos() {
                 key={row.id}
                 row={row}
                 busy={busyId === row.id}
+                puedeEditar={isLoggedIn}
                 onDescartar={() => handleDescartar(row)}
                 onVincular={(pedidoId, etiqueta, cerrarPedido, subestado) =>
                   handleVincular(row, pedidoId, etiqueta, cerrarPedido, subestado)
@@ -437,6 +441,7 @@ export default function PanelCandidatos() {
               key={d.id}
               row={d}
               busy={busyId === d.id}
+              puedeEditar={isLoggedIn}
               onPasarARevision={() => handlePasarARevision(d)}
               onPasarAVincular={() => handlePasarAVincular(d)}
             />
@@ -450,6 +455,7 @@ export default function PanelCandidatos() {
 function FilaCandidato({
   row,
   busy,
+  puedeEditar,
   categorias,
   onNuevaCategoria,
   onDescartar,
@@ -457,6 +463,7 @@ function FilaCandidato({
 }: {
   row: CandidatoCorreo;
   busy: boolean;
+  puedeEditar: boolean;
   categorias: string[];
   onNuevaCategoria: (categoria: string) => void;
   onDescartar: () => void;
@@ -531,16 +538,18 @@ function FilaCandidato({
         <div className="flex items-center gap-3">
           <button
             type="button"
-            disabled={busy || !nombre || !solicitud || !categoria}
+            disabled={busy || !puedeEditar || !nombre || !solicitud || !categoria}
             onClick={submitCargar}
+            title={puedeEditar ? undefined : "Ingresá para poder cargar pedidos"}
             className="whitespace-nowrap rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
           >
             Cargar como pedido
           </button>
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || !puedeEditar}
             onClick={onDescartar}
+            title={puedeEditar ? undefined : "Ingresá para poder descartar"}
             className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
           >
             Descartar
@@ -657,7 +666,9 @@ function FilaCandidato({
             html={row.cuerpo_html}
             texto={row.cuerpo_resumen}
             cuerpoEditado={row.cuerpo_editado}
-            onGuardarEdicion={(texto) => guardarCuerpoEditado(row.id, texto)}
+            onGuardarEdicion={
+              puedeEditar ? (texto) => guardarCuerpoEditado(row.id, texto) : undefined
+            }
           />
         </div>
       )}
@@ -691,11 +702,13 @@ interface PedidoBusqueda {
 function FilaRespuesta({
   row,
   busy,
+  puedeEditar,
   onDescartar,
   onVincular,
 }: {
   row: CandidatoCorreo;
   busy: boolean;
+  puedeEditar: boolean;
   onDescartar: () => void;
   onVincular: (
     pedidoId: string,
@@ -828,7 +841,9 @@ function FilaRespuesta({
             html={row.cuerpo_html}
             texto={row.cuerpo_resumen}
             cuerpoEditado={row.cuerpo_editado}
-            onGuardarEdicion={(texto) => guardarCuerpoEditado(row.id, texto)}
+            onGuardarEdicion={
+              puedeEditar ? (texto) => guardarCuerpoEditado(row.id, texto) : undefined
+            }
           />
         </div>
       )}
@@ -938,16 +953,18 @@ function FilaRespuesta({
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
-          disabled={busy || !seleccionado || (cerrarPedido && !subestado)}
+          disabled={busy || !puedeEditar || !seleccionado || (cerrarPedido && !subestado)}
           onClick={handleVincularClick}
+          title={puedeEditar ? undefined : "Ingresá para poder vincular"}
           className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
         >
           Vincular
         </button>
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || !puedeEditar}
           onClick={handleDescartarClick}
+          title={puedeEditar ? undefined : "Ingresá para poder descartar"}
           className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
         >
           Descartar
@@ -966,11 +983,13 @@ function FilaRespuesta({
 function FilaDescartado({
   row,
   busy,
+  puedeEditar,
   onPasarARevision,
   onPasarAVincular,
 }: {
   row: CandidatoCorreo;
   busy: boolean;
+  puedeEditar: boolean;
   onPasarARevision: () => void;
   onPasarAVincular: () => void;
 }) {
@@ -1013,18 +1032,26 @@ function FilaDescartado({
         <div className="flex shrink-0 gap-2">
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || !puedeEditar}
             onClick={onPasarARevision}
-            title="Tratarlo como un pedido de acceso nuevo, todavía no registrado"
+            title={
+              puedeEditar
+                ? "Tratarlo como un pedido de acceso nuevo, todavía no registrado"
+                : "Ingresá para poder hacer esto"
+            }
             className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
           >
             Pasar a revisión
           </button>
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || !puedeEditar}
             onClick={onPasarAVincular}
-            title="Es una respuesta o repregunta sobre un pedido ya cargado — pasarlo a &quot;Respuestas para vincular&quot;"
+            title={
+              puedeEditar
+                ? 'Es una respuesta o repregunta sobre un pedido ya cargado — pasarlo a "Respuestas para vincular"'
+                : "Ingresá para poder hacer esto"
+            }
             className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
           >
             Pasar a vincular

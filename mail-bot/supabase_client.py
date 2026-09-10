@@ -15,7 +15,15 @@ DEDUPE_VENTANA_DIAS = 30  # ventana para considerar "mismo pedido ya cargado"
 
 def get_client() -> Client:
     url = os.environ["SUPABASE_URL"]
-    key = os.environ["SUPABASE_KEY"]  # anon key, misma que usa el panel (RLS pública)
+    # Desde que se agregó el login de UEEDA (RLS: escritura solo para
+    # usuarios autenticados), esto YA NO puede ser la anon key — el bot no
+    # inicia sesión, así que con la anon key se quedaría sin poder
+    # insertar/actualizar candidatos_correo. Tiene que ser la SERVICE ROLE
+    # KEY (Supabase → Project Settings → API → service_role), que ignora
+    # RLS por completo. Es un secreto más sensible que la anon key: nunca
+    # exponerla en código de frontend, solo acá (bot que corre en una PC
+    # de la red interna, nunca en el navegador).
+    key = os.environ["SUPABASE_KEY"]
     return create_client(url, key)
 
 

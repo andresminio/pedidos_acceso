@@ -16,6 +16,7 @@ import SolicitudForm from "@/components/SolicitudForm";
 import SyncStatus from "@/components/SyncStatus";
 import IconoIA from "@/components/IconoIA";
 import CorreoBody from "@/components/CorreoBody";
+import { useAuth } from "@/lib/auth";
 
 const AGREGAR_CATEGORIA = "__agregar_categoria__";
 
@@ -89,6 +90,7 @@ function PillEstado({ estado }: { estado: string }) {
 }
 
 export default function PanelSolicitudes() {
+  const { isLoggedIn } = useAuth();
   const [rows, setRows] = useState<Solicitud[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -287,7 +289,7 @@ export default function PanelSolicitudes() {
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <SyncStatus />
-        <SolicitudForm onSubmit={handleCreate} submitting={saving} />
+        {isLoggedIn && <SolicitudForm onSubmit={handleCreate} submitting={saving} />}
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -390,7 +392,8 @@ export default function PanelSolicitudes() {
                 onDelete={handleDelete}
                 colsVisibles={colsVisibles}
                 editando={row.id === editandoId}
-                onAbrir={() => setEditandoId(row.id)}
+                puedeEditar={isLoggedIn}
+                onAbrir={() => isLoggedIn && setEditandoId(row.id)}
                 onCerrarEdicion={() => setEditandoId(null)}
                 tieneCorreo={pedidosConCorreo.has(row.id) && !pedidosConRespuesta.has(row.id)}
                 tieneRespuesta={pedidosConRespuesta.has(row.id)}
@@ -409,6 +412,7 @@ function FilaSolicitud({
   onDelete,
   colsVisibles,
   editando,
+  puedeEditar,
   onAbrir,
   onCerrarEdicion,
   tieneCorreo,
@@ -419,6 +423,7 @@ function FilaSolicitud({
   onDelete: (id: string) => Promise<void>;
   colsVisibles: Set<string>;
   editando: boolean;
+  puedeEditar: boolean;
   onAbrir: () => void;
   onCerrarEdicion: () => void;
   tieneCorreo: boolean;
@@ -473,8 +478,10 @@ function FilaSolicitud({
       {!editando && (
         <tr
           onDoubleClick={onAbrir}
-          title="Doble click para editar"
-          className="cursor-pointer align-top text-slate-300 hover:bg-white/[0.02]"
+          title={puedeEditar ? "Doble click para editar" : "Ingresá para poder editar"}
+          className={`align-top text-slate-300 hover:bg-white/[0.02] ${
+            puedeEditar ? "cursor-pointer" : ""
+          }`}
         >
           {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
             <td key={c.key} className="px-3 py-2">
@@ -490,6 +497,7 @@ function FilaSolicitud({
           onDelete={onDelete}
           onCerrar={onCerrarEdicion}
           colSpan={colSpanTotal}
+          puedeEditar={puedeEditar}
         />
       )}
     </>
@@ -502,12 +510,14 @@ function FilaSolicitudEdicion({
   onDelete,
   onCerrar,
   colSpan,
+  puedeEditar,
 }: {
   row: Solicitud;
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onCerrar: () => void;
   colSpan: number;
+  puedeEditar: boolean;
 }) {
   const [nombreSolicitante, setNombreSolicitante] = useState(row.nombre_solicitante);
   const [categoria, setCategoria] = useState(row.categoria ?? "");
@@ -1029,6 +1039,7 @@ function FilaSolicitudEdicion({
             key={abierto === "recepcion" ? "recepcion" : abierto.id}
             row={row}
             abierto={abierto}
+            puedeEditar={puedeEditar}
             mailOrigen={mailOrigen}
             respuestaIA={respuestaIA}
             onRespuestaIAChange={setRespuestaIA}
@@ -1040,7 +1051,9 @@ function FilaSolicitudEdicion({
             onGuardarBorrador={handleGuardarBorrador}
             onSacarBorrador={handleSacarBorrador}
             onRenombrar={handleRenombrarEvento}
-            onGuardarEdicionCuerpo={(texto) => handleGuardarCuerpoEditado(abierto, texto)}
+            onGuardarEdicionCuerpo={
+              puedeEditar ? (texto) => handleGuardarCuerpoEditado(abierto, texto) : undefined
+            }
             onDesvincular={(evento) => {
               handleDesvincularEvento(evento);
               setAbierto(null);
@@ -1095,6 +1108,7 @@ function FilaSolicitudEdicion({
             <button
               type="button"
               disabled={
+                !puedeEditar ||
                 guardando ||
                 eliminando ||
                 !nombreSolicitante ||
@@ -1110,7 +1124,7 @@ function FilaSolicitudEdicion({
           </div>
           <button
             type="button"
-            disabled={guardando || eliminando}
+            disabled={!puedeEditar || guardando || eliminando}
             onClick={handleEliminar}
             className="rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400 hover:bg-red-950/50 disabled:opacity-50"
           >
@@ -1225,6 +1239,7 @@ function LineaTiempoPedido({
 function PopupEventoPedido({
   row,
   abierto,
+  puedeEditar,
   mailOrigen,
   respuestaIA,
   onRespuestaIAChange,
@@ -1242,6 +1257,7 @@ function PopupEventoPedido({
 }: {
   row: Solicitud;
   abierto: PedidoEvento | "recepcion";
+  puedeEditar: boolean;
   mailOrigen: {
     cuerpo_resumen: string | null;
     cuerpo_html: string | null;
@@ -1261,7 +1277,7 @@ function PopupEventoPedido({
   onGuardarBorrador: () => void;
   onSacarBorrador: () => void;
   onRenombrar: (evento: PedidoEvento, nuevaEtiqueta: string) => void;
-  onGuardarEdicionCuerpo: (texto: string | null) => void | Promise<void>;
+  onGuardarEdicionCuerpo?: (texto: string | null) => void | Promise<void>;
   onDesvincular: (evento: PedidoEvento) => void;
   onCerrar: () => void;
 }) {
@@ -1269,7 +1285,7 @@ function PopupEventoPedido({
   // Solo se puede renombrar un evento real (no "Recepción", que no tiene
   // fila propia en pedido_eventos) y que no sea el borrador de IA (su
   // etiqueta fija identifica esa fila especial en el resto del código).
-  const puedeRenombrar = abierto !== "recepcion" && !esBorrador;
+  const puedeRenombrar = puedeEditar && abierto !== "recepcion" && !esBorrador;
   const [editandoEtiqueta, setEditandoEtiqueta] = useState(false);
   const [valorEtiqueta, setValorEtiqueta] = useState(
     abierto === "recepcion" ? "" : abierto.etiqueta
@@ -1333,8 +1349,9 @@ function PopupEventoPedido({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                disabled={generandoRespuesta}
+                disabled={!puedeEditar || generandoRespuesta}
                 onClick={onGenerarRespuesta}
+                title={puedeEditar ? undefined : "Ingresá para poder hacer esto"}
                 className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
               >
                 <IconoIA />
@@ -1347,21 +1364,24 @@ function PopupEventoPedido({
             <textarea
               className="input min-h-48"
               value={respuestaIA}
+              disabled={!puedeEditar}
               onChange={(e) => onRespuestaIAChange(e.target.value)}
             />
             <div className="flex items-center justify-between gap-2">
               <button
                 type="button"
-                disabled={guardandoBorrador}
+                disabled={!puedeEditar || guardandoBorrador}
                 onClick={onSacarBorrador}
+                title={puedeEditar ? undefined : "Ingresá para poder hacer esto"}
                 className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
               >
                 Sacar de la línea de tiempo
               </button>
               <button
                 type="button"
-                disabled={guardandoBorrador}
+                disabled={!puedeEditar || guardandoBorrador}
                 onClick={onGuardarBorrador}
+                title={puedeEditar ? undefined : "Ingresá para poder hacer esto"}
                 className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
               >
                 {guardandoBorrador ? "Guardando…" : "Guardar"}
@@ -1400,8 +1420,9 @@ function PopupEventoPedido({
               <div className="mt-3 flex justify-end">
                 <button
                   type="button"
-                  disabled={desvinculandoId === abierto.id}
+                  disabled={!puedeEditar || desvinculandoId === abierto.id}
                   onClick={() => onDesvincular(abierto)}
+                  title={puedeEditar ? undefined : "Ingresá para poder hacer esto"}
                   className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
                 >
                   {desvinculandoId === abierto.id ? "Desvinculando…" : "Desvincular"}
