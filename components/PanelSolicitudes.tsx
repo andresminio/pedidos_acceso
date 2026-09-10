@@ -1102,45 +1102,10 @@ function FilaSolicitudEdicion({
           />
         )}
 
-        {/* "Generar respuesta con IA" solo aparece antes de la primera vez
-            que se guarda un proyecto — una vez que existe el punto
-            "Proyecto de respuesta de UEEDA" en la línea de tiempo, se edita
-            desde ahí (popup), no acá abajo. */}
-        {mailOrigen && eventos.length === 0 && (
-          <div className="mt-3 flex flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400">Modelo de respuesta</span>
-                <button
-                  type="button"
-                  disabled={generandoRespuesta || !puedeEditar}
-                  onClick={handleGenerarRespuesta}
-                  title={puedeEditar ? undefined : "Ingresá para poder generar con IA"}
-                  className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-                >
-                  <IconoIA />
-                  {generandoRespuesta ? "Generando…" : "Generar respuesta con IA"}
-                </button>
-                {errorRespuestaIA && (
-                  <span className="text-xs text-red-400">{errorRespuestaIA}</span>
-                )}
-              </div>
-              {respuestaIA && (
-                puedeEditar ? (
-                  <textarea
-                    className="input min-h-48"
-                    value={respuestaIA}
-                    onChange={(e) => setRespuestaIA(e.target.value)}
-                  />
-                ) : (
-                  <p className="whitespace-pre-line rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200">
-                    {respuestaIA}
-                  </p>
-                )
-              )}
-            </div>
-          </div>
-        )}
+        {/* "Generar respuesta con IA" ahora vive siempre dentro del popup de
+            "Recepción" (arriba, PopupEventoPedido) — así queda accesible
+            desde ahí sin importar si ya existe una respuesta u otros
+            eventos vinculados. */}
 
         <div className="mt-3 flex items-center justify-between gap-2">
           <div className="flex gap-2">
@@ -1468,6 +1433,55 @@ function PopupEventoPedido({
               }
               onGuardarEdicion={onGuardarEdicionCuerpo}
             />
+            {abierto === "recepcion" && mailOrigen && (
+              <div className="mt-4 flex flex-col gap-3 border-t border-slate-800 pt-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Modelo de respuesta</span>
+                  <button
+                    type="button"
+                    disabled={generandoRespuesta || !puedeEditar}
+                    onClick={onGenerarRespuesta}
+                    title={puedeEditar ? undefined : "Ingresá para poder generar con IA"}
+                    className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    <IconoIA />
+                    {generandoRespuesta
+                      ? "Generando…"
+                      : respuestaIA
+                        ? "Volver a generar con IA"
+                        : "Generar respuesta con IA"}
+                  </button>
+                  {errorRespuestaIA && (
+                    <span className="text-xs text-red-400">{errorRespuestaIA}</span>
+                  )}
+                </div>
+                {respuestaIA && (
+                  puedeEditar ? (
+                    <textarea
+                      className="input min-h-48"
+                      value={respuestaIA}
+                      onChange={(e) => onRespuestaIAChange(e.target.value)}
+                    />
+                  ) : (
+                    <p className="whitespace-pre-line rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200">
+                      {respuestaIA}
+                    </p>
+                  )
+                )}
+                {puedeEditar && respuestaIA && (
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      disabled={guardandoBorrador}
+                      onClick={onGuardarBorrador}
+                      className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                    >
+                      {guardandoBorrador ? "Guardando…" : "Guardar"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
             {puedeEditar && abierto !== "recepcion" && (
               <div className="mt-3 flex justify-end">
                 <button
