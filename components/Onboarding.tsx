@@ -187,7 +187,7 @@ const PASOS_VISUALIZACION: Paso[] = [
   {
     titulo: "¿Qué es MaryBot?",
     texto:
-      "Es un asistente digital que lee ese correo por nosotros, todo el tiempo, sin cansarse. No decide nada por su cuenta: se limita a ordenar y proponer. La IA genera propuestas y una persona valida las acciones antes de su ejecución.",
+      "Es un asistente digital que lee el webmail por nosotros, todo el tiempo, sin cansarse. No decide nada por su cuenta: se limita a ordenar y proponer. La IA genera propuestas y una persona valida las acciones antes de su ejecución.",
     Icono: IconoBot,
   },
   {
@@ -199,7 +199,7 @@ const PASOS_VISUALIZACION: Paso[] = [
   {
     titulo: "Lo lee y lo entiende",
     texto:
-      "Con inteligencia artificial, MaryBot analiza el contenido del correo y lo clasifica en una de tres categorías: un pedido de acceso nuevo, una respuesta o repregunta sobre un pedido que ya existe, o un mensaje que no tiene relación con pedidos de acceso.",
+      "Con inteligencia artificial, MaryBot analiza el contenido del correo y lo clasifica en tres bandejas: parece un pedido nuevo, parece una respuesta o repregunta sobre un pedido que ya existe, o un mensaje que no parece tener relación con pedidos de acceso.",
     Icono: IconoBot,
   },
   {
@@ -211,7 +211,7 @@ const PASOS_VISUALIZACION: Paso[] = [
   {
     titulo: "Una persona confirma",
     texto:
-      "Un integrante del equipo revisa la propuesta, corrige lo que haga falta y confirma: carga el pedido nuevo, o vincula la respuesta con el pedido correspondiente. MaryBot nunca cierra ni carga nada por sí solo.",
+      "Un integrante del equipo de UEEDA revisa la propuesta, corrige lo que haga falta y confirma: carga el pedido nuevo, o vincula la respuesta con el pedido correspondiente. MaryBot nunca cierra ni carga nada por sí solo.",
     Icono: IconoConfirmar,
   },
   {
