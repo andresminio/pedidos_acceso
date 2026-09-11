@@ -1227,7 +1227,7 @@ function LineaTiempoPedido({
           color="bg-[var(--accent-hover)]"
           onClick={() => onAbrir("recepcion")}
         />
-        {!eventos.some((e) => e.etiqueta === ETIQUETA_BORRADOR) && (
+        {eventos.length === 0 && (
           <div className="flex shrink-0 items-start">
             <div className="mt-2.5 h-px w-12 shrink-0 border-t border-dashed border-[var(--border-2)]" />
             <button
