@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { textoCompacto, cortarCadenaReenviada, esInicioDeCadenaReenviada } from "@/lib/texto";
 
 // Solo estructura, nada de estilos/colores propios del mail: así el
@@ -177,14 +177,17 @@ export default function CorreoBody({
           {editando ? (
             <textarea
               autoFocus
-              className="input min-h-40 w-full text-sm"
+              className="input min-h-40 max-h-80 w-full overflow-y-auto text-sm"
               value={borrador}
               onChange={(e) => setBorrador(e.target.value)}
             />
           ) : mostrarHtml ? (
-            <div className="correo-html" dangerouslySetInnerHTML={{ __html: htmlSaneado! }} />
+            <div
+              className="correo-html max-h-80 overflow-y-auto"
+              dangerouslySetInnerHTML={{ __html: htmlSaneado! }}
+            />
           ) : (
-            <p className="whitespace-pre-line">{textoPlano}</p>
+            <p className="max-h-80 overflow-y-auto whitespace-pre-line">{textoPlano}</p>
           )}
         </div>
 

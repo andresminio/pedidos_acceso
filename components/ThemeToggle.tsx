@@ -35,7 +35,7 @@ export default function ThemeToggle() {
       onClick={alternarTema}
       className={`group fixed bottom-20 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full px-2.5 text-white shadow-lg transition-all duration-300 ease-out hover:w-56 hover:px-4 ${
         esClaro
-          ? "bg-amber-500 shadow-amber-950/40 hover:bg-amber-400"
+          ? "bg-blue-600 shadow-blue-950/40 hover:bg-blue-500"
           : "bg-slate-700 hover:bg-slate-600"
       }`}
     >

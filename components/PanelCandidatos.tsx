@@ -757,12 +757,9 @@ function FilaRespuesta({
   const buscarPedidos = useCallback(async (termino: string) => {
     if (!termino.trim()) return;
     setBuscando(true);
-    const { data } = await supabase
-      .from("pedidos_solicitudes")
-      .select("id, nombre_solicitante, fecha, solicitud, estado")
-      .ilike("nombre_solicitante", `%${termino.trim()}%`)
-      .order("fecha", { ascending: false })
-      .limit(8);
+    const { data } = await supabase.rpc("buscar_pedidos_solicitante", {
+      termino: termino.trim(),
+    });
     const encontrados = (data as PedidoBusqueda[]) ?? [];
     setResultados(encontrados);
     setBuscando(false);
