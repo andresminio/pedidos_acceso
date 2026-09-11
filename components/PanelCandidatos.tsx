@@ -701,7 +701,7 @@ function FilaCandidato({
 // bot lo descartó solo al clasificarlo, queda null.
 function PillOrigenDescarte({ revisadoEn }: { revisadoEn: string | null }) {
   return revisadoEn ? (
-    <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-[10px] text-[var(--muted)]">
+    <span className="rounded-full bg-[var(--surface-3)]/40 px-2 py-0.5 text-[10px] text-[var(--muted-3)]">
       Descartado por el usuario
     </span>
   ) : (

@@ -1227,6 +1227,21 @@ function LineaTiempoPedido({
           color="bg-[var(--accent-hover)]"
           onClick={() => onAbrir("recepcion")}
         />
+        {!eventos.some((e) => e.etiqueta === ETIQUETA_BORRADOR) && (
+          <div className="flex shrink-0 items-start">
+            <div className="mt-2.5 h-px w-12 shrink-0 border-t border-dashed border-[var(--border-2)]" />
+            <button
+              type="button"
+              onClick={() => onAbrir("recepcion")}
+              className="flex shrink-0 flex-col items-center gap-1.5 px-3"
+            >
+              <span className="h-4 w-4 rounded-full bg-[var(--muted-3)]" />
+              <span className="max-w-28 whitespace-normal text-center text-xs font-medium leading-tight text-[var(--muted-2)]">
+                Generá modelo de respuesta con IA
+              </span>
+            </button>
+          </div>
+        )}
         {eventos.map((ev) => (
           <div key={ev.id} className="flex shrink-0 items-start">
             <div className="mt-2.5 h-px w-12 shrink-0 bg-[var(--surface-3)]" />

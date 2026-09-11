@@ -95,7 +95,7 @@ export default function LoginButton() {
           >
             <h2 className="text-lg font-semibold text-[var(--foreground)]">Ingresar</h2>
             <p className="text-sm text-[var(--muted)]">
-              Ingresá con el correo institucional de Datos Abiertos para poder editar.
+              Usá el correo institucional de Datos Abiertos para poder editar.
             </p>
             <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
               Webmail PJN
@@ -103,7 +103,7 @@ export default function LoginButton() {
                 type="email"
                 required
                 autoFocus
-                className="input"
+                className="input w-full"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -114,7 +114,7 @@ export default function LoginButton() {
                 <input
                   type={mostrarPassword ? "text" : "password"}
                   required
-                  className="input pr-9"
+                  className="input w-full pr-9"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
