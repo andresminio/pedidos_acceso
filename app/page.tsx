@@ -1,7 +1,6 @@
 import PanelSolicitudes from "@/components/PanelSolicitudes";
 import PanelTabs from "@/components/PanelTabs";
 import Onboarding from "@/components/Onboarding";
-import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   return (
@@ -39,10 +38,7 @@ export default function Home() {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <PanelTabs activa="registro" />
-          </div>
+          <PanelTabs activa="registro" />
         </div>
       </header>
       <PanelSolicitudes />

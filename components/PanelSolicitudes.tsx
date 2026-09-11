@@ -1394,7 +1394,7 @@ function PopupEventoPedido({
                   type="button"
                   disabled={guardandoBorrador}
                   onClick={onSacarBorrador}
-                  className="text-xs font-medium text-[var(--danger-text)] hover:text-[var(--danger-text)] disabled:opacity-50"
+                  className="text-xs font-medium text-[var(--danger-text)] hover:text-[var(--foreground)] disabled:opacity-50"
                 >
                   Sacar de la línea de tiempo
                 </button>
@@ -1498,7 +1498,7 @@ function PopupEventoPedido({
                   type="button"
                   disabled={desvinculandoId === abierto.id}
                   onClick={() => onDesvincular(abierto)}
-                  className="text-xs font-medium text-[var(--danger-text)] hover:text-[var(--danger-text)] disabled:opacity-50"
+                  className="text-xs font-medium text-[var(--danger-text)] hover:text-[var(--foreground)] disabled:opacity-50"
                 >
                   {desvinculandoId === abierto.id ? "Desvinculando…" : "Desvincular"}
                 </button>

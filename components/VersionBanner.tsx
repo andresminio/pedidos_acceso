@@ -50,26 +50,26 @@ export default function VersionBanner() {
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-800 bg-[#12161f] p-6 text-center shadow-2xl">
+      <div className="w-full max-w-sm rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl">
         <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg">
           <IconoActualizar />
         </span>
-        <h2 className="text-lg font-semibold text-white">Hay una versión nueva</h2>
-        <p className="mt-2 text-sm text-slate-400">
+        <h2 className="text-lg font-semibold text-[var(--foreground)]">Hay una versión nueva</h2>
+        <p className="mt-2 text-sm text-[var(--muted)]">
           Se actualizó la aplicación. Actualizá la página para tener los últimos cambios.
         </p>
         <div className="mt-5 flex w-full gap-2">
           <button
             type="button"
             onClick={() => setDescartado(true)}
-            className="flex-1 rounded-md border border-slate-700 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800"
+            className="flex-1 rounded-md border border-[var(--border-2)] px-3 py-2 text-sm font-medium text-[var(--muted-2)] hover:bg-[var(--surface-2)]"
           >
             Más tarde
           </button>
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500"
+            className="flex-1 rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
           >
             Actualizar
           </button>

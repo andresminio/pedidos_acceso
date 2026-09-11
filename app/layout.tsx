@@ -3,6 +3,7 @@ import "./globals.css";
 import VersionBanner from "@/components/VersionBanner";
 import PushSetup from "@/components/PushSetup";
 import LoginButton from "@/components/LoginButton";
+import ThemeToggle from "@/components/ThemeToggle";
 import { AuthProvider } from "@/lib/auth";
 import { ThemeProvider } from "@/lib/theme";
 
@@ -32,6 +33,7 @@ export default function RootLayout({
             <VersionBanner />
             <PushSetup />
             <LoginButton />
+            <ThemeToggle />
             {children}
           </AuthProvider>
         </ThemeProvider>

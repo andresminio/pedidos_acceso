@@ -63,16 +63,16 @@ export default function SyncStatus() {
   const verde = cargado && alDia;
 
   return (
-    <p className="flex items-center gap-1.5 text-xs text-slate-400">
+    <p className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
       <span
-        className={`h-1.5 w-1.5 rounded-full ${verde ? "bg-emerald-500" : "bg-slate-600"}`}
+        className={`h-1.5 w-1.5 rounded-full ${verde ? "bg-[var(--success)]" : "bg-[var(--muted-3)]"}`}
       />
       {verde ? "Sincronizado con" : "Pendiente de sincronizar con"}{" "}
       <a
         href={GOOGLE_SHEET_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-slate-300 underline decoration-slate-600 underline-offset-2 hover:text-white"
+        className="font-medium text-[var(--accent-hover)] underline decoration-[var(--border-2)] underline-offset-2 hover:text-[var(--foreground)]"
       >
         UEEDA pedidos de acceso
       </a>

@@ -335,13 +335,13 @@ export default function PanelCandidatos() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <p className="max-w-2xl text-sm text-slate-400">
+        <p className="max-w-2xl text-sm text-[var(--muted)]">
           MaryBot analiza automáticamente el correo institucional para
           identificar posibles pedidos de acceso a la información y cerrar
           procesos abiertos. Revisá las sugerencias y confirmá las acciones
           pendientes.
         </p>
-        <p className="whitespace-nowrap text-xs text-slate-500">
+        <p className="whitespace-nowrap text-xs text-[var(--muted-3)]">
           {ultimaCorrida ? (
             <>última corrida: {fechaCortaHora(ultimaCorrida)}</>
           ) : (
@@ -353,19 +353,19 @@ export default function PanelCandidatos() {
         </p>
       </div>
 
-      <h2 className="mb-2 text-lg font-semibold text-white">
+      <h2 className="mb-2 text-lg font-semibold text-[var(--foreground)]">
         Nuevos pedidos de información
       </h2>
 
       {error && (
-        <div className="mb-4 rounded-md border border-red-900/50 bg-red-950/50 px-3 py-2 text-sm text-red-300">
+        <div className="mb-4 rounded-md border border-[var(--danger-border)] bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">
           {error}
         </div>
       )}
 
-      {loading && <p className="text-sm text-slate-500">Cargando…</p>}
+      {loading && <p className="text-sm text-[var(--muted-3)]">Cargando…</p>}
       {!loading && candidatosPedido.length === 0 && (
-        <p className="rounded-lg border border-slate-800 bg-[#12161f] px-4 py-6 text-center text-sm text-slate-500 shadow-sm">
+        <p className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-6 text-center text-sm text-[var(--muted-3)] shadow-sm">
           No hay correos pendientes de revisión.
         </p>
       )}
@@ -385,12 +385,12 @@ export default function PanelCandidatos() {
         ))}
       </div>
 
-      <div className="mt-6 border-t border-slate-800 pt-4">
-        <h2 className="mb-2 text-lg font-semibold text-white">
+      <div className="mt-6 border-t border-[var(--border)] pt-4">
+        <h2 className="mb-2 text-lg font-semibold text-[var(--foreground)]">
           Respuestas para vincular
         </h2>
         {!loading && candidatosRespuesta.length === 0 && (
-          <p className="rounded-lg border border-slate-800 bg-[#12161f] px-4 py-6 text-center text-sm text-slate-500 shadow-sm">
+          <p className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-6 text-center text-sm text-[var(--muted-3)] shadow-sm">
             No hay respuestas pendientes de vinculación.
           </p>
         )}
@@ -412,15 +412,15 @@ export default function PanelCandidatos() {
         )}
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-4 text-sm">
-        <p className="text-slate-500">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-4 text-sm">
+        <p className="text-[var(--muted-3)]">
           {descartadosSemana ?? "…"} mails descartados en los últimos{" "}
           {DESCARTADOS_DIAS} días.
         </p>
         <button
           type="button"
           onClick={toggleVerDescartados}
-          className="whitespace-nowrap font-medium text-blue-400 hover:text-blue-300"
+          className="whitespace-nowrap font-medium text-[var(--accent-hover)] hover:text-[var(--accent)]"
         >
           {verDescartados ? "Ocultar descartados" : "Ver descartados"}
         </button>
@@ -429,10 +429,10 @@ export default function PanelCandidatos() {
       {verDescartados && (
         <div className="mt-3 space-y-2">
           {cargandoDescartados && (
-            <p className="text-sm text-slate-500">Cargando…</p>
+            <p className="text-sm text-[var(--muted-3)]">Cargando…</p>
           )}
           {!cargandoDescartados && descartados.length === 0 && (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-[var(--muted-3)]">
               No hay descartados en los últimos {DESCARTADOS_DIAS} días.
             </p>
           )}
@@ -530,9 +530,9 @@ function FilaCandidato({
   }
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-sm">
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--muted-3)]">
           correo · {fechaCortaHora(row.fecha_correo)} · de {row.remitente}
         </p>
         {puedeEditar && (
@@ -541,7 +541,7 @@ function FilaCandidato({
               type="button"
               disabled={busy || !nombre || !solicitud || !categoria}
               onClick={submitCargar}
-              className="whitespace-nowrap rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              className="whitespace-nowrap rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
             >
               Cargar como pedido
             </button>
@@ -549,7 +549,7 @@ function FilaCandidato({
               type="button"
               disabled={busy}
               onClick={onDescartar}
-              className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              className="whitespace-nowrap rounded-md border border-[var(--border-2)] px-3 py-1.5 text-sm text-[var(--muted-2)] hover:bg-[var(--surface-2)] disabled:opacity-50"
             >
               Descartar
             </button>
@@ -557,14 +557,14 @@ function FilaCandidato({
         )}
       </div>
 
-      <h3 className="mb-1 font-semibold text-white">{row.asunto}</h3>
+      <h3 className="mb-1 font-semibold text-[var(--foreground)]">{row.asunto}</h3>
 
       {row.confianza_ia && (
-        <p className="mb-3 text-xs italic text-slate-500">IA: {row.confianza_ia}</p>
+        <p className="mb-3 text-xs italic text-[var(--muted-3)]">IA: {row.confianza_ia}</p>
       )}
 
       <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <label className="flex flex-col gap-1 text-xs text-slate-500">
+        <label className="flex flex-col gap-1 text-xs text-[var(--muted-3)]">
           Solicitante
           {puedeEditar ? (
             <input
@@ -573,13 +573,13 @@ function FilaCandidato({
               onChange={(e) => setNombre(e.target.value)}
             />
           ) : (
-            <p className="text-sm text-slate-200">{nombre || "—"}</p>
+            <p className="text-sm text-[var(--fg-soft)]">{nombre || "—"}</p>
           )}
         </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500">
+        <label className="flex flex-col gap-1 text-xs text-[var(--muted-3)]">
           Categoría
           {!puedeEditar ? (
-            <p className="text-sm text-slate-200">{categoria || "—"}</p>
+            <p className="text-sm text-[var(--fg-soft)]">{categoria || "—"}</p>
           ) : nuevaCategoria ? (
             <input
               autoFocus
@@ -627,7 +627,7 @@ function FilaCandidato({
             </select>
           )}
         </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500">
+        <label className="flex flex-col gap-1 text-xs text-[var(--muted-3)]">
           Subcategoría
           {puedeEditar ? (
             <>
@@ -644,10 +644,10 @@ function FilaCandidato({
               </datalist>
             </>
           ) : (
-            <p className="text-sm text-slate-200">{subcategoria || "—"}</p>
+            <p className="text-sm text-[var(--fg-soft)]">{subcategoria || "—"}</p>
           )}
         </label>
-        <label className="flex flex-col gap-1 text-xs text-slate-500">
+        <label className="flex flex-col gap-1 text-xs text-[var(--muted-3)]">
           Fecha del mail
           {puedeEditar ? (
             <input
@@ -657,12 +657,12 @@ function FilaCandidato({
               onChange={(e) => setFecha(e.target.value)}
             />
           ) : (
-            <p className="text-sm text-slate-200">{fechaCorta(fecha)}</p>
+            <p className="text-sm text-[var(--fg-soft)]">{fechaCorta(fecha)}</p>
           )}
         </label>
       </div>
 
-      <label className="mb-3 flex flex-col gap-1 text-xs text-slate-500">
+      <label className="mb-3 flex flex-col gap-1 text-xs text-[var(--muted-3)]">
         Solicitud
         {puedeEditar ? (
           <textarea
@@ -671,7 +671,7 @@ function FilaCandidato({
             onChange={(e) => setSolicitud(e.target.value)}
           />
         ) : (
-          <p className="whitespace-pre-line text-sm text-slate-200">{solicitud || "—"}</p>
+          <p className="whitespace-pre-line text-sm text-[var(--fg-soft)]">{solicitud || "—"}</p>
         )}
       </label>
 
@@ -701,11 +701,11 @@ function FilaCandidato({
 // bot lo descartó solo al clasificarlo, queda null.
 function PillOrigenDescarte({ revisadoEn }: { revisadoEn: string | null }) {
   return revisadoEn ? (
-    <span className="rounded-full bg-slate-700/40 px-2 py-0.5 text-[10px] text-slate-400">
+    <span className="rounded-full bg-[var(--surface-3)] px-2 py-0.5 text-[10px] text-[var(--muted)]">
       Descartado por el usuario
     </span>
   ) : (
-    <span className="rounded-full bg-slate-700/20 px-2 py-0.5 text-[10px] text-slate-500">
+    <span className="rounded-full bg-[var(--surface-3)]/40 px-2 py-0.5 text-[10px] text-[var(--muted-3)]">
       Descartado por IA
     </span>
   );
@@ -838,16 +838,16 @@ function FilaRespuesta({
   }
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-sm">
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-[var(--muted-3)]">
           correo · {fechaCortaHora(row.fecha_correo)} · de {row.remitente}
         </p>
       </div>
 
-      <h3 className="mb-1 font-semibold text-white">{row.asunto}</h3>
+      <h3 className="mb-1 font-semibold text-[var(--foreground)]">{row.asunto}</h3>
       {row.confianza_ia && (
-        <p className="mb-3 text-xs italic text-slate-500">IA: {row.confianza_ia}</p>
+        <p className="mb-3 text-xs italic text-[var(--muted-3)]">IA: {row.confianza_ia}</p>
       )}
 
       {tieneCuerpo && (
@@ -870,7 +870,7 @@ function FilaRespuesta({
 
       {puedeEditar && (
         <>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[var(--muted-3)]">
             {buscando ? "Buscando pedido…" : "Pedidos candidatos a vincular"}
           </p>
 
@@ -888,14 +888,14 @@ function FilaRespuesta({
               type="button"
               onClick={handleBuscarManual}
               disabled={buscando || !terminoBusqueda.trim()}
-              className="rounded-md border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              className="rounded-md border border-[var(--border-2)] px-3 py-1.5 text-xs font-medium text-[var(--muted-2)] hover:bg-[var(--surface-2)] disabled:opacity-50"
             >
               Buscar
             </button>
           </div>
 
           {buscado && !buscando && resultados.length === 0 && (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-[var(--muted-3)]">
               No se encontraron pedidos de {row.nombre_solicitante ?? "este solicitante"}.
             </p>
           )}
@@ -909,14 +909,14 @@ function FilaRespuesta({
                   onClick={() => setSeleccionado(p)}
                   className={`rounded-md border px-3 py-2 text-left text-xs ${
                     seleccionado?.id === p.id
-                      ? "border-blue-600 bg-blue-950/30 text-white"
-                      : "border-slate-800 text-slate-300 hover:bg-slate-800"
+                      ? "border-[var(--accent)] bg-[var(--accent-soft-bg)] text-[var(--accent-soft-text)]"
+                      : "border-[var(--border)] text-[var(--muted-2)] hover:bg-[var(--surface-2)]"
                   }`}
                 >
                   <span className="font-medium">{p.nombre_solicitante}</span>
                   {" · "}
                   {fechaCorta(p.fecha)} · {p.estado}
-                  <span className="block truncate text-slate-500">{p.solicitud}</span>
+                  <span className="block truncate text-[var(--muted-3)]">{p.solicitud}</span>
                 </button>
               ))}
             </div>
@@ -924,7 +924,7 @@ function FilaRespuesta({
 
           {seleccionado && (
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <label className="flex items-center gap-1.5 text-xs text-slate-500">
+              <label className="flex items-center gap-1.5 text-xs text-[var(--muted-3)]">
                 Etiqueta
                 <input
                   className="input w-56"
@@ -940,23 +940,23 @@ function FilaRespuesta({
                   aria-pressed={cerrarPedido}
                   className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                     cerrarPedido
-                      ? "bg-blue-600 text-white"
-                      : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                      ? "bg-[var(--accent)] text-white"
+                      : "bg-[var(--surface-2)] text-[var(--muted)] hover:bg-[var(--surface-3)]"
                   }`}
                 >
                   <span
                     className={`h-1.5 w-1.5 rounded-full ${
-                      cerrarPedido ? "bg-white" : "bg-slate-500"
+                      cerrarPedido ? "bg-white" : "bg-[var(--muted-3)]"
                     }`}
                   />
                   Cerrar pedido
                 </button>
               )}
               {cerrarPedido && (
-                <label className="flex items-center gap-1.5 text-xs text-slate-500">
+                <label className="flex items-center gap-1.5 text-xs text-[var(--muted-3)]">
                   Sub-estado
                   <select
-                    className={`input w-auto ${!subestado ? "border-red-600" : ""}`}
+                    className={`input w-auto ${!subestado ? "border-[var(--danger-border)]" : ""}`}
                     value={subestado}
                     onChange={(e) => setSubestado(e.target.value)}
                   >
@@ -977,7 +977,7 @@ function FilaRespuesta({
               type="button"
               disabled={busy || !seleccionado || (cerrarPedido && !subestado)}
               onClick={handleVincularClick}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+              className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
             >
               Vincular
             </button>
@@ -985,12 +985,12 @@ function FilaRespuesta({
               type="button"
               disabled={busy}
               onClick={handleDescartarClick}
-              className="whitespace-nowrap rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              className="whitespace-nowrap rounded-md border border-[var(--border-2)] px-3 py-1.5 text-sm text-[var(--muted-2)] hover:bg-[var(--surface-2)] disabled:opacity-50"
             >
               Descartar
             </button>
             {seleccionado && (
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-[var(--muted-3)]">
                 Se agrega a la línea de tiempo del pedido de {seleccionado.nombre_solicitante} (
                 {fechaCorta(seleccionado.fecha)}){cerrarPedido ? " y lo cierra." : "."}
               </span>
@@ -1034,7 +1034,7 @@ function FilaDescartado({
   return (
     <div
       ref={ref}
-      className="rounded-md border border-slate-800 bg-[#0e1219] px-3 py-2 text-xs text-slate-500"
+      className="rounded-md border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-xs text-[var(--muted-3)]"
     >
       <div className="flex items-start justify-between gap-3">
         <div
@@ -1044,11 +1044,11 @@ function FilaDescartado({
           }}
           className={tieneCuerpo ? "cursor-pointer" : ""}
         >
-          <span className="text-slate-400">{fechaCortaHora(row.fecha_correo)}</span>{" "}
-          · de {row.remitente} — <span className="text-slate-300">{row.asunto}</span>{" "}
+          <span className="text-[var(--muted)]">{fechaCortaHora(row.fecha_correo)}</span>{" "}
+          · de {row.remitente} — <span className="text-[var(--muted-2)]">{row.asunto}</span>{" "}
           <PillOrigenDescarte revisadoEn={row.revisado_en} />
           {row.confianza_ia && (
-            <div className="mt-1 italic text-slate-600">IA: {row.confianza_ia}</div>
+            <div className="mt-1 italic text-[var(--muted-3)]">IA: {row.confianza_ia}</div>
           )}
         </div>
         {puedeEditar && (
@@ -1058,7 +1058,7 @@ function FilaDescartado({
               disabled={busy}
               onClick={onPasarARevision}
               title="Tratarlo como un pedido de acceso nuevo, todavía no registrado"
-              className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              className="whitespace-nowrap rounded-md border border-[var(--border-2)] px-2 py-1 text-xs text-[var(--muted-2)] hover:bg-[var(--surface-2)] disabled:opacity-50"
             >
               Pasar a revisión
             </button>
@@ -1067,7 +1067,7 @@ function FilaDescartado({
               disabled={busy}
               onClick={onPasarAVincular}
               title='Es una respuesta o repregunta sobre un pedido ya cargado — pasarlo a "Respuestas para vincular"'
-              className="whitespace-nowrap rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              className="whitespace-nowrap rounded-md border border-[var(--border-2)] px-2 py-1 text-xs text-[var(--muted-2)] hover:bg-[var(--surface-2)] disabled:opacity-50"
             >
               Pasar a vincular
             </button>
@@ -1076,8 +1076,8 @@ function FilaDescartado({
       </div>
       {expandido && tieneCuerpo && (
         <>
-          <p className="mt-2 text-xs text-slate-500">Correo recibido</p>
-          <blockquote className="mt-1 whitespace-pre-line rounded-md border border-slate-800 bg-black/20 px-3 py-2 text-sm italic text-slate-400">
+          <p className="mt-2 text-xs text-[var(--muted-3)]">Correo recibido</p>
+          <blockquote className="mt-1 whitespace-pre-line rounded-md border border-[var(--border)] bg-black/20 px-3 py-2 text-sm italic text-[var(--muted)]">
             {textoCompacto(row.cuerpo_resumen!)}
           </blockquote>
         </>

@@ -252,7 +252,7 @@ export default function Onboarding() {
       <button
         type="button"
         onClick={() => setFase("bienvenida")}
-        className="group fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-blue-600 px-2.5 text-white shadow-lg shadow-blue-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-blue-500 hover:px-4"
+        className="group fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-[var(--accent)] px-2.5 text-white shadow-lg shadow-blue-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-[var(--accent-hover)] hover:px-4"
       >
         <span className="flex h-7 w-7 shrink-0 items-center justify-center">
           <IconoBot />
@@ -268,7 +268,7 @@ export default function Onboarding() {
           onClick={cerrar}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-slate-800 bg-[#12161f] p-6 shadow-2xl"
+            className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {fase === "bienvenida" ? (
@@ -276,10 +276,10 @@ export default function Onboarding() {
                 <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg">
                   <IconoBot />
                 </span>
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-lg font-semibold text-[var(--foreground)]">
                   ¿Primera vez por acá?
                 </h2>
-                <p className="mt-2 text-sm text-slate-400">
+                <p className="mt-2 text-sm text-[var(--muted)]">
                   Te mostramos en unos pasos qué hace MaryBot, cómo clasifica
                   el correo y cómo proceder en cada pantalla.
                 </p>
@@ -287,14 +287,14 @@ export default function Onboarding() {
                   <button
                     type="button"
                     onClick={cerrar}
-                    className="flex-1 rounded-md border border-slate-700 px-3 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800"
+                    className="flex-1 rounded-md border border-[var(--border-2)] px-3 py-2 text-sm font-medium text-[var(--muted-2)] hover:bg-[var(--surface-2)]"
                   >
                     Ahora no
                   </button>
                   <button
                     type="button"
                     onClick={() => setFase(0)}
-                    className="flex-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-500"
+                    className="flex-1 rounded-md bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
                   >
                     Empezar el recorrido
                   </button>
@@ -340,15 +340,15 @@ function PasoRecorrido({
       <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-lg">
         <Icono />
       </span>
-      <h2 className="text-lg font-semibold text-white">{paso.titulo}</h2>
-      <p className="mt-2 text-sm text-slate-400">{paso.texto}</p>
+      <h2 className="text-lg font-semibold text-[var(--foreground)]">{paso.titulo}</h2>
+      <p className="mt-2 text-sm text-[var(--muted)]">{paso.texto}</p>
 
       <div className="mt-5 flex items-center gap-1.5">
         {Array.from({ length: total }).map((_, i) => (
           <span
             key={i}
             className={`h-1.5 rounded-full transition-all ${
-              i === indice ? "w-5 bg-blue-500" : "w-1.5 bg-slate-700"
+              i === indice ? "w-5 bg-[var(--accent-hover)]" : "w-1.5 bg-[var(--surface-3)]"
             }`}
           />
         ))}
@@ -358,7 +358,7 @@ function PasoRecorrido({
         <button
           type="button"
           onClick={onCerrar}
-          className="text-sm font-medium text-slate-500 hover:text-slate-300"
+          className="text-sm font-medium text-[var(--muted-3)] hover:text-[var(--muted-2)]"
         >
           Saltar
         </button>
@@ -367,7 +367,7 @@ function PasoRecorrido({
             <button
               type="button"
               onClick={onAnterior}
-              className="rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-800"
+              className="rounded-md border border-[var(--border-2)] px-3 py-1.5 text-sm font-medium text-[var(--muted-2)] hover:bg-[var(--surface-2)]"
             >
               Anterior
             </button>
@@ -375,7 +375,7 @@ function PasoRecorrido({
           <button
             type="button"
             onClick={esUltimo ? onCerrar : onSiguiente}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
+            className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
           >
             {esUltimo ? "Entendido" : "Siguiente"}
           </button>

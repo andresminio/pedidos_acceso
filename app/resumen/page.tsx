@@ -5,10 +5,10 @@ import Onboarding from "@/components/Onboarding";
 export default function Resumen() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="mb-6 border-b border-slate-800 pb-4">
+      <header className="mb-6 border-b border-[var(--border)] pb-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[var(--accent)] text-white">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -30,10 +30,10 @@ export default function Resumen() {
               </svg>
             </span>
             <div>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-[var(--muted)]">
                 Estadística Electoral y Datos Abiertos
               </p>
-              <h1 className="text-3xl font-semibold text-white">
+              <h1 className="text-3xl font-semibold text-[var(--foreground)]">
                 Pedidos de Acceso
               </h1>
             </div>

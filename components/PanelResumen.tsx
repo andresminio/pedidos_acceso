@@ -334,8 +334,8 @@ export default function PanelResumen() {
   return (
     <div>
       {/* Banner con filtros aplicables a toda la hoja */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-[#12161f] px-4 py-3">
-        <h2 className="text-lg font-semibold text-white">Estadísticas</h2>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3">
+        <h2 className="text-lg font-semibold text-[var(--foreground)]">Estadísticas</h2>
         <div className="flex flex-wrap items-center gap-2">
           <select
             className="input w-auto"
@@ -371,7 +371,7 @@ export default function PanelResumen() {
             type="button"
             onClick={descargarExcel}
             disabled={loading}
-            className="whitespace-nowrap rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+            className="whitespace-nowrap rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
           >
             Descargar Excel
           </button>
@@ -379,13 +379,13 @@ export default function PanelResumen() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-md border border-red-900/50 bg-red-950/50 px-3 py-2 text-sm text-red-300">
+        <div className="mb-4 rounded-md border border-[var(--danger-border)] bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">
           {error}
         </div>
       )}
 
       {loading ? (
-        <p className="text-sm text-slate-500">Cargando…</p>
+        <p className="text-sm text-[var(--muted-3)]">Cargando…</p>
       ) : (
         <div className="space-y-8">
           {/* Contadores del período elegido */}
@@ -394,12 +394,12 @@ export default function PanelResumen() {
             <TarjetaContador
               etiqueta="Cerrados"
               valor={contadores.cerrados}
-              color="text-emerald-400"
+              color="text-[var(--success-text)]"
             />
             <TarjetaContador
               etiqueta="Pendientes"
               valor={contadores.pendientes}
-              color="text-amber-400"
+              color="text-[var(--warning-text)]"
             />
           </div>
 
@@ -415,7 +415,7 @@ export default function PanelResumen() {
             </thead>
             <tbody>
               {tabla1.filas.map((f) => (
-                <tr key={f.cuatrimestre} className="border-t border-slate-800">
+                <tr key={f.cuatrimestre} className="border-t border-[var(--border)]">
                   <Td>{NOMBRE_CUATRIMESTRE[f.cuatrimestre]}</Td>
                   <Td align="right">{f.cerrado}</Td>
                   <Td align="right">{f.pendiente}</Td>
@@ -431,34 +431,34 @@ export default function PanelResumen() {
 
           {/* Gráfico: totales por tema */}
           <div>
-            <p className="mb-3 text-sm font-semibold text-white">
+            <p className="mb-3 text-sm font-semibold text-[var(--foreground)]">
               Totales por tema — {etiquetaPeriodo}
             </p>
-            <div className="rounded-lg border border-slate-800 bg-[#12161f] p-4">
+            <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
               <div className="space-y-1.5">
                 {tabla4.filas.map((f) => (
                   <div key={f.tema} className="flex items-center gap-2 text-xs">
                     <span
-                      className="w-56 shrink-0 truncate text-slate-400 sm:w-64"
+                      className="w-56 shrink-0 truncate text-[var(--muted)] sm:w-64"
                       title={f.tema}
                     >
                       {f.tema}
                     </span>
-                    <div className="h-4 flex-1 rounded bg-slate-800">
+                    <div className="h-4 flex-1 rounded bg-[var(--surface-2)]">
                       <div
-                        className="h-4 rounded bg-blue-600"
+                        className="h-4 rounded bg-[var(--accent)]"
                         style={{
                           width: maxTema ? `${(f.cantidad / maxTema) * 100}%` : "0%",
                         }}
                       />
                     </div>
-                    <span className="w-8 shrink-0 text-right text-slate-300">
+                    <span className="w-8 shrink-0 text-right text-[var(--muted-2)]">
                       {f.cantidad}
                     </span>
                   </div>
                 ))}
                 {tabla4.filas.length === 0 && (
-                  <p className="text-sm text-slate-500">Sin datos para este período.</p>
+                  <p className="text-sm text-[var(--muted-3)]">Sin datos para este período.</p>
                 )}
               </div>
             </div>
@@ -472,15 +472,15 @@ export default function PanelResumen() {
 function TarjetaContador({
   etiqueta,
   valor,
-  color = "text-white",
+  color = "text-[var(--foreground)]",
 }: {
   etiqueta: string;
   valor: number;
   color?: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-800 bg-[#12161f] px-6 py-5">
-      <p className="text-sm text-slate-500">{etiqueta}</p>
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-6 py-5">
+      <p className="text-sm text-[var(--muted-3)]">{etiqueta}</p>
       <p className={`text-5xl font-semibold ${color}`}>{valor}</p>
     </div>
   );
@@ -495,8 +495,8 @@ function TablaResumen({
 }) {
   return (
     <div>
-      {titulo && <p className="mb-2 text-sm font-semibold text-white">{titulo}</p>}
-      <div className="overflow-x-auto rounded-lg border border-slate-800 bg-[#12161f]">
+      {titulo && <p className="mb-2 text-sm font-semibold text-[var(--foreground)]">{titulo}</p>}
+      <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)]">
         <table className="w-full text-sm">{children}</table>
       </div>
     </div>
@@ -512,7 +512,7 @@ function Th({
 }) {
   return (
     <th
-      className={`px-3 py-2 text-xs font-medium uppercase tracking-wide text-slate-500 ${
+      className={`px-3 py-2 text-xs font-medium uppercase tracking-wide text-[var(--muted-3)] ${
         align === "right" ? "text-right" : "text-left"
       }`}
     >
@@ -529,7 +529,7 @@ function Td({
   align?: "left" | "right";
 }) {
   return (
-    <td className={`px-3 py-2 text-slate-300 ${align === "right" ? "text-right" : "text-left"}`}>
+    <td className={`px-3 py-2 text-[var(--muted-2)] ${align === "right" ? "text-right" : "text-left"}`}>
       {children}
     </td>
   );
@@ -537,7 +537,7 @@ function Td({
 
 function FilaTotal({ etiqueta, valores }: { etiqueta: string; valores: number[] }) {
   return (
-    <tr className="border-t border-slate-700 bg-slate-800/40 font-semibold text-white">
+    <tr className="border-t border-[var(--border-2)] bg-[var(--surface-2)]/40 font-semibold text-[var(--foreground)]">
       <Td>{etiqueta}</Td>
       {valores.map((v, i) => (
         <Td key={i} align="right">

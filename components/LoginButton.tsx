@@ -69,10 +69,10 @@ export default function LoginButton() {
       <button
         type="button"
         onClick={handleClickPill}
-        className={`group fixed bottom-36 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full px-2.5 text-white shadow-lg transition-all duration-300 ease-out hover:w-56 hover:px-4 ${
+        className={`group fixed bottom-52 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full px-2.5 text-white shadow-lg transition-all duration-300 ease-out hover:w-56 hover:px-4 ${
           isLoggedIn
             ? "bg-emerald-700 shadow-emerald-950/40 hover:bg-emerald-600"
-            : "bg-slate-700 hover:bg-slate-600"
+            : "bg-[var(--surface-3)] hover:bg-[var(--muted-3)]"
         }`}
       >
         <span className="flex h-7 w-7 shrink-0 items-center justify-center">
@@ -91,13 +91,13 @@ export default function LoginButton() {
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-slate-800 bg-[#12161f] p-6 shadow-2xl"
+            className="flex w-full max-w-sm flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 shadow-2xl"
           >
-            <h2 className="text-lg font-semibold text-white">Ingresar</h2>
-            <p className="text-sm text-slate-400">
+            <h2 className="text-lg font-semibold text-[var(--foreground)]">Ingresar</h2>
+            <p className="text-sm text-[var(--muted)]">
               Ingresá con el correo institucional de Datos Abiertos para poder editar.
             </p>
-            <label className="flex flex-col gap-1 text-xs text-slate-400">
+            <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
               Webmail PJN
               <input
                 type="email"
@@ -108,7 +108,7 @@ export default function LoginButton() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </label>
-            <label className="flex flex-col gap-1 text-xs text-slate-400">
+            <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
               Contraseña
               <div className="relative">
                 <input
@@ -122,25 +122,25 @@ export default function LoginButton() {
                   type="button"
                   onClick={() => setMostrarPassword((v) => !v)}
                   aria-label={mostrarPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted-3)] hover:text-[var(--muted-2)]"
                 >
                   <IconoOjo tachado={mostrarPassword} />
                 </button>
               </div>
             </label>
-            {error && <p className="text-xs text-red-400">{error}</p>}
+            {error && <p className="text-xs text-[var(--danger-text)]">{error}</p>}
             <div className="mt-1 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setAbierto(false)}
-                className="rounded-md border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-800"
+                className="rounded-md border border-[var(--border-2)] px-3 py-1.5 text-sm font-medium text-[var(--muted-2)] hover:bg-[var(--surface-2)]"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={enviando}
-                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
               >
                 {enviando ? "Ingresando…" : "Ingresar"}
               </button>

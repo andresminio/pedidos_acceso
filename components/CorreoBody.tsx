@@ -196,7 +196,7 @@ export default function CorreoBody({
                   type="button"
                   disabled={guardando}
                   onClick={guardar}
-                  className="font-medium text-[var(--accent-hover)] hover:text-[var(--accent-hover)] disabled:opacity-50"
+                  className="font-medium text-[var(--accent-hover)] hover:text-[var(--accent)] disabled:opacity-50"
                 >
                   {guardando ? "Guardando…" : "Guardar"}
                 </button>
@@ -214,7 +214,7 @@ export default function CorreoBody({
                 <button
                   type="button"
                   onClick={abrirEditor}
-                  className="font-medium text-[var(--accent-hover)] hover:text-[var(--accent-hover)]"
+                  className="font-medium text-[var(--accent-hover)] hover:text-[var(--accent)]"
                 >
                   Editar mensaje
                 </button>

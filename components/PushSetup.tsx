@@ -108,7 +108,7 @@ export default function PushSetup() {
       <button
         type="button"
         onClick={desactivar}
-        className="group fixed bottom-20 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-emerald-700 px-2.5 text-white shadow-lg shadow-emerald-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-emerald-600 hover:px-4"
+        className="group fixed bottom-36 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-emerald-700 px-2.5 text-white shadow-lg shadow-emerald-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-emerald-600 hover:px-4"
       >
         <span className="flex h-7 w-7 shrink-0 items-center justify-center">
           <IconoCampana />
@@ -125,7 +125,7 @@ export default function PushSetup() {
       <button
         type="button"
         onClick={() => setOculto(true)}
-        className="group fixed bottom-20 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-slate-700 px-2.5 text-white shadow-lg transition-all duration-300 ease-out hover:w-56 hover:bg-slate-600 hover:px-4"
+        className="group fixed bottom-36 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-slate-700 px-2.5 text-white shadow-lg transition-all duration-300 ease-out hover:w-56 hover:bg-slate-600 hover:px-4"
       >
         <span className="flex h-7 w-7 shrink-0 items-center justify-center">
           <IconoCampana />
@@ -142,7 +142,7 @@ export default function PushSetup() {
       type="button"
       onClick={activar}
       disabled={estado === "activando"}
-      className="group fixed bottom-20 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-blue-600 px-2.5 text-white shadow-lg shadow-blue-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-blue-500 hover:px-4 disabled:opacity-50"
+      className="group fixed bottom-36 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-blue-600 px-2.5 text-white shadow-lg shadow-blue-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-blue-500 hover:px-4 disabled:opacity-50"
     >
       <span className="flex h-7 w-7 shrink-0 items-center justify-center">
         <IconoCampana />
