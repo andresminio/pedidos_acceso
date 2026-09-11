@@ -130,11 +130,25 @@ export default function CorreoBody({
   const [editando, setEditando] = useState(false);
   const [borrador, setBorrador] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const cajaRef = useRef<HTMLDivElement>(null);
 
   function abrirEditor() {
     setBorrador(edicionActual?.trim() || textoRecortado);
     setEditando(true);
   }
+
+  // Click afuera del cuadro = "me arrepentí": cancela la edición sin
+  // guardar, igual que el botón Cancelar.
+  useEffect(() => {
+    if (!editando) return;
+    function handleClickFuera(e: MouseEvent) {
+      if (cajaRef.current && !cajaRef.current.contains(e.target as Node)) {
+        setEditando(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, [editando]);
 
   async function guardar() {
     if (!onGuardarEdicion) return;
@@ -162,7 +176,7 @@ export default function CorreoBody({
       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--surface-3)] text-xs font-semibold text-[var(--fg-soft)]">
         {iniciales(remitente)}
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1" ref={cajaRef}>
         <p className="mb-1 text-xs text-[var(--muted-3)]">{etiqueta}</p>
         <div className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3.5 py-3 text-sm leading-relaxed text-[var(--fg-soft)]">
           {hayEncabezado && (
