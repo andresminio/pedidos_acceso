@@ -1235,7 +1235,9 @@ function LineaTiempoPedido({
               onClick={() => onAbrir("recepcion")}
               className="flex shrink-0 flex-col items-center gap-1.5 px-3"
             >
-              <span className="h-4 w-4 rounded-full bg-[var(--muted-3)]" />
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[var(--ia)] text-white">
+                <IconoIA />
+              </span>
               <span className="max-w-28 whitespace-normal text-center text-xs font-medium leading-tight text-[var(--muted-2)]">
                 Generá modelo de respuesta con IA
               </span>
