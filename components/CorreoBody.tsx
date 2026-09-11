@@ -46,8 +46,8 @@ function recortarCadenaEnHtml(contenedor: HTMLElement): void {
 function DatoEncabezado({ label, valor }: { label: string; valor: string }) {
   return (
     <p className="truncate">
-      <span className="text-slate-500">{label}: </span>
-      <span className="text-slate-300">{valor}</span>
+      <span className="text-[var(--muted-3)]">{label}: </span>
+      <span className="text-[var(--muted-2)]">{valor}</span>
     </p>
   );
 }
@@ -159,14 +159,14 @@ export default function CorreoBody({
 
   return (
     <div className="flex items-start gap-2.5">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-700 text-xs font-semibold text-slate-200">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--surface-3)] text-xs font-semibold text-[var(--fg-soft)]">
         {iniciales(remitente)}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="mb-1 text-xs text-slate-500">{etiqueta}</p>
-        <div className="rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200">
+        <p className="mb-1 text-xs text-[var(--muted-3)]">{etiqueta}</p>
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3.5 py-3 text-sm leading-relaxed text-[var(--fg-soft)]">
           {hayEncabezado && (
-            <div className="mb-2.5 border-b border-slate-800 pb-2 text-xs">
+            <div className="mb-2.5 border-b border-[var(--border)] pb-2 text-xs">
               <DatoEncabezado label="De" valor={remitente} />
               {destinatario && <DatoEncabezado label="Para" valor={destinatario} />}
               {fecha && <DatoEncabezado label="Fecha" valor={fecha} />}
@@ -196,7 +196,7 @@ export default function CorreoBody({
                   type="button"
                   disabled={guardando}
                   onClick={guardar}
-                  className="font-medium text-blue-400 hover:text-blue-300 disabled:opacity-50"
+                  className="font-medium text-[var(--accent-hover)] hover:text-[var(--accent-hover)] disabled:opacity-50"
                 >
                   {guardando ? "Guardando…" : "Guardar"}
                 </button>
@@ -204,7 +204,7 @@ export default function CorreoBody({
                   type="button"
                   disabled={guardando}
                   onClick={() => setEditando(false)}
-                  className="text-slate-500 hover:text-slate-300"
+                  className="text-[var(--muted-3)] hover:text-[var(--muted-2)]"
                 >
                   Cancelar
                 </button>
@@ -214,7 +214,7 @@ export default function CorreoBody({
                 <button
                   type="button"
                   onClick={abrirEditor}
-                  className="font-medium text-blue-400 hover:text-blue-300"
+                  className="font-medium text-[var(--accent-hover)] hover:text-[var(--accent-hover)]"
                 >
                   Editar mensaje
                 </button>
@@ -223,7 +223,7 @@ export default function CorreoBody({
                     type="button"
                     disabled={guardando}
                     onClick={restaurarAutomatico}
-                    className="text-slate-500 hover:text-slate-300 disabled:opacity-50"
+                    className="text-[var(--muted-3)] hover:text-[var(--muted-2)] disabled:opacity-50"
                   >
                     Restaurar corte automático
                   </button>

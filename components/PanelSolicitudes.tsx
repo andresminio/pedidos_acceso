@@ -78,10 +78,10 @@ function PillEstado({ estado }: { estado: string }) {
   const esCerrado = estado.toLowerCase() === "cerrado";
   const esPendiente = estado.toLowerCase() === "pendiente";
   const clase = esCerrado
-    ? "bg-emerald-500/15 text-emerald-400"
+    ? "bg-[var(--success)]/15 text-[var(--success-text)]"
     : esPendiente
-      ? "bg-amber-500/15 text-amber-400"
-      : "bg-slate-700/40 text-slate-300";
+      ? "bg-[var(--warning)]/15 text-[var(--warning-text)]"
+      : "bg-[var(--surface-3)] text-[var(--muted-2)]";
   return (
     <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${clase}`}>
       {estado}
@@ -282,7 +282,7 @@ export default function PanelSolicitudes() {
   return (
     <div>
       {error && (
-        <div className="mb-4 rounded-md border border-red-900/50 bg-red-950/50 px-3 py-2 text-sm text-red-300">
+        <div className="mb-4 rounded-md border border-[var(--danger-border)] bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger-text)]">
           {error}
         </div>
       )}
@@ -299,7 +299,7 @@ export default function PanelSolicitudes() {
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
-            className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]"
           >
             <circle cx="11" cy="11" r="7" />
             <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
@@ -349,26 +349,26 @@ export default function PanelSolicitudes() {
         <BotonColumnas colsVisibles={colsVisibles} onToggle={toggleCol} />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-800 bg-[#12161f] shadow-sm">
-        <table className="min-w-full divide-y divide-slate-800 text-sm">
+      <div className="overflow-x-auto rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        <table className="min-w-full divide-y divide-[var(--border)] text-sm">
           <thead>
-            <tr className="bg-blue-500/10">
+            <tr className="bg-[var(--accent)]/10">
               {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
                 <th
                   key={c.key}
-                  className="whitespace-nowrap px-3 py-2 text-left font-bold text-slate-300"
+                  className="whitespace-nowrap px-3 py-2 text-left font-bold text-[var(--muted-2)]"
                 >
                   {c.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800">
+          <tbody className="divide-y divide-[var(--border)]">
             {loading && (
               <tr>
                 <td
                   colSpan={colsVisibles.size}
-                  className="px-3 py-6 text-center text-slate-400"
+                  className="px-3 py-6 text-center text-[var(--muted)]"
                 >
                   Cargando…
                 </td>
@@ -378,7 +378,7 @@ export default function PanelSolicitudes() {
               <tr>
                 <td
                   colSpan={colsVisibles.size}
-                  className="px-3 py-6 text-center text-slate-400"
+                  className="px-3 py-6 text-center text-[var(--muted)]"
                 >
                   No hay pedidos registrados con estos filtros.
                 </td>
@@ -436,14 +436,14 @@ function FilaSolicitud({
     cuatrimestre: row.cuatrimestre,
     fecha: <span className="whitespace-nowrap">{fechaCorta(row.fecha)}</span>,
     solicitante: (
-      <span className="font-medium text-white">{row.nombre_solicitante}</span>
+      <span className="font-medium text-[var(--foreground)]">{row.nombre_solicitante}</span>
     ),
     solicitud: (
       <span className="inline-flex max-w-xs items-center gap-1.5" title={row.solicitud}>
         {tieneCorreo && (
           <span
             title="Correo importado vinculado — se puede generar respuesta con IA"
-            className="shrink-0 text-slate-400"
+            className="shrink-0 text-[var(--muted)]"
           >
             <IconoIA />
           </span>
@@ -451,7 +451,7 @@ function FilaSolicitud({
         {tieneRespuesta && (
           <span
             title="Tiene eventos en la línea de tiempo"
-            className="shrink-0 text-emerald-500"
+            className="shrink-0 text-[var(--success-text)]"
           >
             <IconoRespuestaVinculada />
           </span>
@@ -479,7 +479,7 @@ function FilaSolicitud({
         <tr
           onDoubleClick={onAbrir}
           title={puedeEditar ? "Doble click para editar" : "Doble click para ver el detalle"}
-          className="cursor-pointer align-top text-slate-300 hover:bg-white/[0.02]"
+          className="cursor-pointer align-top text-[var(--muted-2)] hover:bg-[var(--foreground)]/[0.03]"
         >
           {COLUMNAS.filter((c) => colsVisibles.has(c.key)).map((c) => (
             <td key={c.key} className="px-3 py-2">
@@ -880,10 +880,10 @@ function FilaSolicitudEdicion({
   }
 
   return (
-    <tr ref={filaRef} className="bg-[#0e1219]">
+    <tr ref={filaRef} className="bg-[var(--background)]">
       <td colSpan={colSpan} className="px-3 py-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+          <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
             Solicitante
             {puedeEditar ? (
               <input
@@ -892,13 +892,13 @@ function FilaSolicitudEdicion({
                 onChange={(e) => setNombreSolicitante(e.target.value)}
               />
             ) : (
-              <p className="text-sm text-slate-200">{nombreSolicitante || "—"}</p>
+              <p className="text-sm text-[var(--fg-soft)]">{nombreSolicitante || "—"}</p>
             )}
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+          <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
             Categoría
             {!puedeEditar ? (
-              <p className="text-sm text-slate-200">{categoria || "—"}</p>
+              <p className="text-sm text-[var(--fg-soft)]">{categoria || "—"}</p>
             ) : nuevaCategoria ? (
               <input
                 autoFocus
@@ -944,7 +944,7 @@ function FilaSolicitudEdicion({
               </select>
             )}
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+          <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
             Subcategoría
             {puedeEditar ? (
               <>
@@ -961,10 +961,10 @@ function FilaSolicitudEdicion({
                 </datalist>
               </>
             ) : (
-              <p className="text-sm text-slate-200">{subcategoria || "—"}</p>
+              <p className="text-sm text-[var(--fg-soft)]">{subcategoria || "—"}</p>
             )}
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+          <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
             Fecha
             {puedeEditar ? (
               <input
@@ -974,12 +974,12 @@ function FilaSolicitudEdicion({
                 onChange={(e) => setFecha(e.target.value)}
               />
             ) : (
-              <p className="text-sm text-slate-200">{fechaCorta(fecha)}</p>
+              <p className="text-sm text-[var(--fg-soft)]">{fechaCorta(fecha)}</p>
             )}
           </label>
         </div>
 
-        <label className="mt-3 flex flex-col gap-1 text-xs text-slate-400">
+        <label className="mt-3 flex flex-col gap-1 text-xs text-[var(--muted)]">
           Solicitud
           {puedeEditar ? (
             <textarea
@@ -988,12 +988,12 @@ function FilaSolicitudEdicion({
               onChange={(e) => setSolicitud(e.target.value)}
             />
           ) : (
-            <p className="whitespace-pre-line text-sm text-slate-200">{solicitud || "—"}</p>
+            <p className="whitespace-pre-line text-sm text-[var(--fg-soft)]">{solicitud || "—"}</p>
           )}
         </label>
 
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+          <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
             Estado
             {puedeEditar ? (
               <select
@@ -1013,13 +1013,13 @@ function FilaSolicitudEdicion({
               </div>
             )}
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+          <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
             Sub-estado
             {puedeEditar ? (
               <>
                 <select
                   className={`input disabled:cursor-not-allowed disabled:opacity-40 ${
-                    errorSubestado ? "border-red-600" : ""
+                    errorSubestado ? "border-[var(--danger-border)]" : ""
                   }`}
                   value={subestado}
                   disabled={estado !== "Cerrado"}
@@ -1033,32 +1033,32 @@ function FilaSolicitudEdicion({
                   ))}
                 </select>
                 {errorSubestado && (
-                  <span className="text-xs text-red-400">{errorSubestado}</span>
+                  <span className="text-xs text-[var(--danger-text)]">{errorSubestado}</span>
                 )}
               </>
             ) : (
-              <p className="text-sm text-slate-200">{subestado || "—"}</p>
+              <p className="text-sm text-[var(--fg-soft)]">{subestado || "—"}</p>
             )}
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+          <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
             F. respuesta
             {puedeEditar ? (
               <>
                 <input
                   type="date"
-                  className={`input ${errorFechaRespuesta ? "border-red-600" : ""}`}
+                  className={`input ${errorFechaRespuesta ? "border-[var(--danger-border)]" : ""}`}
                   value={fechaRespuesta}
                   onChange={(e) => setFechaRespuesta(e.target.value)}
                 />
                 {errorFechaRespuesta && (
-                  <span className="text-xs text-red-400">{errorFechaRespuesta}</span>
+                  <span className="text-xs text-[var(--danger-text)]">{errorFechaRespuesta}</span>
                 )}
               </>
             ) : (
-              <p className="text-sm text-slate-200">{fechaCorta(fechaRespuesta)}</p>
+              <p className="text-sm text-[var(--fg-soft)]">{fechaCorta(fechaRespuesta)}</p>
             )}
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+          <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
             Observaciones
             {puedeEditar ? (
               <input
@@ -1067,7 +1067,7 @@ function FilaSolicitudEdicion({
                 onChange={(e) => setObservaciones(e.target.value)}
               />
             ) : (
-              <p className="text-sm text-slate-200">{observaciones || "—"}</p>
+              <p className="text-sm text-[var(--fg-soft)]">{observaciones || "—"}</p>
             )}
           </label>
         </div>
@@ -1113,7 +1113,7 @@ function FilaSolicitudEdicion({
               type="button"
               disabled={guardando || eliminando}
               onClick={onCerrar}
-              className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+              className="rounded-md border border-[var(--border-2)] px-3 py-1.5 text-sm text-[var(--muted-2)] hover:bg-[var(--surface-2)] disabled:opacity-50"
             >
               {puedeEditar ? "Cancelar" : "Cerrar"}
             </button>
@@ -1129,7 +1129,7 @@ function FilaSolicitudEdicion({
                   !!errorSubestado
                 }
                 onClick={handleGuardar}
-                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 disabled:opacity-50"
+                className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
               >
                 Guardar
               </button>
@@ -1140,7 +1140,7 @@ function FilaSolicitudEdicion({
               type="button"
               disabled={guardando || eliminando}
               onClick={handleEliminar}
-              className="rounded-md border border-red-900/50 px-3 py-1.5 text-sm text-red-400 hover:bg-red-950/50 disabled:opacity-50"
+              className="rounded-md border border-[var(--danger-border)] px-3 py-1.5 text-sm text-[var(--danger-text)] hover:bg-[var(--danger-bg)] disabled:opacity-50"
             >
               {eliminando ? "Eliminando…" : "Eliminar"}
             </button>
@@ -1165,7 +1165,7 @@ function BotonColumnas({
       <button
         type="button"
         onClick={() => setAbierto((a) => !a)}
-        className="flex items-center gap-1.5 rounded-md border border-slate-700 bg-[#12161f] px-3 py-1.5 text-sm text-slate-300 shadow-sm hover:bg-slate-800"
+        className="flex items-center gap-1.5 rounded-md border border-[var(--border-2)] bg-[var(--card)] px-3 py-1.5 text-sm text-[var(--muted-2)] shadow-sm hover:bg-[var(--surface-2)]"
       >
         <svg
           viewBox="0 0 24 24"
@@ -1182,11 +1182,11 @@ function BotonColumnas({
       {abierto && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setAbierto(false)} />
-          <div className="absolute right-0 z-20 mt-1 w-56 rounded-md border border-slate-700 bg-[#12161f] p-2 shadow-lg">
+          <div className="absolute right-0 z-20 mt-1 w-56 rounded-md border border-[var(--border-2)] bg-[var(--card)] p-2 shadow-lg">
             {COLUMNAS.map((c) => (
               <label
                 key={c.key}
-                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-slate-300 hover:bg-slate-800"
+                className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-[var(--muted-2)] hover:bg-[var(--surface-2)]"
               >
                 <input
                   type="checkbox"
@@ -1219,22 +1219,22 @@ function LineaTiempoPedido({
 }) {
   return (
     <div className="mt-5">
-      <p className="mb-3 text-sm text-slate-400">Línea de tiempo</p>
+      <p className="mb-3 text-sm text-[var(--muted)]">Línea de tiempo</p>
       <div className="flex items-start overflow-x-auto pb-2">
         <PuntoTiempo
           etiqueta="Recepción"
           fecha={row.fecha}
-          color="bg-blue-500"
+          color="bg-[var(--accent-hover)]"
           onClick={() => onAbrir("recepcion")}
         />
         {eventos.map((ev) => (
           <div key={ev.id} className="flex shrink-0 items-start">
-            <div className="mt-2.5 h-px w-12 shrink-0 bg-slate-700" />
+            <div className="mt-2.5 h-px w-12 shrink-0 bg-[var(--surface-3)]" />
             <PuntoTiempo
               etiqueta={ev.etiqueta}
               fecha={ev.fecha}
               color={
-                ev.etiqueta === ETIQUETA_BORRADOR ? "bg-amber-500" : "bg-emerald-500"
+                ev.etiqueta === ETIQUETA_BORRADOR ? "bg-[var(--warning)]" : "bg-[var(--success)]"
               }
               onClick={() => onAbrir(ev)}
             />
@@ -1317,7 +1317,7 @@ function PopupEventoPedido({
       onClick={onCerrar}
     >
       <div
-        className="max-h-[80vh] w-full max-w-5xl overflow-y-auto rounded-lg border border-slate-800 bg-[#12161f] p-4 shadow-lg"
+        className="max-h-[80vh] w-full max-w-5xl overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-start justify-between gap-2">
@@ -1339,21 +1339,21 @@ function PopupEventoPedido({
               />
             ) : (
               <h4
-                className={`font-semibold text-white ${puedeRenombrar ? "cursor-text" : ""}`}
+                className={`font-semibold text-[var(--foreground)] ${puedeRenombrar ? "cursor-text" : ""}`}
                 title={puedeRenombrar ? "Doble click para editar el nombre" : undefined}
                 onDoubleClick={() => puedeRenombrar && setEditandoEtiqueta(true)}
               >
                 {abierto === "recepcion" ? "Recepción" : abierto.etiqueta}
               </h4>
             )}
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-[var(--muted-3)]">
               {fechaCorta(abierto === "recepcion" ? row.fecha : abierto.fecha)}
             </p>
           </div>
           <button
             type="button"
             onClick={onCerrar}
-            className="text-slate-400 hover:text-slate-200"
+            className="text-[var(--muted)] hover:text-[var(--fg-soft)]"
           >
             ✕
           </button>
@@ -1367,14 +1367,14 @@ function PopupEventoPedido({
                   type="button"
                   disabled={generandoRespuesta || !puedeEditar}
                   onClick={onGenerarRespuesta}
-                  className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-md border border-[var(--border-2)] px-2.5 py-1 text-xs text-[var(--muted-2)] hover:bg-[var(--surface-2)] disabled:opacity-50"
                 >
                   <IconoIA />
                   {generandoRespuesta ? "Generando…" : "Volver a generar con IA"}
                 </button>
               </span>
               {errorRespuestaIA && (
-                <span className="text-xs text-red-400">{errorRespuestaIA}</span>
+                <span className="text-xs text-[var(--danger-text)]">{errorRespuestaIA}</span>
               )}
             </div>
             {puedeEditar ? (
@@ -1384,7 +1384,7 @@ function PopupEventoPedido({
                 onChange={(e) => onRespuestaIAChange(e.target.value)}
               />
             ) : (
-              <p className="whitespace-pre-line rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200">
+              <p className="whitespace-pre-line rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3.5 py-3 text-sm leading-relaxed text-[var(--fg-soft)]">
                 {respuestaIA || "(sin texto)"}
               </p>
             )}
@@ -1394,7 +1394,7 @@ function PopupEventoPedido({
                   type="button"
                   disabled={guardandoBorrador}
                   onClick={onSacarBorrador}
-                  className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
+                  className="text-xs font-medium text-[var(--danger-text)] hover:text-[var(--danger-text)] disabled:opacity-50"
                 >
                   Sacar de la línea de tiempo
                 </button>
@@ -1402,7 +1402,7 @@ function PopupEventoPedido({
                   type="button"
                   disabled={guardandoBorrador}
                   onClick={onGuardarBorrador}
-                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
+                  className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
                 >
                   {guardandoBorrador ? "Guardando…" : "Guardar"}
                 </button>
@@ -1438,53 +1438,58 @@ function PopupEventoPedido({
               onGuardarEdicion={onGuardarEdicionCuerpo}
             />
             {abierto === "recepcion" && mailOrigen && (
-              <div className="mt-4 flex flex-col gap-3 border-t border-slate-800 pt-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">Modelo de respuesta</span>
-                  <span title={puedeEditar ? undefined : "Ingresá para poder usar esta opción"}>
-                    <button
-                      type="button"
-                      disabled={generandoRespuesta || !puedeEditar}
-                      onClick={onGenerarRespuesta}
-                      className="flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
-                    >
-                      <IconoIA />
-                      {generandoRespuesta
-                        ? "Generando…"
-                        : respuestaIA
-                          ? "Volver a generar con IA"
-                          : "Generar respuesta con IA"}
-                    </button>
-                  </span>
-                  {errorRespuestaIA && (
-                    <span className="text-xs text-red-400">{errorRespuestaIA}</span>
+              <div className="mt-4 flex items-start gap-2.5 border-t border-[var(--border)] pt-4">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--ia)] text-xs font-semibold text-[var(--fg-soft)]">
+                  IA
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-2">
+                    <p className="text-xs text-[var(--muted-3)]">Modelo de respuesta</p>
+                    <span title={puedeEditar ? undefined : "Ingresá para poder usar esta opción"}>
+                      <button
+                        type="button"
+                        disabled={generandoRespuesta || !puedeEditar}
+                        onClick={onGenerarRespuesta}
+                        className="flex items-center gap-1.5 rounded-md border border-[var(--border-2)] px-2.5 py-1 text-xs text-[var(--muted-2)] hover:bg-[var(--surface-2)] disabled:opacity-50"
+                      >
+                        <IconoIA />
+                        {generandoRespuesta
+                          ? "Generando…"
+                          : respuestaIA
+                            ? "Volver a generar con IA"
+                            : "Generar respuesta con IA"}
+                      </button>
+                    </span>
+                    {errorRespuestaIA && (
+                      <span className="text-xs text-[var(--danger-text)]">{errorRespuestaIA}</span>
+                    )}
+                  </div>
+                  {respuestaIA && (
+                    puedeEditar ? (
+                      <textarea
+                        className="input min-h-48 w-full text-sm"
+                        value={respuestaIA}
+                        onChange={(e) => onRespuestaIAChange(e.target.value)}
+                      />
+                    ) : (
+                      <p className="whitespace-pre-line rounded-xl border border-[var(--border)] bg-[var(--card-2)] px-3.5 py-3 text-sm leading-relaxed text-[var(--fg-soft)]">
+                        {respuestaIA}
+                      </p>
+                    )
+                  )}
+                  {puedeEditar && respuestaIA && (
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        type="button"
+                        disabled={guardandoBorrador}
+                        onClick={onGuardarBorrador}
+                        className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                      >
+                        {guardandoBorrador ? "Guardando…" : "Guardar"}
+                      </button>
+                    </div>
                   )}
                 </div>
-                {respuestaIA && (
-                  puedeEditar ? (
-                    <textarea
-                      className="input min-h-48"
-                      value={respuestaIA}
-                      onChange={(e) => onRespuestaIAChange(e.target.value)}
-                    />
-                  ) : (
-                    <p className="whitespace-pre-line rounded-xl border border-slate-800 bg-[#171c26] px-3.5 py-3 text-sm leading-relaxed text-slate-200">
-                      {respuestaIA}
-                    </p>
-                  )
-                )}
-                {puedeEditar && respuestaIA && (
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      disabled={guardandoBorrador}
-                      onClick={onGuardarBorrador}
-                      className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-50"
-                    >
-                      {guardandoBorrador ? "Guardando…" : "Guardar"}
-                    </button>
-                  </div>
-                )}
               </div>
             )}
             {puedeEditar && abierto !== "recepcion" && (
@@ -1493,7 +1498,7 @@ function PopupEventoPedido({
                   type="button"
                   disabled={desvinculandoId === abierto.id}
                   onClick={() => onDesvincular(abierto)}
-                  className="text-xs font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
+                  className="text-xs font-medium text-[var(--danger-text)] hover:text-[var(--danger-text)] disabled:opacity-50"
                 >
                   {desvinculandoId === abierto.id ? "Desvinculando…" : "Desvincular"}
                 </button>
@@ -1524,11 +1529,11 @@ function PuntoTiempo({
       className="flex shrink-0 flex-col items-center gap-1.5 px-3"
     >
       <span className={`h-4 w-4 rounded-full ${color}`} />
-      <span className="whitespace-nowrap text-xs text-slate-500">
+      <span className="whitespace-nowrap text-xs text-[var(--muted-3)]">
         {fechaCorta(fecha)}
       </span>
       <span
-        className="max-w-32 truncate text-xs font-medium text-slate-300"
+        className="max-w-32 truncate text-xs font-medium text-[var(--muted-2)]"
         title={etiqueta}
       >
         {etiqueta}

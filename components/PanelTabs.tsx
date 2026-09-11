@@ -53,7 +53,7 @@ export default function PanelTabs({
   }, [totalRevision]);
 
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-[#12161f] p-1">
+    <div className="flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--card)] p-1">
       <Tab
         href="/revision"
         activo={activa === "revision"}
@@ -82,15 +82,17 @@ function Tab({
       href={href}
       className={`flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
         activo
-          ? "bg-slate-800 text-white shadow-sm"
-          : "text-slate-400 hover:text-slate-200"
+          ? "bg-[var(--surface-2)] text-[var(--foreground)] shadow-sm"
+          : "text-[var(--muted)] hover:text-[var(--fg-soft)]"
       }`}
     >
       {label}
       {contador !== null && (
         <span
           className={`rounded-full px-1.5 py-0.5 text-xs font-semibold ${
-            activo ? "bg-blue-500/20 text-blue-300" : "bg-slate-700 text-slate-400"
+            activo
+              ? "bg-[var(--accent-soft-bg)] text-[var(--accent-soft-text)]"
+              : "bg-[var(--surface-3)] text-[var(--muted)]"
           }`}
         >
           {contador}

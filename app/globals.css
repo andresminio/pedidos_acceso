@@ -1,12 +1,61 @@
 @import "tailwindcss";
 
-/* Tema oscuro fijo (no es prefers-color-scheme, es el look del producto). */
+/* Tema oscuro por defecto, con una versión clara opcional (ver
+   ThemeToggle / lib/theme.tsx) que se activa con [data-theme="light"] en
+   <html>. Todavía no todos los componentes usan estos tokens — se está
+   migrando pantalla por pantalla, empezando por "Ingresados". */
 :root {
   --background: #0b0e14;
   --foreground: #e2e8f0;
   --border: #1f2937;
+  --border-2: #334155;
   --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-soft-bg: rgba(59, 130, 246, 0.2);
+  --accent-soft-text: #93c5fd;
   --card: #12161f;
+  --card-2: #171c26;
+  --surface-2: #1e293b;
+  --surface-3: #334155;
+  --muted: #94a3b8;
+  --muted-2: #cbd5e1;
+  --muted-3: #64748b;
+  --fg-soft: #e2e8f0;
+  --danger-bg: #450a0a;
+  --danger-border: #7f1d1d;
+  --danger-text: #f87171;
+  --success: #10b981;
+  --success-text: #34d399;
+  --warning: #f59e0b;
+  --warning-text: #fbbf24;
+  --ia: #4338ca;
+}
+
+[data-theme="light"] {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --border: #e2e8f0;
+  --border-2: #cbd5e1;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft-bg: #dbeafe;
+  --accent-soft-text: #1d4ed8;
+  --card: #ffffff;
+  --card-2: #f1f5f9;
+  --surface-2: #e2e8f0;
+  --surface-3: #cbd5e1;
+  --muted: #475569;
+  --muted-2: #334155;
+  --muted-3: #64748b;
+  --fg-soft: #1e293b;
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+  --danger-text: #dc2626;
+  --success: #059669;
+  --success-text: #059669;
+  --warning: #d97706;
+  --warning-text: #d97706;
+  --ia: #4f46e5;
 }
 
 body {
@@ -84,7 +133,7 @@ body {
   }
 
   .correo-html a {
-    color: #60a5fa;
+    color: var(--accent-hover);
     text-decoration: underline;
     text-underline-offset: 2px;
   }

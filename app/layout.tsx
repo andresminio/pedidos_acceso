@@ -4,6 +4,7 @@ import VersionBanner from "@/components/VersionBanner";
 import PushSetup from "@/components/PushSetup";
 import LoginButton from "@/components/LoginButton";
 import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "UEEDA Pedidos de acceso a la información pública",
@@ -26,12 +27,14 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className="min-h-screen antialiased">
-        <AuthProvider>
-          <VersionBanner />
-          <PushSetup />
-          <LoginButton />
-          {children}
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <VersionBanner />
+            <PushSetup />
+            <LoginButton />
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
