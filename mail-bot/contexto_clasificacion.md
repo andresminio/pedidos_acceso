@@ -37,3 +37,9 @@ no se parsean.
 - Los mails con asunto que empieza "Ley 27.275" son casi siempre pedidos formales.
 - Los mails de la lista interna "prensa@cne.gov.ar" nunca son pedidos, son uso interno.
 -->
+
+- "Padrón electoral histórico" (subcategoría de "Padrón Electoral") solo
+  aplica a pedidos sobre padrones de elecciones anteriores a 1983. Un
+  padrón de cualquier año 1983 en adelante (aunque sea de hace varios
+  años) no es "histórico" — dejá la subcategoría en null o elegí otra
+  que corresponda.

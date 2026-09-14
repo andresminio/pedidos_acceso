@@ -1,0 +1,25 @@
+ 
+===== vie. 11/09/2026 12:38:58,42 ===== 
+1 mail(s) nuevo(s) desde UID 30914
+Gemini (gemini-3.5-flash-lite) no disponible (intento 1/2), reintento en 5s: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+UID 30931: guardado como 'descartado'.
+Listo. 1/1 procesados sin errores.
+Fin de la corrida. 
+ 
+===== lun. 14/09/2026  8:32:58,91 ===== 
+1 mail(s) nuevo(s) desde UID 30931
+UID 30931: ya tiene candidato registrado, salteo clasificación.
+Listo. 1/1 procesados sin errores.
+Fin de la corrida. 
+ 
+===== lun. 14/09/2026  9:18:01,26 ===== 
+1 mail(s) nuevo(s) desde UID 30931
+UID 30932: guardado como 'pendiente'.
+Listo. 1/1 procesados sin errores.
+Fin de la corrida. 
+ 
+===== lun. 14/09/2026  9:31:12,71 ===== 
+1 mail(s) nuevo(s) desde UID 30932
+UID 30935: guardado como 'descartado'.
+Listo. 1/1 procesados sin errores.
+Fin de la corrida. 
