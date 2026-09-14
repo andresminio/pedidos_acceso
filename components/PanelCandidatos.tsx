@@ -336,7 +336,7 @@ export default function PanelCandidatos() {
     <div>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <p className="max-w-2xl text-sm text-[var(--muted)]">
-          UEEDAbot analiza automáticamente el correo institucional para
+          UEEDA_bot analiza automáticamente el correo institucional para
           identificar posibles pedidos de acceso a la información y cerrar
           procesos abiertos. Revisá las sugerencias y confirmá las acciones
           pendientes.
@@ -523,7 +523,7 @@ function FilaCandidato({
       estado: "Pendiente",
       subestado: null,
       fecha_respuesta: null,
-      observaciones: "Cargado automáticamente desde UEEDAbot",
+      observaciones: "Cargado automáticamente desde UEEDA_bot",
       respuesta_ia_borrador: null,
       respuesta_texto: null,
     });

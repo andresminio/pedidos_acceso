@@ -12,7 +12,7 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let data = { title: "UEEDAbot", body: "Hay novedades para revisar." };
+  let data = { title: "UEEDA_bot", body: "Hay novedades para revisar." };
   try {
     if (event.data) data = { ...data, ...event.data.json() };
   } catch {

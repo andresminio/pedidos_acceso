@@ -1,6 +1,6 @@
 {
-  "name": "UEEDAbot",
-  "short_name": "UEEDAbot",
+  "name": "UEEDA_bot",
+  "short_name": "UEEDA_bot",
   "description": "Panel de registro y seguimiento de pedidos de acceso a la información pública",
   "start_url": "/",
   "display": "standalone",

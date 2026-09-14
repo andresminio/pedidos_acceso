@@ -314,7 +314,7 @@ las dudas, pero no generan trabajo de revisión.
 
 ## 7. Avisos push (Web Push)
 
-Cada persona que instala la app (`UEEDAbot`, ver PWA arriba) puede activar
+Cada persona que instala la app (`UEEDA_bot`, ver PWA arriba) puede activar
 avisos en su propia PC con el botón flotante "🔔 Activar avisos" (abajo a
 la izquierda). Es por navegador/dispositivo — activarlo en tu PC no avisa
 a nadie más, cada compañera tiene que hacerlo en la suya. Cuando
