@@ -23,3 +23,9 @@ Fin de la corrida.
 UID 30935: guardado como 'descartado'.
 Listo. 1/1 procesados sin errores.
 Fin de la corrida. 
+ 
+===== lun. 14/09/2026 10:31:29,75 ===== 
+1 mail(s) nuevo(s) desde UID 30935
+UID 30946: guardado como 'pendiente'.
+Listo. 1/1 procesados sin errores.
+Fin de la corrida. 
