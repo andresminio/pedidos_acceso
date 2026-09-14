@@ -137,21 +137,21 @@ function IconoCandado() {
 // acciones de carga/edición tal como funcionan.
 const PASOS_EDICION: Paso[] = [
   {
-    titulo: "¿Qué es MaryBot?",
+    titulo: "¿Qué es UEEDAbot?",
     texto:
-      'MaryBot revisa el correo institucional cada cierto tiempo y clasifica automáticamente cada mail en tres categorías: un pedido de acceso nuevo, una respuesta/repregunta sobre un pedido que ya existe, o un mail no relacionado con pedidos de acceso. Nunca carga ni cierra nada por su cuenta — todo pasa por una persona antes de quedar registrado.',
+      'UEEDAbot revisa el correo institucional cada cierto tiempo y clasifica automáticamente cada mail en tres categorías: un pedido de acceso nuevo, una respuesta/repregunta sobre un pedido que ya existe, o un mail no relacionado con pedidos de acceso. Nunca carga ni cierra nada por su cuenta — todo pasa por una persona antes de quedar registrado.',
     Icono: IconoBot,
   },
   {
     titulo: "Un asistente que te ayuda a registrar pedidos",
     texto:
-      "Acordate que MaryBot facilita el registro, seguimiento y generación de respuesta pero no hace cambios sobre el correo. Tenés que reenviar los mails a Nora y las respuestas al solicitante desde el webmail.",
+      "Acordate que UEEDAbot facilita el registro, seguimiento y generación de respuesta pero no hace cambios sobre el correo. Tenés que reenviar los mails a Nora y las respuestas al solicitante desde el webmail.",
     Icono: IconoReenvio,
   },
   {
     titulo: "Llega un pedido nuevo, ingresalo",
     texto:
-      'Cuando MaryBot detecta un correo que parece un pedido nuevo, aparece en "En revisión" → "Nuevos pedidos de información", con los datos ya propuestos (solicitante, categoría, fecha). Revisalos, corregí lo que haga falta y tocá "Cargar como pedido" — o "Descartar" si en realidad no es un pedido.',
+      'Cuando UEEDAbot detecta un correo que parece un pedido nuevo, aparece en "En revisión" → "Nuevos pedidos de información", con los datos ya propuestos (solicitante, categoría, fecha). Revisalos, corregí lo que haga falta y tocá "Cargar como pedido" — o "Descartar" si en realidad no es un pedido.',
     Icono: IconoBandeja,
   },
   {
@@ -181,11 +181,11 @@ const PASOS_EDICION: Paso[] = [
 ];
 
 // Recorrido para quien NO inició sesión: explica el proceso completo de
-// MaryBot paso a paso (de punta a punta), ya que es la versión que va a
+// UEEDAbot paso a paso (de punta a punta), ya que es la versión que va a
 // ver la mayor parte de la gente que entra al panel.
 const PASOS_VISUALIZACION: Paso[] = [
   {
-    titulo: "¿Qué es MaryBot?",
+    titulo: "¿Qué es UEEDAbot?",
     texto:
       "Es un asistente digital que lee el webmail por nosotros, todo el tiempo, sin cansarse. No decide nada por su cuenta: se limita a ordenar y proponer. La IA genera propuestas y una persona valida las acciones antes de su ejecución.",
     Icono: IconoBot,
@@ -199,7 +199,7 @@ const PASOS_VISUALIZACION: Paso[] = [
   {
     titulo: "Lo lee y lo entiende",
     texto:
-      "Con inteligencia artificial, MaryBot analiza el contenido del correo y lo clasifica en tres bandejas: parece un pedido nuevo, parece una respuesta o repregunta sobre un pedido que ya existe, o un mensaje que no parece tener relación con pedidos de acceso.",
+      "Con inteligencia artificial, UEEDAbot analiza el contenido del correo y lo clasifica en tres bandejas: parece un pedido nuevo, parece una respuesta o repregunta sobre un pedido que ya existe, o un mensaje que no parece tener relación con pedidos de acceso.",
     Icono: IconoBot,
   },
   {
@@ -211,7 +211,7 @@ const PASOS_VISUALIZACION: Paso[] = [
   {
     titulo: "Una persona confirma",
     texto:
-      "Un integrante del equipo de UEEDA revisa la propuesta, corrige lo que haga falta y confirma: carga el pedido nuevo, o vincula la respuesta con el pedido correspondiente. MaryBot nunca cierra ni carga nada por sí solo.",
+      "Un integrante del equipo de UEEDA revisa la propuesta, corrige lo que haga falta y confirma: carga el pedido nuevo, o vincula la respuesta con el pedido correspondiente. UEEDAbot nunca cierra ni carga nada por sí solo.",
     Icono: IconoConfirmar,
   },
   {
@@ -280,7 +280,7 @@ export default function Onboarding() {
                   ¿Primera vez por acá?
                 </h2>
                 <p className="mt-2 text-sm text-[var(--muted)]">
-                  Te mostramos en unos pasos qué hace MaryBot, cómo clasifica
+                  Te mostramos en unos pasos qué hace UEEDAbot, cómo clasifica
                   el correo y cómo proceder en cada pantalla.
                 </p>
                 <div className="mt-5 flex w-full gap-2">

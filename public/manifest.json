@@ -1,6 +1,6 @@
 {
-  "name": "MaryBot",
-  "short_name": "MaryBot",
+  "name": "UEEDAbot",
+  "short_name": "UEEDAbot",
   "description": "Panel de registro y seguimiento de pedidos de acceso a la información pública",
   "start_url": "/",
   "display": "standalone",
