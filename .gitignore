@@ -32,6 +32,7 @@ datos importados/
 # Logs
 *.log
 npm-debug.log*
+mail-bot/log.txt
 
 # Sistema
 .DS_Store
