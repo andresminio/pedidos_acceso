@@ -22,12 +22,11 @@ import sys
 import traceback
 from pathlib import Path
 
-from dotenv import load_dotenv
+from secrets_loader import load_secrets
 
-# Carga mail-bot/.env si existe (uso local / "revisar correo ahora").
-# En GitHub Actions no hay .env — las env vars ya vienen de los Secrets,
-# y load_dotenv() simplemente no encuentra archivo y no hace nada.
-load_dotenv(Path(__file__).parent / ".env")
+# Trae las 7 variables (IMAP_*, GEMINI_API_KEY, SUPABASE_*) desde
+# Bitwarden Secrets Manager (proyecto marybot) e inyecta en os.environ.
+load_secrets()
 
 from classify import Clasificacion, classify_mail, remitente_excluido
 from ingest import fetch_new_messages
