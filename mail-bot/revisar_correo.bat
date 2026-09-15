@@ -1,7 +1,9 @@
 @echo off
 REM Doble-click para revisar el correo ahora. Requiere estar conectado
-REM a la VPN/red interna del organismo, y tener mail-bot\.env completo
-REM (copiá .env.example a .env una sola vez y completá los valores).
+REM a la VPN/red interna del organismo, y tener seteada la variable de
+REM entorno BWS_ACCESS_TOKEN (cuenta de maquina de Bitwarden Secrets
+REM Manager con acceso al proyecto marybot). Las credenciales ya NO se
+REM leen de un .env local, se traen de Bitwarden en main.py.
 
 cd /d "%~dp0"
 
@@ -9,9 +11,9 @@ set LOG=log.txt
 echo. >> "%LOG%"
 echo ===== %date% %time% ===== >> "%LOG%"
 
-if not exist ".env" (
-    echo Falta mail-bot\.env — copia .env.example a .env y completa los valores.
-    echo Falta mail-bot\.env >> "%LOG%"
+if "%BWS_ACCESS_TOKEN%"=="" (
+    echo Falta la variable de entorno BWS_ACCESS_TOKEN (token de Bitwarden Secrets Manager).
+    echo Falta BWS_ACCESS_TOKEN >> "%LOG%"
     timeout /t 15
     exit /b 1
 )
