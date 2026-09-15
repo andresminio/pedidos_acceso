@@ -422,7 +422,7 @@ export default function PanelResumen() {
               valor={
                 tiempoPromedioDias === null
                   ? "—"
-                  : `${tiempoPromedioDias.toFixed(1)} días`
+                  : `${Math.round(tiempoPromedioDias)} días`
               }
               color="text-[var(--accent-hover)]"
             />
