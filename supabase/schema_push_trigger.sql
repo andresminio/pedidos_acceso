@@ -7,6 +7,8 @@
 --
 -- IMPORTANTE: reemplazá <TU-APP> por tu dominio real de Vercel antes de
 -- correr esto (ej. pedidos-acceso.vercel.app).
+-- IMPORTANTE: reemplazá TU_SECRET_ACA por el mismo valor que pusiste en la
+-- variable de entorno PUSH_SEND_SECRET en Vercel.
 --
 -- Ejecutar en el SQL Editor de Supabase, mismo proyecto que las demás
 -- tablas (uywxcspzavewdyvuvcot).
