@@ -91,6 +91,22 @@ export default function PanelResumen() {
     return { total, cerrados, pendientes: total - cerrados };
   }, [rowsDelPeriodo]);
 
+  // Tiempo promedio de respuesta: solo pedidos cerrados que tengan las dos
+  // fechas (recepción y respuesta) — un cerrado sin fecha_respuesta cargada
+  // no entra en el promedio en vez de contar como 0 días.
+  const tiempoPromedioDias = useMemo(() => {
+    const conAmbasFechas = rowsDelPeriodo.filter(
+      (r) => esCerrado(r.estado) && r.fecha && r.fecha_respuesta
+    );
+    if (conAmbasFechas.length === 0) return null;
+    const totalDias = conAmbasFechas.reduce((acc, r) => {
+      const recepcion = new Date(r.fecha).getTime();
+      const respuesta = new Date(r.fecha_respuesta as string).getTime();
+      return acc + (respuesta - recepcion) / (1000 * 60 * 60 * 24);
+    }, 0);
+    return totalDias / conAmbasFechas.length;
+  }, [rowsDelPeriodo]);
+
   // Tabla por cuatrimestre — SIEMPRE el desglose completo del año elegido
   // (1er/2do/3er), sin importar el cuatrimestre puntual del banner: esta es
   // la base de la Hoja 1 del Excel ("Cantidad de solicitudes recibidas por
@@ -389,7 +405,7 @@ export default function PanelResumen() {
       ) : (
         <div className="space-y-8">
           {/* Contadores del período elegido */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <TarjetaContador etiqueta="Total" valor={contadores.total} />
             <TarjetaContador
               etiqueta="Cerrados"
@@ -400,6 +416,15 @@ export default function PanelResumen() {
               etiqueta="Pendientes"
               valor={contadores.pendientes}
               color="text-[var(--warning-text)]"
+            />
+            <TarjetaContador
+              etiqueta="Tiempo promedio de respuesta"
+              valor={
+                tiempoPromedioDias === null
+                  ? "—"
+                  : `${tiempoPromedioDias.toFixed(1)} días`
+              }
+              color="text-[var(--accent-hover)]"
             />
           </div>
 
@@ -475,7 +500,7 @@ function TarjetaContador({
   color = "text-[var(--foreground)]",
 }: {
   etiqueta: string;
-  valor: number;
+  valor: number | string;
   color?: string;
 }) {
   return (

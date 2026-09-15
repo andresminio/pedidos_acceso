@@ -28,6 +28,7 @@ supabase/migration_*.sql
 # Planillas y documentos importados a mano — contienen datos reales de
 # solicitantes (nombres, pedidos), no deberían viajar en el repo.
 datos importados/
+datos importados (gitignorado)/
 
 # Logs
 *.log
