@@ -22,6 +22,15 @@ import sys
 import traceback
 from pathlib import Path
 
+# Windows: cuando la salida va redirigida a un archivo (>> log.txt desde
+# el .bat) o corre por el Programador de tareas, Python usa cp1252 en vez
+# de UTF-8 y explota con UnicodeEncodeError apenas alguien imprime un
+# emoji o tilde. Forzamos UTF-8 en stdout/stderr antes de importar nada
+# que pueda imprimir algo.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 from secrets_loader import load_secrets
 
 # Trae las 7 variables (IMAP_*, GEMINI_API_KEY, SUPABASE_*) desde

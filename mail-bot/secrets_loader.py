@@ -31,7 +31,7 @@ def load_secrets() -> None:
     for env_name, secret_id in SECRET_IDS.items():
         response = client.secrets().get(secret_id)
         os.environ[env_name] = response.data.value
-        print(f"✅ {env_name} recuperado exitosamente desde Bitwarden.")
+        print(f"OK: {env_name} recuperado exitosamente desde Bitwarden.")
 
 
 if __name__ == "__main__":
