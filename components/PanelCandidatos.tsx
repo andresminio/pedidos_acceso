@@ -52,10 +52,13 @@ function nombreDeRemitente(remitente: string): string {
 // (por ejemplo, uno pasado a mano desde "Ver descartados" con "Pasar a
 // vincular"): mismo criterio de remitentes fijos que mail-bot/classify.py,
 // para no mostrar un genérico "Respuesta" cuando se puede ser específico.
+// El email de Nora NO se hardcodea acá a propósito (este componente corre
+// en el navegador: cualquier valor literal queda visible en el bundle
+// público) — ese caso puntual solo se etiqueta bien vía etiqueta_evento,
+// ya resuelto server-side en mail-bot/classify.py con NORA_EMAIL.
 function etiquetaSugerida(row: CandidatoCorreo): string {
   if (row.etiqueta_evento) return row.etiqueta_evento;
   const remitente = row.remitente.toLowerCase();
-  if (remitente.includes("NORA_EMAIL_REDACTADO")) return "Respuesta de Nora";
   if (remitente.includes("cnelectoral.psactjudicial@pjn.gov.ar")) return "Respuesta Prosecretaría";
   return "Respuesta";
 }

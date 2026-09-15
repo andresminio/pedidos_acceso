@@ -18,6 +18,13 @@ from google.genai import errors as genai_errors
 
 CONTEXTO_PATH = Path(__file__).parent / "contexto_clasificacion.md"
 
+# Email de Nora (Prosecretaría) para distinguir sus respuestas en la línea de
+# tiempo — se pasa por env var (NORA_EMAIL en mail-bot/.env) para no dejar
+# el email real de una persona hardcodeado en el repo. Sin configurar, el
+# clasificador simplemente no va a poder etiquetar específicamente sus
+# respuestas (cae en el caso genérico "Reenvío/Respuesta de otra área").
+EMAIL_NORA = os.environ.get("NORA_EMAIL", "")
+
 INTENTOS_POR_MODELO = 2
 ESPERA_ENTRE_INTENTOS_SEGUNDOS = 5  # espera fija entre los 2 intentos de un mismo modelo
 
@@ -187,7 +194,7 @@ quedan en false.
 - "etiqueta_evento" describe QUÉ tipo de paso es este correo dentro del \
 intercambio de un pedido ya cargado — se va a mostrar como un punto en la \
 línea de tiempo del pedido (Recepción → ... → respuesta final). El \
-CONTENIDO manda sobre el remitente: NORA_EMAIL_REDACTADO y \
+CONTENIDO manda sobre el remitente: {email_nora} y \
 cnelectoral.psactjudicial@pjn.gov.ar también mandan mails de coordinación \
 interna que NO son la respuesta para el solicitante (avisos, consultas \
 internas, "¿tenés novedades de tal pedido?", etc.) — para esos casos, \
@@ -196,7 +203,7 @@ interno sin una respuesta concreta para reenviar (ver el punto anterior), \
 así que no llegan a necesitar etiqueta. Recién si el correo SÍ trae el \
 texto de una respuesta concreta para el solicitante, elegí la etiqueta \
 según el remitente:
-  - NORA_EMAIL_REDACTADO → "Respuesta de Nora"
+  - {email_nora} → "Respuesta de Nora"
   - cnelectoral.psactjudicial@pjn.gov.ar → "Respuesta Prosecretaría"
   - El remitente es el SOLICITANTE original volviendo a escribir sobre su \
 propio pedido (no alguien interno) → "Repregunta del solicitante"
@@ -338,6 +345,7 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
         categorias=", ".join(CATEGORIAS),
         subcategorias=_lista_subcategorias(),
         contexto=_leer_contexto(),
+        email_nora=EMAIL_NORA,
         remitente=remitente,
         asunto=asunto,
         cuerpo=cuerpo[:4000],

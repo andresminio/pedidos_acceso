@@ -164,6 +164,11 @@ Studio](https://aistudio.google.com/apikey)) y la misma `SUPABASE_URL` /
 
 `mail-bot/.env` está en `.gitignore` — nunca se sube al repo.
 
+Opcional: `NORA_EMAIL` — el email de quien responde por Prosecretaría, si
+querés que el bot distinga esas respuestas con una etiqueta específica en
+la línea de tiempo de cada pedido (sin configurar, quedan con una
+etiqueta genérica).
+
 El bot prueba un modelo Gemini y, si está saturado, rota a otro (se
 puede fijar una versión específica con `GEMINI_MODEL` en el `.env` si en
 algún momento se prefiere).
