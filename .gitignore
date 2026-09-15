@@ -46,3 +46,7 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Nota técnica con capturas reales del panel (nombres/emails de solicitantes) — nunca versionar
+Nota_Tecnica_MaryBot*.docx
+~$*Tecnica_MaryBot*.docx
