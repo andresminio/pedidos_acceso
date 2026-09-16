@@ -361,7 +361,6 @@ public/
 supabase/
   schema.sql                        → tabla pedidos_solicitudes, índices, trigger, RLS
   schema_candidatos_correo.sql      → tablas candidatos_correo + mail_sync_state
-  schema_revision_triggers.sql      → tabla revision_triggers
   schema_push_subscriptions.sql     → tabla push_subscriptions (Web Push)
 mail-bot/
   ingest.py                  → conexión IMAP, trae mails nuevos

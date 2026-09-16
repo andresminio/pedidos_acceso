@@ -175,18 +175,6 @@ export interface CandidatoCorreo {
   created_at: string;
 }
 
-// Señal para el botón "Revisar correo ahora" — la levanta el watcher
-// que corre en una PC dentro de la red interna (mail-bot/watcher.py).
-export type EstadoTrigger = "pendiente" | "procesando" | "completado" | "error";
-
-export interface RevisionTrigger {
-  id: string;
-  solicitado_en: string;
-  estado: EstadoTrigger;
-  mensaje: string | null;
-  completado_en: string | null;
-}
-
 // Un punto en la línea de tiempo de un pedido: recepción, reenvío,
 // respuesta de Nora, repregunta del solicitante, etc. El punto de
 // "Recepción" en sí no vive acá — se arma directo desde
