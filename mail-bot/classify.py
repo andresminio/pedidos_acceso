@@ -18,12 +18,18 @@ from google.genai import errors as genai_errors
 
 CONTEXTO_PATH = Path(__file__).parent / "contexto_clasificacion.md"
 
-# Email de Nora (Prosecretaría) para distinguir sus respuestas en la línea de
-# tiempo — se pasa por env var (NORA_EMAIL en mail-bot/.env) para no dejar
-# el email real de una persona hardcodeado en el repo. Sin configurar, el
-# clasificador simplemente no va a poder etiquetar específicamente sus
+# Emails de las áreas/personas cuyas respuestas hay que distinguir en la
+# línea de tiempo de cada pedido — se pasan por variables de entorno (hoy
+# recuperadas desde Bitwarden Secrets Manager, ver secrets_loader.py) para
+# no dejar ningún email real hardcodeado en el repo. Sin configurar alguna,
+# el clasificador simplemente no va a poder etiquetar específicamente esas
 # respuestas (cae en el caso genérico "Reenvío/Respuesta de otra área").
 EMAIL_NORA = os.environ.get("NORA_EMAIL", "")
+EMAIL_PROSECRETARIA = os.environ.get("PROSECRETARIA_EMAIL", "")
+EMAIL_SECRETARIA_ACTUACION_ELECTORAL = os.environ.get(
+    "SECRETARIA_ACTUACION_ELECTORAL_EMAIL", ""
+)
+EMAIL_CONSEJO_ABIERTO = os.environ.get("CONSEJO_ABIERTO_EMAIL", "")
 
 INTENTOS_POR_MODELO = 2
 ESPERA_ENTRE_INTENTOS_SEGUNDOS = 5  # espera fija entre los 2 intentos de un mismo modelo
@@ -194,17 +200,19 @@ quedan en false.
 - "etiqueta_evento" describe QUÉ tipo de paso es este correo dentro del \
 intercambio de un pedido ya cargado — se va a mostrar como un punto en la \
 línea de tiempo del pedido (Recepción → ... → respuesta final). El \
-CONTENIDO manda sobre el remitente: {email_nora} y \
-cnelectoral.psactjudicial@pjn.gov.ar también mandan mails de coordinación \
-interna que NO son la respuesta para el solicitante (avisos, consultas \
-internas, "¿tenés novedades de tal pedido?", etc.) — para esos casos, \
-"es_respuesta_pedido" tiene que ser false igual que cualquier otro mail \
-interno sin una respuesta concreta para reenviar (ver el punto anterior), \
-así que no llegan a necesitar etiqueta. Recién si el correo SÍ trae el \
-texto de una respuesta concreta para el solicitante, elegí la etiqueta \
-según el remitente:
+CONTENIDO manda sobre el remitente: {email_nora}, {email_prosecretaria}, \
+{email_secretaria_actuacion_electoral} y {email_consejo_abierto} también \
+mandan mails de coordinación interna que NO son la respuesta para el \
+solicitante (avisos, consultas internas, "¿tenés novedades de tal \
+pedido?", etc.) — para esos casos, "es_respuesta_pedido" tiene que ser \
+false igual que cualquier otro mail interno sin una respuesta concreta \
+para reenviar (ver el punto anterior), así que no llegan a necesitar \
+etiqueta. Recién si el correo SÍ trae el texto de una respuesta concreta \
+para el solicitante, elegí la etiqueta según el remitente:
   - {email_nora} → "Respuesta de Nora"
-  - cnelectoral.psactjudicial@pjn.gov.ar → "Respuesta Prosecretaría"
+  - {email_prosecretaria} → "Respuesta Prosecretaría"
+  - {email_secretaria_actuacion_electoral} → "Respuesta Secretaría de Actuación Electoral"
+  - {email_consejo_abierto} → "Respuesta Consejo Abierto"
   - El remitente es el SOLICITANTE original volviendo a escribir sobre su \
 propio pedido (no alguien interno) → "Repregunta del solicitante"
   - Cualquier otro caso de respuesta/reenvío (otra área interna, remitente \
@@ -346,6 +354,9 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
         subcategorias=_lista_subcategorias(),
         contexto=_leer_contexto(),
         email_nora=EMAIL_NORA,
+        email_prosecretaria=EMAIL_PROSECRETARIA,
+        email_secretaria_actuacion_electoral=EMAIL_SECRETARIA_ACTUACION_ELECTORAL,
+        email_consejo_abierto=EMAIL_CONSEJO_ABIERTO,
         remitente=remitente,
         asunto=asunto,
         cuerpo=cuerpo[:4000],
