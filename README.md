@@ -1,4 +1,4 @@
-# UEEDA_Bot
+# Mail_Bot
 
 **Pipeline de ingesta, clasificación y gestión de pedidos de acceso a la información pública — con inteligencia artificial y un humano validando cada paso.**
 
