@@ -22,6 +22,7 @@ create table if not exists public.candidatos_correo (
   solicitud_propuesta text,
   categoria_propuesta text,
   subcategoria_propuesta text,
+  observaciones_propuesta text, -- ej. "Reenviado por Consejo Abierto"
 
   -- Estado del flujo de revisión humana
   estado_revision     text not null default 'pendiente'

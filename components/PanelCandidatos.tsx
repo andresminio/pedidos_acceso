@@ -526,7 +526,9 @@ function FilaCandidato({
       estado: "Pendiente",
       subestado: null,
       fecha_respuesta: null,
-      observaciones: "Cargado automáticamente desde UEEDA_bot",
+      observaciones: row.observaciones_propuesta
+        ? `${row.observaciones_propuesta} — Cargado automáticamente desde UEEDA_bot`
+        : "Cargado automáticamente desde UEEDA_bot",
       respuesta_ia_borrador: null,
       respuesta_texto: null,
     });

@@ -133,6 +133,7 @@ def main() -> int:
                 "solicitud_propuesta": clasif.solicitud_propuesta,
                 "categoria_propuesta": clasif.categoria_propuesta,
                 "subcategoria_propuesta": clasif.subcategoria_propuesta,
+                "observaciones_propuesta": clasif.observaciones_propuesta,
                 "estado_revision": estado_revision,
             }
 

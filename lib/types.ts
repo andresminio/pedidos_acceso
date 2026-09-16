@@ -164,6 +164,10 @@ export interface CandidatoCorreo {
   solicitud_propuesta: string | null;
   categoria_propuesta: string | null;
   subcategoria_propuesta: string | null;
+  // Nota que propone la IA para el campo "Observaciones" del pedido al
+  // cargarlo — hoy solo se usa para marcar "Reenviado por Consejo
+  // Abierto" cuando corresponde (ver mail-bot/classify.py).
+  observaciones_propuesta: string | null;
   estado_revision: EstadoRevision;
   pedido_id: string | null;
   revisado_en: string | null;

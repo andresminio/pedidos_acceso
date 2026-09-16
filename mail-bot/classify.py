@@ -168,7 +168,8 @@ texto extra) con este formato exacto:
   "nombre_solicitante": "nombre de quien pide, o null si no se puede inferir",
   "solicitud_propuesta": "qué se solicita, directo y breve (ver formato abajo), o null",
   "categoria_propuesta": "una de estas categorías EXACTAS, o null si ninguna aplica: {categorias}",
-  "subcategoria_propuesta": "subtema más específico si aplica, o null"
+  "subcategoria_propuesta": "subtema más específico si aplica, o null",
+  "observaciones_propuesta": "ver regla de Consejo Abierto más abajo; en cualquier otro caso, null"
 }}
 
 Referencia de subcategorías típicas por categoría (no es una lista cerrada: \
@@ -220,6 +221,14 @@ distinto a los de la lista) → una frase corta (2-4 palabras) específica \
 al caso, por ejemplo "Reenvío a Secretaría Electoral" — evitá una \
 etiqueta genérica como "Respuesta" a secas.
 Si "es_respuesta_pedido" es false, "etiqueta_evento" queda en null.
+- "observaciones_propuesta": si el correo es un REENVÍO que llega desde \
+{email_consejo_abierto} (es decir, Consejo Abierto lo reenvía desde otro \
+remitente original, o el cuerpo muestra que Consejo Abierto lo está \
+reenviando/derivando), anotá acá algo breve como "Reenviado por Consejo \
+Abierto" para que quede visible en las observaciones del pedido cuando se \
+cargue. En cualquier otro caso dejá "observaciones_propuesta" en null — no \
+uses este campo para repetir información que ya va en "confianza_ia" ni \
+para ningún otro caso que no sea este reenvío de Consejo Abierto.
 - Cómo determinar "nombre_solicitante" (aplica tanto para un pedido nuevo \
 como para encontrar al solicitante original de una respuesta a vincular): \
 priorizá el nombre real de la persona — si el mail está firmado (nombre \
@@ -280,6 +289,7 @@ class Clasificacion:
     solicitud_propuesta: str | None
     categoria_propuesta: str | None
     subcategoria_propuesta: str | None
+    observaciones_propuesta: str | None = None
 
 
 def _client() -> genai.Client:
@@ -426,4 +436,5 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
         solicitud_propuesta=data.get("solicitud_propuesta"),
         categoria_propuesta=categoria,
         subcategoria_propuesta=data.get("subcategoria_propuesta"),
+        observaciones_propuesta=data.get("observaciones_propuesta"),
     )
