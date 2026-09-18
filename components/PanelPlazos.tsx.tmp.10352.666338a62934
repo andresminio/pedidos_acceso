@@ -58,7 +58,7 @@ const LEYENDA: { tipo: TipoDia; label: string }[] = [
   { tipo: "finde", label: "Fin de semana" },
   { tipo: "feriado", label: "Feriado" },
   { tipo: "feria_judicial", label: "Feria judicial" },
-  { tipo: "inhabil_judicial", label: "Inhábil judicial (incluye 16/11)" },
+  { tipo: "inhabil_judicial", label: "Inhábil judicial" },
 ];
 
 const TIPO_LABEL: Record<TipoInhabil, string> = {
