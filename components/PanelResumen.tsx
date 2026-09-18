@@ -519,7 +519,7 @@ function TarjetaContador({
   valor,
   color = "text-[var(--foreground)]",
 }: {
-  etiqueta: string;
+  etiqueta: ReactNode;
   valor: number | string;
   color?: string;
 }) {
