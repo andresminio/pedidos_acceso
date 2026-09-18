@@ -24,7 +24,7 @@ export default function CalculadoraPlazosButton() {
   return (
     <Link
       href="/plazos"
-      className="group fixed bottom-[17rem] right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-emerald-700 px-2.5 text-white shadow-lg shadow-emerald-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-emerald-600 hover:px-4"
+      className="group fixed bottom-36 right-5 z-40 flex h-12 w-12 items-center overflow-hidden rounded-full bg-emerald-700 px-2.5 text-white shadow-lg shadow-emerald-950/40 transition-all duration-300 ease-out hover:w-56 hover:bg-emerald-600 hover:px-4"
     >
       <span className="flex h-7 w-7 shrink-0 items-center justify-center">
         <IconoCalculadora />

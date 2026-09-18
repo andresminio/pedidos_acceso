@@ -107,7 +107,7 @@ function PillPlazo({ fecha, feriados }: { fecha: string; feriados: Set<string> }
     ? "Plazo vencido"
     : dias === 0
       ? "Vence hoy"
-      : `${dias} día${dias === 1 ? "" : "s"} hábil${dias === 1 ? "" : "es"}`;
+      : `Faltan ${dias} día${dias === 1 ? "" : "s"} hábil${dias === 1 ? "" : "es"}`;
   return (
     <span
       title={`Vence el ${fechaCorta(vencimiento)}`}
