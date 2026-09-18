@@ -34,10 +34,15 @@
 // cálculo.
 
 // Feria judicial de invierno: rango [inicio, fin] AAAA-MM-DD, ambas fechas
-// inclusive, fijado cada año por Acordada de la CSJN.
+// inclusive, fijado cada año por Acordada de la CSJN. Siempre son 10 días
+// hábiles (2 semanas), pero el arranque varía entre mediados y fines de
+// julio según el año (no hay una regla fija como "el enero" de la feria
+// de verano) — años recientes, para tener el patrón a la vista:
 const FERIA_INVIERNO: Record<number, [string, string]> = {
-  // Acordada 11/2026 (CSJN, 2/6/2026): 20 al 31 de julio de 2026 inclusive.
-  2026: ["2026-07-20", "2026-07-31"],
+  2023: ["2023-07-17", "2023-07-28"], // Acordada 17/2023
+  2024: ["2024-07-15", "2024-07-26"], // Acordada 16/2024
+  2025: ["2025-07-21", "2025-08-01"], // Acordada 9/2025
+  2026: ["2026-07-20", "2026-07-31"], // Acordada 11/2026 (CSJN, 2/6/2026)
 };
 
 function esFinDeSemana(fechaISO: string): boolean {
