@@ -531,7 +531,7 @@ function TarjetaContador({
 }) {
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-6 py-5">
-      <p className="text-sm text-[var(--muted-3)]">{etiqueta}</p>
+      <p className="flex min-h-[2.5rem] items-end text-sm text-[var(--muted-3)]">{etiqueta}</p>
       <p className={`text-5xl font-semibold ${color}`}>{valor}</p>
     </div>
   );
