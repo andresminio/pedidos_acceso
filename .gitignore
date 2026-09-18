@@ -5,6 +5,10 @@ mail-bot/__pycache__/
 **/__pycache__/
 *.pyc
 
+# Carpeta de descarte temporal (archivos movidos acá antes de borrarlos
+# de verdad, ver limpiezas del repo) — nunca versionar su contenido.
+to_delete/
+
 # Next.js
 .next/
 out/
