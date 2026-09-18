@@ -436,13 +436,7 @@ export default function PanelResumen() {
               color="text-[var(--warning-text)]"
             />
             <TarjetaContador
-              etiqueta={
-                <>
-                  Tiempo promedio de respuesta
-                  <br />
-                  <span className="whitespace-nowrap">(días hábiles judiciales)</span>
-                </>
-              }
+              etiqueta="Tiempo promedio de respuesta"
               valor={
                 conAmbasFechas.length > 0 && feriados.cargando
                   ? "…"
@@ -531,7 +525,7 @@ function TarjetaContador({
 }) {
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-6 py-5">
-      <p className="flex min-h-[2.5rem] items-end text-sm text-[var(--muted-3)]">{etiqueta}</p>
+      <p className="text-sm text-[var(--muted-3)]">{etiqueta}</p>
       <p className={`text-5xl font-semibold ${color}`}>{valor}</p>
     </div>
   );
