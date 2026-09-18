@@ -11,11 +11,11 @@
 //
 // Lo que SÍ sigue fijo acá, porque ninguna API pública lo tiene (son
 // reglas propias del Poder Judicial de la Nación, no feriados
-// nacionales): fines de semana, la feria judicial de verano (todo enero)
-// y de invierno (fechas que fija la Corte Suprema por Acordada cada año),
-// y el 16/11 (Día del Empleado Judicial, Ley 26.674, equiparado a feriado
-// obligatorio para todo el Poder Judicial — suspende los plazos
-// procesales).
+// nacionales): fines de semana y la feria judicial de verano (todo enero)
+// y de invierno (fechas que fija la Corte Suprema por Acordada cada año).
+// El 16/11 (Día del Empleado Judicial) NO está hardcodeado — se carga a
+// mano cada año como inhábil judicial desde /plazos, como cualquier otro
+// inhábil (ver TipoInhabil en lib/useFeriados.ts).
 //
 // A propósito NO se incluyen los "días no laborables" de comunidades
 // religiosas (Ley 27.399, arts. 2 y 3: Pascua Judía, Rosh Hashaná, Iom
@@ -63,22 +63,16 @@ function esFeriaInvierno(fechaISO: string): boolean {
   return fechaISO >= rango[0] && fechaISO <= rango[1];
 }
 
-// Día del Empleado Judicial (Ley 26.674) — fijo cada 16/11.
-function esDiaDelEmpleadoJudicial(fechaISO: string): boolean {
-  return fechaISO.slice(5) === "11-16";
-}
-
 // Categoría de una regla FIJA (no feriado nacional ni inhábil cargado a
-// mano) — la usa /plazos para pintar el calendario. El 16/11 entra en la
-// misma categoría "inhabil_judicial" que un inhábil judicial cargado a
-// mano (ver TipoInhabil en lib/useFeriados.ts): no hay una categoría
-// aparte para "Día del Empleado Judicial".
-export type TipoDiaFijo = "finde" | "feria_judicial" | "inhabil_judicial";
+// mano) — la usa /plazos para pintar el calendario. El 16/11 (Día del
+// Empleado Judicial) NO es una regla fija: se carga a mano cada año como
+// inhábil judicial (ver TipoInhabil en lib/useFeriados.ts), así que cae
+// en el Set de "feriados" que recibe esDiaHabil, no acá.
+export type TipoDiaFijo = "finde" | "feria_judicial";
 
 export function tipoDiaFijo(fechaISO: string): TipoDiaFijo | null {
   if (esFinDeSemana(fechaISO)) return "finde";
   if (esFeriaVerano(fechaISO) || esFeriaInvierno(fechaISO)) return "feria_judicial";
-  if (esDiaDelEmpleadoJudicial(fechaISO)) return "inhabil_judicial";
   return null;
 }
 
@@ -90,17 +84,16 @@ export function motivoFijo(fechaISO: string): string | null {
   if (esFinDeSemana(fechaISO)) return "Fin de semana";
   if (esFeriaVerano(fechaISO)) return "Feria judicial de verano";
   if (esFeriaInvierno(fechaISO)) return "Feria judicial de invierno";
-  if (esDiaDelEmpleadoJudicial(fechaISO)) return "Inhábil judicial (16/11 — Día del Empleado Judicial)";
   return null;
 }
 
 // `feriados`: Set de fechas ISO que son feriado nacional o inhábil
-// cargado a mano (lo arma useFeriados con lo que trae la API + Supabase).
+// cargado a mano (lo arma useFeriados con lo que trae la API + Supabase) —
+// ahí entra también el 16/11 el día que se cargue como inhábil judicial.
 export function esDiaHabil(fechaISO: string, feriados: Set<string>): boolean {
   if (esFinDeSemana(fechaISO)) return false;
   if (esFeriaVerano(fechaISO)) return false;
   if (esFeriaInvierno(fechaISO)) return false;
-  if (esDiaDelEmpleadoJudicial(fechaISO)) return false;
   if (feriados.has(fechaISO)) return false;
   return true;
 }

@@ -84,7 +84,13 @@ export function useFeriados(anios: number[]): Feriados {
         if (cancelado) return;
         setFeriadosNacionales(porAnio.flat());
         if (resultadoCustom.error) {
-          setError("No se pudieron cargar los inhábiles cargados a mano.");
+          // No se muestra como error al usuario: si todavía no existe la
+          // tabla (falta correr schema_dias_inhabiles_custom.sql) o
+          // simplemente no hay nada cargado, el resultado práctico es el
+          // mismo — no hay inhábiles a mano que sumar. Se loguea para
+          // poder diagnosticarlo igual.
+          console.error("No se pudieron cargar los inhábiles cargados a mano:", resultadoCustom.error);
+          setInhabilesCustom([]);
         } else {
           setInhabilesCustom(resultadoCustom.data ?? []);
         }
