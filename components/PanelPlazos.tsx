@@ -208,7 +208,7 @@ export default function PanelPlazos() {
       if (tipo === "habil" || tipo === "finde") return null;
       return { fecha: fechaISO, tipo, motivo: feriados.motivo(fechaISO) ?? motivoFijo(fechaISO) ?? "" };
     })
-    .filter((d): d is { fecha: string; tipo: TipoDia; motivo: string } => d !== null);
+    .filter((d): d is { fecha: string; tipo: TipoInhabil; motivo: string } => d !== null);
 
   return (
     <div className="flex flex-col gap-6">
