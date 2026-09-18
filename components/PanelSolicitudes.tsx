@@ -616,18 +616,25 @@ function FilaSolicitudEdicion({
   // Info interna de plazos (no se le manda nada de esto al solicitante):
   // - Pendiente: cuándo vence el plazo legal de 15 días hábiles desde la
   //   recepción (ver lib/feriados.ts — cuenta fines de semana, feriados
-  //   nacionales, feria judicial de verano/invierno y el 16/11).
-  // - Cerrado: cuánto tiempo (corrido, no hábil) pasó entre la recepción
-  //   y el cierre.
+  //   nacionales, feria judicial de verano/invierno y los inhábiles
+  //   judiciales cargados a mano).
+  // - Cerrado: cuántos días hábiles judiciales pasaron entre la recepción
+  //   y el cierre (mismo criterio que el plazo legal, para que el número
+  //   sea comparable contra los 15 días hábiles).
   // Los feriados nacionales se traen de una API (ver lib/useFeriados.ts) —
-  // pedimos el año de la fecha de recepción y el de hoy, +1 cada uno, para
-  // cubrir el caso de un plazo que cruza fin de año.
+  // pedimos el año de la fecha de recepción, el de la fecha de respuesta
+  // (o el de hoy si todavía no hay), +1 cada uno, para cubrir el caso de
+  // un plazo que cruza fin de año.
   const aniosFeriados = useMemo(() => {
-    if (estado !== "Pendiente" || !fecha) return [];
+    if (!fecha) return [];
+    if (estado !== "Pendiente" && estado !== "Cerrado") return [];
     const anioFecha = Number(fecha.slice(0, 4));
-    const anioHoy = new Date().getFullYear();
-    return [...new Set([anioFecha, anioFecha + 1, anioHoy, anioHoy + 1])];
-  }, [estado, fecha]);
+    const anioReferencia =
+      estado === "Cerrado" && fechaRespuesta
+        ? Number(fechaRespuesta.slice(0, 4))
+        : new Date().getFullYear();
+    return [...new Set([anioFecha, anioFecha + 1, anioReferencia, anioReferencia + 1])];
+  }, [estado, fecha, fechaRespuesta]);
   const feriados = useFeriados(aniosFeriados);
 
   const infoPlazo = useMemo(() => {
@@ -639,7 +646,8 @@ function FilaSolicitudEdicion({
       return { tipo: "pendiente" as const, vencimiento, diasHabiles };
     }
     if (estado === "Cerrado" && fecha && fechaRespuesta) {
-      const dias = diasCalendarioEntre(fecha, fechaRespuesta);
+      if (feriados.cargando) return { tipo: "cargando" as const };
+      const dias = diasHabilesEntre(fecha, fechaRespuesta, feriados.set);
       return { tipo: "cerrado" as const, dias };
     }
     return null;
@@ -1136,7 +1144,9 @@ function FilaSolicitudEdicion({
               <>
                 Tiempo transcurrido entre recepción y cierre:{" "}
                 <span className="font-medium text-[var(--fg-soft)]">
-                  {infoPlazo.dias} día{infoPlazo.dias === 1 ? "" : "s"}
+                  {infoPlazo.dias} día{infoPlazo.dias === 1 ? "" : "s"} hábil
+                  {infoPlazo.dias === 1 ? "" : "es"} judicial
+                  {infoPlazo.dias === 1 ? "" : "es"}
                 </span>
               </>
             )}

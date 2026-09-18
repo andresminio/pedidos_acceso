@@ -85,7 +85,9 @@ export default function PanelPlazos() {
   // --- Alta de inhábil personalizado ---
   const [modalAbierto, setModalAbierto] = useState(false);
   const [verInhabiles, setVerInhabiles] = useState(false);
+  const [esRango, setEsRango] = useState(false);
   const [nuevaFecha, setNuevaFecha] = useState(HOY_ISO());
+  const [nuevaFechaHasta, setNuevaFechaHasta] = useState(HOY_ISO());
   const [nuevoMotivo, setNuevoMotivo] = useState("");
   const [nuevoTipo, setNuevoTipo] = useState<TipoInhabil>("feriado");
   const [guardando, setGuardando] = useState(false);
@@ -116,25 +118,46 @@ export default function PanelPlazos() {
     return { resultado, diaSemana };
   }, [modo, fechaDesde, cantidadDias, direccion, feriados.cargando, feriados.set]);
 
+  // Todas las fechas ISO entre desde y hasta, ambas inclusive.
+  function fechasEnRango(desdeISO: string, hastaISO: string): string[] {
+    const fechas: string[] = [];
+    const cursor = new Date(desdeISO + "T00:00:00");
+    const fin = new Date(hastaISO + "T00:00:00").getTime();
+    while (cursor.getTime() <= fin) {
+      fechas.push(cursor.toISOString().slice(0, 10));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return fechas;
+  }
+
   async function agregarInhabil(e: React.FormEvent) {
     e.preventDefault();
     if (!nuevoMotivo.trim()) return;
+    if (esRango && nuevaFechaHasta < nuevaFecha) {
+      setErrorAlta("La fecha \"hasta\" no puede ser anterior a la fecha \"desde\".");
+      return;
+    }
+    const fechas = esRango ? fechasEnRango(nuevaFecha, nuevaFechaHasta) : [nuevaFecha];
     setGuardando(true);
     setErrorAlta(null);
+    const motivo = nuevoMotivo.trim();
+    // upsert (no insert): así cargar de nuevo un rango que se pisa con algo
+    // ya cargado actualiza el motivo/tipo en vez de romper por la fecha
+    // duplicada (fecha es la clave primaria de la tabla).
     const { error } = await supabase
       .from("dias_inhabiles_custom")
-      .insert({ fecha: nuevaFecha, motivo: nuevoMotivo.trim(), tipo: nuevoTipo });
+      .upsert(
+        fechas.map((fecha) => ({ fecha, motivo, tipo: nuevoTipo })),
+        { onConflict: "fecha" }
+      );
     setGuardando(false);
     if (error) {
-      setErrorAlta(
-        error.code === "23505"
-          ? "Ya hay un inhábil cargado para esa fecha."
-          : "No se pudo guardar: " + error.message
-      );
+      setErrorAlta("No se pudo guardar: " + error.message);
       return;
     }
     setNuevoMotivo("");
     setNuevoTipo("feriado");
+    setEsRango(false);
     setModalAbierto(false);
     feriados.recargar();
   }
@@ -171,6 +194,21 @@ export default function PanelPlazos() {
     setMesVisible(m);
     setAnioVisible(a);
   }
+
+  // Detalle debajo del calendario: un renglón por cada día no hábil del
+  // mes visible que tenga un motivo puntual (feriado, feria judicial o
+  // inhábil judicial) — los fines de semana comunes no se listan, son
+  // obvios y llenarían la lista de ruido.
+  const diasDestacados = celdas
+    .filter((f): f is string => f !== null)
+    .map((fechaISO) => {
+      const esNacional = feriados.feriadosNacionales.some((f) => f.fecha === fechaISO);
+      const custom = feriados.inhabilesCustom.find((d) => d.fecha === fechaISO);
+      const tipo = clasificarDia(fechaISO, esNacional, custom?.tipo ?? null);
+      if (tipo === "habil" || tipo === "finde") return null;
+      return { fecha: fechaISO, tipo, motivo: feriados.motivo(fechaISO) ?? motivoFijo(fechaISO) ?? "" };
+    })
+    .filter((d): d is { fecha: string; tipo: TipoDia; motivo: string } => d !== null);
 
   return (
     <div className="flex flex-col gap-6">
@@ -344,6 +382,22 @@ export default function PanelPlazos() {
             </span>
           ))}
         </div>
+
+        {diasDestacados.length > 0 && (
+          <ul className="mt-4 flex flex-col gap-1.5 border-t border-[var(--border)] pt-3 text-sm">
+            {diasDestacados.map((d) => (
+              <li key={d.fecha} className="flex items-start gap-2">
+                <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-sm ${ESTILO_TIPO[d.tipo]}`} />
+                <span>
+                  <span className="font-medium text-[var(--foreground)]">
+                    {fechaCorta(d.fecha)}
+                  </span>{" "}
+                  — {d.motivo}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* Inhábiles cargados a mano: botón de alta arriba (mismo lugar/estilo
@@ -395,14 +449,41 @@ export default function PanelPlazos() {
                 </button>
               </div>
               <form onSubmit={agregarInhabil} className="flex flex-col gap-3">
-                <label className="flex flex-col gap-1 text-sm">
-                  <span className="font-medium text-[var(--muted)]">Fecha</span>
+                <div className={esRango ? "grid grid-cols-2 gap-3" : ""}>
+                  <label className="flex flex-col gap-1 text-sm">
+                    <span className="font-medium text-[var(--muted)]">
+                      {esRango ? "Desde" : "Fecha"}
+                    </span>
+                    <input
+                      type="date"
+                      className="input"
+                      value={nuevaFecha}
+                      onChange={(e) => setNuevaFecha(e.target.value)}
+                    />
+                  </label>
+                  {esRango && (
+                    <label className="flex flex-col gap-1 text-sm">
+                      <span className="font-medium text-[var(--muted)]">Hasta</span>
+                      <input
+                        type="date"
+                        className="input"
+                        value={nuevaFechaHasta}
+                        min={nuevaFecha}
+                        onChange={(e) => setNuevaFechaHasta(e.target.value)}
+                      />
+                    </label>
+                  )}
+                </div>
+                <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
                   <input
-                    type="date"
-                    className="input"
-                    value={nuevaFecha}
-                    onChange={(e) => setNuevaFecha(e.target.value)}
+                    type="checkbox"
+                    checked={esRango}
+                    onChange={(e) => {
+                      setEsRango(e.target.checked);
+                      if (e.target.checked) setNuevaFechaHasta(nuevaFecha);
+                    }}
                   />
+                  Cargar un rango de fechas (ej. para toda la feria judicial)
                 </label>
                 <label className="flex flex-col gap-1 text-sm">
                   <span className="font-medium text-[var(--muted)]">Tipo</span>

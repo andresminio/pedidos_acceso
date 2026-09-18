@@ -5,6 +5,8 @@ import type { ReactNode } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { fechaCorta } from "@/lib/fechas";
+import { diasHabilesEntre } from "@/lib/feriados";
+import { useFeriados } from "@/lib/useFeriados";
 
 interface FilaResumen {
   anio: number;
@@ -91,21 +93,37 @@ export default function PanelResumen() {
     return { total, cerrados, pendientes: total - cerrados };
   }, [rowsDelPeriodo]);
 
-  // Tiempo promedio de respuesta: solo pedidos cerrados que tengan las dos
-  // fechas (recepción y respuesta) — un cerrado sin fecha_respuesta cargada
-  // no entra en el promedio en vez de contar como 0 días.
+  // Tiempo promedio de respuesta, en días HÁBILES JUDICIALES (no corridos —
+  // mismo criterio que el plazo legal de 15 días hábiles, ver
+  // lib/feriados.ts): solo pedidos cerrados que tengan las dos fechas
+  // (recepción y respuesta) — un cerrado sin fecha_respuesta cargada no
+  // entra en el promedio en vez de contar como 0 días.
+  const conAmbasFechas = useMemo(
+    () => rowsDelPeriodo.filter((r) => esCerrado(r.estado) && r.fecha && r.fecha_respuesta),
+    [rowsDelPeriodo]
+  );
+
+  // Años que hacen falta para tener los feriados de todas las fechas
+  // involucradas (recepción y respuesta de cada pedido cerrado del período).
+  const aniosFeriados = useMemo(() => {
+    const anios = new Set<number>();
+    for (const r of conAmbasFechas) {
+      anios.add(Number(r.fecha.slice(0, 4)));
+      anios.add(Number((r.fecha_respuesta as string).slice(0, 4)));
+    }
+    return [...anios];
+  }, [conAmbasFechas]);
+  const feriados = useFeriados(aniosFeriados);
+
   const tiempoPromedioDias = useMemo(() => {
-    const conAmbasFechas = rowsDelPeriodo.filter(
-      (r) => esCerrado(r.estado) && r.fecha && r.fecha_respuesta
-    );
     if (conAmbasFechas.length === 0) return null;
-    const totalDias = conAmbasFechas.reduce((acc, r) => {
-      const recepcion = new Date(r.fecha).getTime();
-      const respuesta = new Date(r.fecha_respuesta as string).getTime();
-      return acc + (respuesta - recepcion) / (1000 * 60 * 60 * 24);
-    }, 0);
+    if (feriados.cargando) return null;
+    const totalDias = conAmbasFechas.reduce(
+      (acc, r) => acc + diasHabilesEntre(r.fecha, r.fecha_respuesta as string, feriados.set),
+      0
+    );
     return totalDias / conAmbasFechas.length;
-  }, [rowsDelPeriodo]);
+  }, [conAmbasFechas, feriados.cargando, feriados.set]);
 
   // Tabla por cuatrimestre — SIEMPRE el desglose completo del año elegido
   // (1er/2do/3er), sin importar el cuatrimestre puntual del banner: esta es
@@ -418,11 +436,13 @@ export default function PanelResumen() {
               color="text-[var(--warning-text)]"
             />
             <TarjetaContador
-              etiqueta="Tiempo promedio de respuesta"
+              etiqueta="Tiempo promedio de respuesta (días hábiles judiciales)"
               valor={
-                tiempoPromedioDias === null
-                  ? "—"
-                  : `${Math.round(tiempoPromedioDias)} días`
+                conAmbasFechas.length > 0 && feriados.cargando
+                  ? "…"
+                  : tiempoPromedioDias === null
+                    ? "—"
+                    : `${Math.round(tiempoPromedioDias)} días`
               }
               color="text-[var(--accent-hover)]"
             />
