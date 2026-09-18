@@ -436,7 +436,13 @@ export default function PanelResumen() {
               color="text-[var(--warning-text)]"
             />
             <TarjetaContador
-              etiqueta="Tiempo promedio de respuesta (días hábiles judiciales)"
+              etiqueta={
+                <>
+                  Tiempo promedio de respuesta
+                  <br />
+                  <span className="whitespace-nowrap">(días hábiles judiciales)</span>
+                </>
+              }
               valor={
                 conAmbasFechas.length > 0 && feriados.cargando
                   ? "…"
