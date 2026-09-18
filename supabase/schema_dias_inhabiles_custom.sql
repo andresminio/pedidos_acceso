@@ -10,6 +10,11 @@
 create table if not exists public.dias_inhabiles_custom (
   fecha      date primary key,
   motivo     text not null,
+  -- Todo inhábil cargado a mano es uno de estos tres tipos — no hay una
+  -- categoría "custom" aparte en el calendario de /plazos, se pinta con el
+  -- mismo color que corresponda a su tipo (ver lib/feriados.ts).
+  tipo       text not null default 'feriado'
+             check (tipo in ('feriado', 'feria_judicial', 'inhabil_judicial')),
   created_at timestamptz not null default now()
 );
 

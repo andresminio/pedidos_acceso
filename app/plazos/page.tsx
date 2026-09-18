@@ -9,7 +9,7 @@ export default function Plazos() {
           <div>
             <p className="text-sm text-[var(--muted)]">Estadística Electoral y Datos Abiertos</p>
             <h1 className="text-3xl font-semibold text-[var(--foreground)]">
-              Calculadora de plazos
+              Calculadora de días hábiles judiciales
             </h1>
           </div>
           <Link

@@ -63,16 +63,29 @@ function esDiaDelEmpleadoJudicial(fechaISO: string): boolean {
   return fechaISO.slice(5) === "11-16";
 }
 
-// Motivo de por qué una fecha es inhábil por una regla FIJA (no feriado
-// nacional ni inhábil cargado a mano) — para mostrar en el calendario de
-// /plazos. Devuelve null si la fecha es hábil por estas reglas (puede
-// igual ser inhábil por un feriado nacional o uno cargado a mano — ver
-// lib/useFeriados.ts).
+// Categoría de una regla FIJA (no feriado nacional ni inhábil cargado a
+// mano) — la usa /plazos para pintar el calendario. El 16/11 entra en la
+// misma categoría "inhabil_judicial" que un inhábil judicial cargado a
+// mano (ver TipoInhabil en lib/useFeriados.ts): no hay una categoría
+// aparte para "Día del Empleado Judicial".
+export type TipoDiaFijo = "finde" | "feria_judicial" | "inhabil_judicial";
+
+export function tipoDiaFijo(fechaISO: string): TipoDiaFijo | null {
+  if (esFinDeSemana(fechaISO)) return "finde";
+  if (esFeriaVerano(fechaISO) || esFeriaInvierno(fechaISO)) return "feria_judicial";
+  if (esDiaDelEmpleadoJudicial(fechaISO)) return "inhabil_judicial";
+  return null;
+}
+
+// Motivo de por qué una fecha es inhábil por una regla FIJA — para el
+// tooltip del calendario de /plazos. Devuelve null si la fecha es hábil
+// por estas reglas (puede igual ser inhábil por un feriado nacional o uno
+// cargado a mano — ver lib/useFeriados.ts).
 export function motivoFijo(fechaISO: string): string | null {
   if (esFinDeSemana(fechaISO)) return "Fin de semana";
   if (esFeriaVerano(fechaISO)) return "Feria judicial de verano";
   if (esFeriaInvierno(fechaISO)) return "Feria judicial de invierno";
-  if (esDiaDelEmpleadoJudicial(fechaISO)) return "Día del Empleado Judicial";
+  if (esDiaDelEmpleadoJudicial(fechaISO)) return "Inhábil judicial (16/11 — Día del Empleado Judicial)";
   return null;
 }
 

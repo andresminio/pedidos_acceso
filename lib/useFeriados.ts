@@ -8,9 +8,16 @@ export interface FeriadoNacional {
   nombre: string;
 }
 
+// Un inhábil cargado a mano siempre es UNO de estos tres tipos — no existe
+// una categoría "custom" aparte en el calendario, se pinta con el mismo
+// color que su tipo (ver TipoDiaFijo en lib/feriados.ts, que además usa
+// "inhabil_judicial" para el 16/11 fijo).
+export type TipoInhabil = "feriado" | "feria_judicial" | "inhabil_judicial";
+
 export interface DiaInhabilCustom {
   fecha: string; // ISO yyyy-mm-dd
   motivo: string;
+  tipo: TipoInhabil;
 }
 
 export interface Feriados {
@@ -72,7 +79,7 @@ export function useFeriados(anios: number[]): Feriados {
       try {
         const [porAnio, resultadoCustom] = await Promise.all([
           Promise.all(aniosPedidos.map(fetchFeriadosDeAnio)),
-          supabase.from("dias_inhabiles_custom").select("fecha, motivo").order("fecha"),
+          supabase.from("dias_inhabiles_custom").select("fecha, motivo, tipo").order("fecha"),
         ]);
         if (cancelado) return;
         setFeriadosNacionales(porAnio.flat());

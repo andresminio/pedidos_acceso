@@ -4,12 +4,14 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useFeriados } from "@/lib/useFeriados";
+import type { TipoInhabil } from "@/lib/useFeriados";
 import {
   diasCalendarioEntre,
   diasHabilesEntre,
   motivoFijo,
   restarDiasHabiles,
   sumarDiasHabiles,
+  tipoDiaFijo,
 } from "@/lib/feriados";
 
 const HOY_ISO = () => new Date().toISOString().slice(0, 10);
@@ -25,48 +27,45 @@ function fechaCorta(fechaISO: string): string {
   return `${d}/${m}/${a}`;
 }
 
-// Clasifica una fecha para el color del calendario. El orden importa: un
-// inhábil cargado a mano puede caer un feriado nacional también, no
-// importa, se muestra el primero que matchee.
-type TipoDia =
-  | "habil"
-  | "finde"
-  | "feriado_nacional"
-  | "feria_judicial"
-  | "empleado_judicial"
-  | "custom";
+// Clasifica una fecha para el color del calendario. Un inhábil cargado a
+// mano es siempre uno de los tres tipos de TipoInhabil — no hay una
+// categoría "custom" aparte, se pinta con el color de su propio tipo. El
+// 16/11 (fijo) entra en "inhabil_judicial", la misma categoría que un
+// inhábil judicial cargado a mano.
+type TipoDia = "habil" | "finde" | TipoInhabil;
 
 function clasificarDia(
   fechaISO: string,
   esFeriadoNacional: boolean,
-  esCustom: boolean
+  tipoCustom: TipoInhabil | null
 ): TipoDia {
-  const fijo = motivoFijo(fechaISO);
-  if (fijo === "Fin de semana") return "finde";
-  if (fijo === "Feria judicial de verano" || fijo === "Feria judicial de invierno")
-    return "feria_judicial";
-  if (fijo === "Día del Empleado Judicial") return "empleado_judicial";
-  if (esCustom) return "custom";
-  if (esFeriadoNacional) return "feriado_nacional";
+  const fijo = tipoDiaFijo(fechaISO);
+  if (fijo) return fijo;
+  if (tipoCustom) return tipoCustom;
+  if (esFeriadoNacional) return "feriado";
   return "habil";
 }
 
 const ESTILO_TIPO: Record<TipoDia, string> = {
   habil: "bg-[var(--card)] text-[var(--foreground)]",
   finde: "bg-[var(--surface-2)] text-[var(--muted)]",
-  feriado_nacional: "bg-blue-500/20 text-blue-300",
+  feriado: "bg-blue-500/20 text-blue-300",
   feria_judicial: "bg-purple-500/20 text-purple-300",
-  empleado_judicial: "bg-amber-500/20 text-amber-300",
-  custom: "bg-rose-500/20 text-rose-300",
+  inhabil_judicial: "bg-amber-500/20 text-amber-300",
 };
 
 const LEYENDA: { tipo: TipoDia; label: string }[] = [
   { tipo: "finde", label: "Fin de semana" },
-  { tipo: "feriado_nacional", label: "Feriado nacional" },
+  { tipo: "feriado", label: "Feriado" },
   { tipo: "feria_judicial", label: "Feria judicial" },
-  { tipo: "empleado_judicial", label: "16/11 — Día del Empleado Judicial" },
-  { tipo: "custom", label: "Inhábil cargado a mano" },
+  { tipo: "inhabil_judicial", label: "Inhábil judicial (incluye 16/11)" },
 ];
+
+const TIPO_LABEL: Record<TipoInhabil, string> = {
+  feriado: "Feriado",
+  feria_judicial: "Feria judicial",
+  inhabil_judicial: "Inhábil judicial",
+};
 
 export default function PanelPlazos() {
   const { isLoggedIn } = useAuth();
@@ -84,8 +83,10 @@ export default function PanelPlazos() {
   const [anioVisible, setAnioVisible] = useState(hoy.getFullYear());
 
   // --- Alta de inhábil personalizado ---
+  const [modalAbierto, setModalAbierto] = useState(false);
   const [nuevaFecha, setNuevaFecha] = useState(HOY_ISO());
   const [nuevoMotivo, setNuevoMotivo] = useState("");
+  const [nuevoTipo, setNuevoTipo] = useState<TipoInhabil>("feriado");
   const [guardando, setGuardando] = useState(false);
   const [errorAlta, setErrorAlta] = useState<string | null>(null);
 
@@ -121,7 +122,7 @@ export default function PanelPlazos() {
     setErrorAlta(null);
     const { error } = await supabase
       .from("dias_inhabiles_custom")
-      .insert({ fecha: nuevaFecha, motivo: nuevoMotivo.trim() });
+      .insert({ fecha: nuevaFecha, motivo: nuevoMotivo.trim(), tipo: nuevoTipo });
     setGuardando(false);
     if (error) {
       setErrorAlta(
@@ -132,6 +133,8 @@ export default function PanelPlazos() {
       return;
     }
     setNuevoMotivo("");
+    setNuevoTipo("feriado");
+    setModalAbierto(false);
     feriados.recargar();
   }
 
@@ -317,8 +320,8 @@ export default function PanelPlazos() {
           {celdas.map((fechaISO, i) => {
             if (!fechaISO) return <div key={`vacio-${i}`} />;
             const esNacional = feriados.feriadosNacionales.some((f) => f.fecha === fechaISO);
-            const esCustom = feriados.inhabilesCustom.some((d) => d.fecha === fechaISO);
-            const tipo = clasificarDia(fechaISO, esNacional, esCustom);
+            const custom = feriados.inhabilesCustom.find((d) => d.fecha === fechaISO);
+            const tipo = clasificarDia(fechaISO, esNacional, custom?.tipo ?? null);
             const motivo = feriados.motivo(fechaISO) ?? motivoFijo(fechaISO);
             return (
               <div
@@ -353,36 +356,91 @@ export default function PanelPlazos() {
         </p>
 
         {isLoggedIn && (
-          <form onSubmit={agregarInhabil} className="mb-4 flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
-              Fecha
-              <input
-                type="date"
-                className="input"
-                value={nuevaFecha}
-                onChange={(e) => setNuevaFecha(e.target.value)}
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-xs text-[var(--muted)]">
-              Motivo
-              <input
-                type="text"
-                required
-                placeholder="ej. Paro judicial"
-                className="input w-64"
-                value={nuevoMotivo}
-                onChange={(e) => setNuevoMotivo(e.target.value)}
-              />
-            </label>
-            <button
-              type="submit"
-              disabled={guardando}
-              className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+          <button
+            type="button"
+            onClick={() => setModalAbierto(true)}
+            className="mb-4 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
+          >
+            + Agregar inhábil
+          </button>
+        )}
+
+        {modalAbierto && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+            onClick={() => setModalAbierto(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--card)] p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
             >
-              {guardando ? "Guardando…" : "Agregar"}
-            </button>
-            {errorAlta && <p className="w-full text-xs text-[var(--danger-text)]">{errorAlta}</p>}
-          </form>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-[var(--foreground)]">
+                  Agregar inhábil
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setModalAbierto(false)}
+                  aria-label="Cerrar"
+                  className="text-[var(--muted-3)] hover:text-[var(--muted-2)]"
+                >
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={agregarInhabil} className="flex flex-col gap-3">
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="font-medium text-[var(--muted)]">Fecha</span>
+                  <input
+                    type="date"
+                    className="input"
+                    value={nuevaFecha}
+                    onChange={(e) => setNuevaFecha(e.target.value)}
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="font-medium text-[var(--muted)]">Tipo</span>
+                  <select
+                    className="input"
+                    value={nuevoTipo}
+                    onChange={(e) => setNuevoTipo(e.target.value as TipoInhabil)}
+                  >
+                    <option value="feriado">Feriado</option>
+                    <option value="feria_judicial">Feria judicial</option>
+                    <option value="inhabil_judicial">Inhábil judicial</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="font-medium text-[var(--muted)]">Motivo</span>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    placeholder="ej. Paro judicial"
+                    className="input"
+                    value={nuevoMotivo}
+                    onChange={(e) => setNuevoMotivo(e.target.value)}
+                  />
+                </label>
+                {errorAlta && <p className="text-xs text-[var(--danger-text)]">{errorAlta}</p>}
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={guardando}
+                    className="rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+                  >
+                    {guardando ? "Guardando…" : "Guardar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModalAbierto(false)}
+                    className="rounded-md border border-[var(--border-2)] px-4 py-2 text-sm font-medium text-[var(--muted-2)] hover:bg-[var(--surface-2)]"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
 
         {feriados.inhabilesCustom.length === 0 ? (
@@ -398,7 +456,8 @@ export default function PanelPlazos() {
                   <span className="font-medium text-[var(--foreground)]">
                     {fechaCorta(d.fecha)}
                   </span>{" "}
-                  — {d.motivo}
+                  — {d.motivo}{" "}
+                  <span className="text-xs text-[var(--muted)]">({TIPO_LABEL[d.tipo]})</span>
                 </span>
                 {isLoggedIn && (
                   <button
