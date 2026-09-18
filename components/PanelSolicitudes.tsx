@@ -10,6 +10,8 @@ import {
   cargarSubcategorias,
 } from "@/lib/categorias";
 import { anioCuatrimestreDeFecha, fechaCorta } from "@/lib/fechas";
+import { diasCalendarioEntre, diasHabilesEntre, sumarDiasHabiles } from "@/lib/feriados";
+import { useFeriados } from "@/lib/useFeriados";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { PedidoEvento, Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
@@ -610,6 +612,38 @@ function FilaSolicitudEdicion({
   const errorSubestado =
     estado === "Cerrado" && !subestado ? "Un pedido Cerrado necesita Sub-estado." : null;
 
+  // Info interna de plazos (no se le manda nada de esto al solicitante):
+  // - Pendiente: cuándo vence el plazo legal de 15 días hábiles desde la
+  //   recepción (ver lib/feriados.ts — cuenta fines de semana, feriados
+  //   nacionales, feria judicial de verano/invierno y el 16/11).
+  // - Cerrado: cuánto tiempo (corrido, no hábil) pasó entre la recepción
+  //   y el cierre.
+  // Los feriados nacionales se traen de una API (ver lib/useFeriados.ts) —
+  // pedimos el año de la fecha de recepción y el de hoy, +1 cada uno, para
+  // cubrir el caso de un plazo que cruza fin de año.
+  const aniosFeriados = useMemo(() => {
+    if (estado !== "Pendiente" || !fecha) return [];
+    const anioFecha = Number(fecha.slice(0, 4));
+    const anioHoy = new Date().getFullYear();
+    return [...new Set([anioFecha, anioFecha + 1, anioHoy, anioHoy + 1])];
+  }, [estado, fecha]);
+  const feriados = useFeriados(aniosFeriados);
+
+  const infoPlazo = useMemo(() => {
+    if (estado === "Pendiente" && fecha) {
+      if (feriados.cargando) return { tipo: "cargando" as const };
+      const vencimiento = sumarDiasHabiles(fecha, 15, feriados.set);
+      const hoyISO = new Date().toISOString().slice(0, 10);
+      const diasHabiles = diasHabilesEntre(hoyISO, vencimiento, feriados.set); // negativo = vencido
+      return { tipo: "pendiente" as const, vencimiento, diasHabiles };
+    }
+    if (estado === "Cerrado" && fecha && fechaRespuesta) {
+      const dias = diasCalendarioEntre(fecha, fechaRespuesta);
+      return { tipo: "cerrado" as const, dias };
+    }
+    return null;
+  }, [estado, fecha, fechaRespuesta, feriados.cargando, feriados.set]);
+
   useEffect(() => {
     cargarCategorias().then(setCategorias);
   }, []);
@@ -1071,6 +1105,42 @@ function FilaSolicitudEdicion({
             )}
           </label>
         </div>
+
+        {infoPlazo && (
+          <p className="mt-2 text-xs text-[var(--muted)]">
+            {infoPlazo.tipo === "cargando" ? (
+              "Calculando plazo…"
+            ) : infoPlazo.tipo === "pendiente" ? (
+              <>
+                Plazo legal (15 días hábiles): vence el{" "}
+                <span
+                  className={
+                    infoPlazo.diasHabiles < 0
+                      ? "font-medium text-[var(--danger-text)]"
+                      : "font-medium text-[var(--fg-soft)]"
+                  }
+                >
+                  {fechaCorta(infoPlazo.vencimiento)}
+                </span>{" "}
+                {infoPlazo.diasHabiles < 0
+                  ? `— vencido hace ${Math.abs(infoPlazo.diasHabiles)} día(s) hábil(es)`
+                  : infoPlazo.diasHabiles === 0
+                    ? "— vence hoy"
+                    : `— faltan ${infoPlazo.diasHabiles} día(s) hábil(es)`}
+                {feriados.error && (
+                  <span className="text-[var(--danger-text)]"> ({feriados.error})</span>
+                )}
+              </>
+            ) : (
+              <>
+                Tiempo transcurrido entre recepción y cierre:{" "}
+                <span className="font-medium text-[var(--fg-soft)]">
+                  {infoPlazo.dias} día{infoPlazo.dias === 1 ? "" : "s"}
+                </span>
+              </>
+            )}
+          </p>
+        )}
 
         <LineaTiempoPedido row={row} eventos={eventos} onAbrir={setAbierto} />
 
