@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import {
   agregarCategoria,
@@ -1107,7 +1108,7 @@ function FilaSolicitudEdicion({
         </div>
 
         {infoPlazo && (
-          <p className="mt-2 text-xs text-[var(--muted)]">
+          <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--muted)]">
             {infoPlazo.tipo === "cargando" ? (
               "Calculando plazo…"
             ) : infoPlazo.tipo === "pendiente" ? (
@@ -1139,6 +1140,28 @@ function FilaSolicitudEdicion({
                 </span>
               </>
             )}
+            <Link
+              href="/plazos"
+              className="inline-flex items-center gap-1 rounded-md border border-[var(--border-2)] px-1.5 py-0.5 text-[var(--muted-2)] hover:bg-[var(--surface-2)]"
+              title="Abrir la calculadora de días hábiles judiciales"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.7}
+                className="h-3 w-3"
+              >
+                <rect x="5" y="3" width="14" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M8 7h8" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 18h.01M12 18h.01"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Calculadora
+            </Link>
           </p>
         )}
 

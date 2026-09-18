@@ -473,6 +473,20 @@ export default function PanelPlazos() {
           </ul>
         )}
       </section>
+
+      <p className="text-xs text-[var(--muted)]">
+        Fuente de los feriados nacionales:{" "}
+        <a
+          href="https://argentinadatos.com"
+          target="_blank"
+          rel="noreferrer"
+          className="underline hover:text-[var(--fg-soft)]"
+        >
+          ArgentinaDatos
+        </a>{" "}
+        (api.argentinadatos.com), actualizada automáticamente. La feria judicial y el 16/11 se
+        mantienen a mano en el código (ver lib/feriados.ts) — no hay una API pública que los tenga.
+      </p>
     </div>
   );
 }
