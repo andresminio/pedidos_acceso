@@ -84,6 +84,7 @@ export default function PanelPlazos() {
 
   // --- Alta de inhábil personalizado ---
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [verInhabiles, setVerInhabiles] = useState(false);
   const [nuevaFecha, setNuevaFecha] = useState(HOY_ISO());
   const [nuevoMotivo, setNuevoMotivo] = useState("");
   const [nuevoTipo, setNuevoTipo] = useState<TipoInhabil>("feriado");
@@ -345,27 +346,33 @@ export default function PanelPlazos() {
         </div>
       </section>
 
-      {/* Inhábiles cargados a mano */}
-      <section className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4">
-        <h2 className="mb-3 text-lg font-semibold text-[var(--foreground)]">
-          Inhábiles cargados a mano
-        </h2>
-        <p className="mb-3 text-xs text-[var(--muted)]">
-          Para paros, asuetos administrativos, feriados provinciales u otra fecha puntual que no
-          esté en los feriados nacionales ni en la feria judicial.
+      {/* Inhábiles cargados a mano: botón de alta arriba (mismo lugar/estilo
+          que "+ Nuevo pedido" en Ingresados) + línea compacta tipo "mails
+          descartados" para desplegar la lista, sin panel aparte. */}
+      {isLoggedIn && (
+        <button
+          type="button"
+          onClick={() => setModalAbierto(true)}
+          className="self-start rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
+        >
+          + Nuevo día inhábil
+        </button>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <p className="text-[var(--muted-3)]">
+          {feriados.inhabilesCustom.length} inhábil(es) cargado(s) a mano.
         </p>
+        <button
+          type="button"
+          onClick={() => setVerInhabiles((v) => !v)}
+          className="whitespace-nowrap font-medium text-[var(--accent-hover)] hover:text-[var(--accent)]"
+        >
+          {verInhabiles ? "Ocultar inhábiles" : "Ver inhábiles"}
+        </button>
+      </div>
 
-        {isLoggedIn && (
-          <button
-            type="button"
-            onClick={() => setModalAbierto(true)}
-            className="mb-4 rounded-md bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
-          >
-            + Nuevo día inhábil
-          </button>
-        )}
-
-        {modalAbierto && (
+      {modalAbierto && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
             onClick={() => setModalAbierto(false)}
@@ -443,36 +450,39 @@ export default function PanelPlazos() {
           </div>
         )}
 
-        {feriados.inhabilesCustom.length === 0 ? (
-          <p className="text-sm text-[var(--muted)]">No hay ninguno cargado todavía.</p>
-        ) : (
-          <ul className="flex flex-col gap-1.5">
-            {feriados.inhabilesCustom.map((d) => (
-              <li
-                key={d.fecha}
-                className="flex items-center justify-between rounded-md bg-[var(--surface-2)] px-3 py-1.5 text-sm"
-              >
-                <span>
-                  <span className="font-medium text-[var(--foreground)]">
-                    {fechaCorta(d.fecha)}
-                  </span>{" "}
-                  — {d.motivo}{" "}
-                  <span className="text-xs text-[var(--muted)]">({TIPO_LABEL[d.tipo]})</span>
-                </span>
-                {isLoggedIn && (
-                  <button
-                    type="button"
-                    onClick={() => quitarInhabil(d.fecha)}
-                    className="text-xs text-[var(--danger-text)] hover:underline"
+        {verInhabiles && (
+          <div className="mt-1">
+            {feriados.inhabilesCustom.length === 0 ? (
+              <p className="text-sm text-[var(--muted)]">No hay ninguno cargado todavía.</p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {feriados.inhabilesCustom.map((d) => (
+                  <li
+                    key={d.fecha}
+                    className="flex items-center justify-between rounded-md bg-[var(--surface-2)] px-3 py-1.5 text-sm"
                   >
-                    Quitar
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+                    <span>
+                      <span className="font-medium text-[var(--foreground)]">
+                        {fechaCorta(d.fecha)}
+                      </span>{" "}
+                      — {d.motivo}{" "}
+                      <span className="text-xs text-[var(--muted)]">({TIPO_LABEL[d.tipo]})</span>
+                    </span>
+                    {isLoggedIn && (
+                      <button
+                        type="button"
+                        onClick={() => quitarInhabil(d.fecha)}
+                        className="text-xs text-[var(--danger-text)] hover:underline"
+                      >
+                        Quitar
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         )}
-      </section>
 
       <p className="text-xs text-[var(--muted)]">
         Fuente: Feriados Nacionales{" "}
