@@ -104,7 +104,7 @@ function PillPlazo({ fecha, feriados }: { fecha: string; feriados: Set<string> }
   const dias = diasHabilesEntre(hoyISO, vencimiento, feriados);
   const vencido = dias < 0;
   const texto = vencido
-    ? "Plazo vencido"
+    ? "Plazo cumplido"
     : dias === 0
       ? "Vence hoy"
       : `Faltan ${dias} día${dias === 1 ? "" : "s"} hábil${dias === 1 ? "" : "es"}`;
