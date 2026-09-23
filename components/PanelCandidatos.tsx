@@ -361,27 +361,23 @@ export default function PanelCandidatos() {
           procesos abiertos. Revisá las sugerencias y confirmá las acciones
           pendientes.
         </p>
-        <div className="text-right text-xs text-[var(--muted-3)]">
-          {ultimasCorridas.length === 0 ? (
-            <p className="whitespace-nowrap">todavía no corrió</p>
-          ) : (
-            <p className="whitespace-nowrap">
-              última corrida: {fechaCortaHora(ultimasCorridas[0].corrida_en)}
-              {ultimasCorridas[0].hostname ? <> · {ultimasCorridas[0].hostname}</> : null}
-              {" · "}
-              nuevos correos: {ultimasCorridas[0].nuevos_correos}, revisión:{" "}
-              {ultimasCorridas[0].en_revision}, descartados: {ultimasCorridas[0].descartados}
-            </p>
-          )}
+        <div className="flex flex-col items-end text-xs text-[var(--muted-3)]">
           {ultimasCorridas.length > 0 && (
             <button
               type="button"
               onClick={() => setVerCorridas((v) => !v)}
-              className="mt-0.5 font-medium text-[var(--accent-hover)] hover:text-[var(--accent)]"
+              className="mb-0.5 font-medium text-[var(--accent-hover)] hover:text-[var(--accent)]"
             >
               {verCorridas ? "Ocultar últimas corridas" : "Ver últimas corridas"}
             </button>
           )}
+          <p className="whitespace-nowrap">
+            {ultimasCorridas.length === 0 ? (
+              "todavía no corrió"
+            ) : (
+              <>última corrida: {fechaCortaHora(ultimasCorridas[0].corrida_en)}</>
+            )}
+          </p>
         </div>
       </div>
 

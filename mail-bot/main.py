@@ -61,6 +61,7 @@ def _hostname() -> str | None:
 def main() -> int:
     client = get_client()
     hostname = _hostname()
+    nuevos_pedidos = 0
     en_revision = 0
     descartados = 0
 
@@ -86,6 +87,11 @@ def main() -> int:
         update_sync_state(client, ultimo_uid=None, error=error)
         log_run(client, hostname, nuevos_correos=0, en_revision=0, descartados=0, error=error)
         return 1
+
+    # nuevos_pedidos: candidatos nuevos clasificados como pedido de acceso
+    # (van a la cola "Nuevos pedidos de información"). en_revision: el
+    # resto de los "pendiente" (respuestas para vincular). descartados: lo
+    # que no es ni pedido ni respuesta.
 
     print(f"{len(mensajes)} mail(s) nuevo(s) desde UID {last_uid or '(ninguno, primera corrida)'}")
 
@@ -154,7 +160,10 @@ def main() -> int:
             update_sync_state(client, ultimo_uid=msg.uid)
             procesados_ok += 1
             if estado_revision == "pendiente":
-                en_revision += 1
+                if clasif.es_pedido_acceso:
+                    nuevos_pedidos += 1
+                else:
+                    en_revision += 1
             elif estado_revision == "descartado":
                 descartados += 1
             print(f"UID {msg.uid}: guardado como '{estado_revision}'.")
@@ -169,7 +178,7 @@ def main() -> int:
             log_run(
                 client,
                 hostname,
-                nuevos_correos=len(mensajes),
+                nuevos_correos=nuevos_pedidos,
                 en_revision=en_revision,
                 descartados=descartados,
                 error=error,
@@ -181,7 +190,7 @@ def main() -> int:
     log_run(
         client,
         hostname,
-        nuevos_correos=len(mensajes),
+        nuevos_correos=nuevos_pedidos,
         en_revision=en_revision,
         descartados=descartados,
         error=None,
