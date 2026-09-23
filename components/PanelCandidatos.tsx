@@ -73,13 +73,29 @@ function fechaCortaHora(iso: string): string {
   });
 }
 
+// Una fila de historial de corridas del bot (mail_sync_runs, mail-bot/).
+// mail_sync_state sigue existiendo aparte (solo trackea el último UID IMAP
+// para el dedupe) — esto es un log, una fila por corrida.
+interface CorridaBot {
+  id: string;
+  corrida_en: string;
+  hostname: string | null;
+  nuevos_correos: number;
+  en_revision: number;
+  descartados: number;
+  error: string | null;
+}
+
+const CORRIDAS_HISTORIAL = 5;
+
 export default function PanelCandidatos() {
   const { isLoggedIn } = useAuth();
   const [rows, setRows] = useState<CandidatoCorreo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [ultimaCorrida, setUltimaCorrida] = useState<string | null>(null);
+  const [ultimasCorridas, setUltimasCorridas] = useState<CorridaBot[]>([]);
+  const [verCorridas, setVerCorridas] = useState(false);
 
   const [descartadosSemana, setDescartadosSemana] = useState<number | null>(null);
   const [verDescartados, setVerDescartados] = useState(false);
@@ -117,14 +133,15 @@ export default function PanelCandidatos() {
     }
     setLoading(false);
 
-    // Estado general: última vez que corrió el bot (independiente de si
-    // encontró pedidos o no) — se guarda en mail_sync_state.
-    const { data: estado } = await supabase
-      .from("mail_sync_state")
-      .select("ultima_corrida_en")
-      .eq("id", 1)
-      .maybeSingle();
-    setUltimaCorrida(estado?.ultima_corrida_en ?? null);
+    // Historial de corridas del bot (independiente de si encontró pedidos
+    // o no) — mail_sync_runs tiene una fila por corrida, a diferencia de
+    // mail_sync_state que es una sola fila con el último UID IMAP.
+    const { data: corridas } = await supabase
+      .from("mail_sync_runs")
+      .select("id, corrida_en, hostname, nuevos_correos, en_revision, descartados, error")
+      .order("corrida_en", { ascending: false })
+      .limit(CORRIDAS_HISTORIAL);
+    setUltimasCorridas((corridas as CorridaBot[]) ?? []);
 
     const { count } = await supabase
       .from("candidatos_correo")
@@ -344,17 +361,52 @@ export default function PanelCandidatos() {
           procesos abiertos. Revisá las sugerencias y confirmá las acciones
           pendientes.
         </p>
-        <p className="whitespace-nowrap text-xs text-[var(--muted-3)]">
-          {ultimaCorrida ? (
-            <>última corrida: {fechaCortaHora(ultimaCorrida)}</>
+        <div className="text-right text-xs text-[var(--muted-3)]">
+          {ultimasCorridas.length === 0 ? (
+            <p className="whitespace-nowrap">todavía no corrió</p>
           ) : (
-            "todavía no corrió"
+            <p className="whitespace-nowrap">
+              última corrida: {fechaCortaHora(ultimasCorridas[0].corrida_en)}
+              {ultimasCorridas[0].hostname ? <> · {ultimasCorridas[0].hostname}</> : null}
+              {" · "}
+              nuevos correos: {ultimasCorridas[0].nuevos_correos}, revisión:{" "}
+              {ultimasCorridas[0].en_revision}, descartados: {ultimasCorridas[0].descartados}
+            </p>
           )}
-          {" · "}
-          {rows.length} mail{rows.length === 1 ? "" : "s"} nuevo
-          {rows.length === 1 ? "" : "s"}
-        </p>
+          {ultimasCorridas.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setVerCorridas((v) => !v)}
+              className="mt-0.5 font-medium text-[var(--accent-hover)] hover:text-[var(--accent)]"
+            >
+              {verCorridas ? "Ocultar últimas corridas" : "Ver últimas corridas"}
+            </button>
+          )}
+        </div>
       </div>
+
+      {verCorridas && (
+        <div className="-mt-2 mb-4 space-y-1 rounded-md border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-xs text-[var(--muted-3)]">
+          {ultimasCorridas.map((c) => (
+            <div key={c.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5">
+              <span className="whitespace-nowrap">
+                {fechaCortaHora(c.corrida_en)}
+                {c.hostname ? <> · {c.hostname}</> : null}
+              </span>
+              <span className="whitespace-nowrap">
+                {c.error ? (
+                  <span className="text-[var(--danger-text)]">error: {c.error}</span>
+                ) : (
+                  <>
+                    nuevos: {c.nuevos_correos}, revisión: {c.en_revision}, descartados:{" "}
+                    {c.descartados}
+                  </>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <h2 className="mb-2 text-lg font-semibold text-[var(--foreground)]">
         Nuevos pedidos de información

@@ -44,6 +44,27 @@ def update_sync_state(client: Client, ultimo_uid: str | None, error: str | None 
     client.table("mail_sync_state").update(payload).eq("id", 1).execute()
 
 
+def log_run(
+    client: Client,
+    hostname: str | None,
+    nuevos_correos: int,
+    en_revision: int,
+    descartados: int,
+    error: str | None = None,
+) -> None:
+    """Registra una fila de historial en mail_sync_runs (una por corrida),
+    separado de mail_sync_state (que solo trackea el último UID IMAP)."""
+    client.table("mail_sync_runs").insert(
+        {
+            "hostname": hostname,
+            "nuevos_correos": nuevos_correos,
+            "en_revision": en_revision,
+            "descartados": descartados,
+            "error": error,
+        }
+    ).execute()
+
+
 def _normalizar(texto: str | None) -> str:
     return (texto or "").strip().lower()
 

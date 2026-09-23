@@ -18,6 +18,7 @@ Orquestador: corre en cada ejecución del workflow de GitHub Actions.
 from __future__ import annotations
 
 import os
+import platform
 import sys
 import traceback
 from pathlib import Path
@@ -42,6 +43,7 @@ from ingest import fetch_new_messages
 from supabase_client import (
     get_client,
     get_last_uid,
+    log_run,
     update_sync_state,
     upsert_candidato,
     ya_esta_cargado,
@@ -49,8 +51,18 @@ from supabase_client import (
 )
 
 
+def _hostname() -> str | None:
+    # En Windows (Programador de tareas / .bat local) esto está siempre
+    # seteado; platform.node() queda de respaldo para otros entornos (ej.
+    # GitHub Actions, donde va a mostrar el nombre del runner).
+    return os.environ.get("COMPUTERNAME") or platform.node() or None
+
+
 def main() -> int:
     client = get_client()
+    hostname = _hostname()
+    en_revision = 0
+    descartados = 0
 
     imap_host = os.environ["IMAP_HOST"]
     imap_port = int(os.environ.get("IMAP_PORT", "993"))
@@ -72,6 +84,7 @@ def main() -> int:
         print(error, file=sys.stderr)
         traceback.print_exc()
         update_sync_state(client, ultimo_uid=None, error=error)
+        log_run(client, hostname, nuevos_correos=0, en_revision=0, descartados=0, error=error)
         return 1
 
     print(f"{len(mensajes)} mail(s) nuevo(s) desde UID {last_uid or '(ninguno, primera corrida)'}")
@@ -140,6 +153,10 @@ def main() -> int:
             upsert_candidato(client, candidato)
             update_sync_state(client, ultimo_uid=msg.uid)
             procesados_ok += 1
+            if estado_revision == "pendiente":
+                en_revision += 1
+            elif estado_revision == "descartado":
+                descartados += 1
             print(f"UID {msg.uid}: guardado como '{estado_revision}'.")
 
         except Exception as e:
@@ -149,10 +166,26 @@ def main() -> int:
             # No avanzamos ultimo_uid más allá de acá: el próximo run
             # reintenta este mail (y los siguientes) de nuevo.
             update_sync_state(client, ultimo_uid=None, error=error)
+            log_run(
+                client,
+                hostname,
+                nuevos_correos=len(mensajes),
+                en_revision=en_revision,
+                descartados=descartados,
+                error=error,
+            )
             print(f"Procesados OK antes del error: {procesados_ok}/{len(mensajes)}")
             return 1
 
     update_sync_state(client, ultimo_uid=last_uid if not mensajes else mensajes[-1].uid, error=None)
+    log_run(
+        client,
+        hostname,
+        nuevos_correos=len(mensajes),
+        en_revision=en_revision,
+        descartados=descartados,
+        error=None,
+    )
     print(f"Listo. {procesados_ok}/{len(mensajes)} procesados sin errores.")
     return 0
 
