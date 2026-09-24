@@ -88,6 +88,18 @@ interface CorridaBot {
 
 const CORRIDAS_HISTORIAL = 5;
 
+// Resumen corto y legible del error de una corrida (mail_sync_runs.error
+// suele traer el traceback/JSON crudo de Python — acá solo mostramos un
+// motivo breve; el texto completo queda como title/tooltip).
+function resumenError(error: string): string {
+  if (/fallo imap/i.test(error)) return "error de conexión IMAP";
+  if (/503|unavailable|overloaded|high demand/i.test(error))
+    return "IA no disponible (reintenta solo)";
+  if (/429|quota|rate limit/i.test(error)) return "límite de la IA alcanzado";
+  if (/timeout|timed out/i.test(error)) return "tiempo de espera agotado";
+  return "error en la corrida";
+}
+
 export default function PanelCandidatos() {
   const { isLoggedIn } = useAuth();
   const [rows, setRows] = useState<CandidatoCorreo[]>([]);
@@ -391,7 +403,9 @@ export default function PanelCandidatos() {
               </span>
               <span className="whitespace-nowrap">
                 {c.error ? (
-                  <span className="text-[var(--danger-text)]">error: {c.error}</span>
+                  <span className="text-[var(--muted-3)]" title={c.error}>
+                    {resumenError(c.error)}
+                  </span>
                 ) : (
                   <>
                     nuevos: {c.nuevos_correos}, revisión: {c.en_revision}, descartados:{" "}

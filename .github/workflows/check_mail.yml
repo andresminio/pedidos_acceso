@@ -1,28 +1,25 @@
-name: Check mail (NO USAR — ver nota)
+name: Check mail
 
-# Este workflow queda DESACTIVADO por diseño: los runners de GitHub
-# Actions corren en la nube pública de GitHub y NO pueden llegar a
-# webmail.pjn.gov.ar, que solo es accesible desde la red interna /
-# VPN del organismo.
+# Corre en un runner self-hosted registrado en una PC conectada a la
+# red interna del organismo (webmail.pjn.gov.ar solo es accesible desde
+# ahí — por eso NO puede ser un runner en la nube de GitHub). El único
+# secreto que hace falta acá es BWS_ACCESS_TOKEN: main.py llama a
+# secrets_loader.load_secrets(), que trae el resto (IMAP_*, GEMINI_*,
+# SUPABASE_*) desde Bitwarden Secrets Manager y sobreescribe
+# os.environ — no hace falta (ni sirve) pasarlos acá.
 #
-# En su lugar, el bot se corre a demanda desde una máquina que sí esté
-# conectada a esa red — ver mail-bot/revisar_correo.bat y la sección
-# "Revisar correo ahora" del README.
-#
-# Si en algún momento se consigue un runner self-hosted DENTRO de la
-# red interna (o la VPN se puede automatizar), este archivo es la base
-# para volver a un cron real: cambiar `runs-on` a `self-hosted` y
-# descomentar el trigger `schedule`.
+# El .bat local (revisar_correo.bat, vía Programador de tareas) puede
+# seguir conviviendo con esto mientras se valida que el runner ande
+# bien — ver README, sección "Revisar correo ahora".
 
 on:
   workflow_dispatch: {}
-  # schedule:
-  #   - cron: "*/30 * * * *"
+  schedule:
+    - cron: "0 * * * *"
 
 jobs:
   check-mail:
-    # runs-on: ubuntu-latest  # NO sirve: sin acceso a la red interna
-    runs-on: self-hosted # requiere un runner registrado dentro de la red del organismo
+    runs-on: self-hosted
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -37,11 +34,5 @@ jobs:
       - name: Correr bot de correo
         working-directory: mail-bot
         env:
-          IMAP_HOST: ${{ secrets.IMAP_HOST }}
-          IMAP_PORT: ${{ secrets.IMAP_PORT }}
-          IMAP_USER: ${{ secrets.IMAP_USER }}
-          IMAP_PASS: ${{ secrets.IMAP_PASS }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          BWS_ACCESS_TOKEN: ${{ secrets.BWS_ACCESS_TOKEN }}
         run: python main.py
