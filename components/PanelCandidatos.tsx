@@ -1116,7 +1116,10 @@ function FilaDescartado({
           className={tieneCuerpo ? "cursor-pointer" : ""}
         >
           <span className="text-[var(--muted)]">{fechaCortaHora(row.fecha_correo)}</span>{" "}
-          · de {row.remitente} — <span className="text-[var(--muted-2)]">{row.asunto}</span>{" "}
+          {row.direccion === "saliente"
+            ? `· enviado para ${row.destinatario ?? "—"}`
+            : `· de ${row.remitente}`}{" "}
+          — <span className="text-[var(--muted-2)]">{row.asunto}</span>{" "}
           <PillOrigenDescarte revisadoEn={row.revisado_en} />
           {row.confianza_ia && (
             <div className="mt-1 italic text-[var(--muted-3)]">IA: {row.confianza_ia}</div>
@@ -1124,15 +1127,19 @@ function FilaDescartado({
         </div>
         {puedeEditar && (
           <div className="flex shrink-0 gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={onPasarARevision}
-              title="Tratarlo como un pedido de acceso nuevo, todavía no registrado"
-              className="whitespace-nowrap rounded-md border border-[var(--border-2)] px-2 py-1 text-xs text-[var(--muted-2)] hover:bg-[var(--surface-2)] disabled:opacity-50"
-            >
-              Pasar a revisión
-            </button>
+            {/* Un correo ENVIADO nunca es un pedido nuevo: solo se ofrece
+                pasarlo a vincular. */}
+            {row.direccion !== "saliente" && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={onPasarARevision}
+                title="Tratarlo como un pedido de acceso nuevo, todavía no registrado"
+                className="whitespace-nowrap rounded-md border border-[var(--border-2)] px-2 py-1 text-xs text-[var(--muted-2)] hover:bg-[var(--surface-2)] disabled:opacity-50"
+              >
+                Pasar a revisión
+              </button>
+            )}
             <button
               type="button"
               disabled={busy}

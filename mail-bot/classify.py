@@ -453,7 +453,8 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
 #   - comunicación INTERMEDIA (a Nora, Prosecretaría, Secretaría de
 #     Actuación Electoral, Consejo Abierto u otra área, o un aviso/
 #     aclaración al solicitante) -> "Envío a <área>" o similar, sin cerrar.
-# Lo que no tiene que ver con ningún pedido concreto no se guarda.
+# Lo que no tiene que ver con ningún pedido concreto se guarda como
+# "descartado" (se puede recuperar desde "Ver descartados").
 # ---------------------------------------------------------------------------
 
 ETIQUETA_RESPUESTA_FINAL = "Respuesta final"
@@ -508,12 +509,13 @@ Cuerpo:
 """
 
 
-def classify_saliente(destinatario: str, asunto: str, cuerpo: str) -> Clasificacion | None:
+def classify_saliente(destinatario: str, asunto: str, cuerpo: str) -> Clasificacion:
     """
-    Devuelve una Clasificacion lista para guardar como candidato en
-    "Respuestas para vincular" (etiqueta "Respuesta final" o una intermedia
-    tipo "Envío a Nora"), o None si el mail saliente no tiene que ver con
-    ningún pedido (en ese caso no se guarda nada).
+    Devuelve la Clasificacion del mail saliente. Si es parte de un pedido
+    (es_respuesta_pedido=True, etiqueta "Respuesta final" o una intermedia
+    tipo "Envío a Nora") queda en "Respuestas para vincular"; si no, la
+    etiqueta es None y main.py lo guarda como "descartado" (visible en "Ver
+    descartados", por si la IA se equivocó).
     """
     prompt = PROMPT_SALIENTE_TEMPLATE.format(
         email_nora=EMAIL_NORA,
@@ -532,11 +534,11 @@ def classify_saliente(destinatario: str, asunto: str, cuerpo: str) -> Clasificac
     elif tipo == "intermedia":
         etiqueta = (data.get("etiqueta_evento") or "").strip() or "Envío intermedio"
     else:
-        return None
+        etiqueta = None  # "ninguna": va a descartados (recuperable desde el panel)
 
     return Clasificacion(
         es_pedido_acceso=False,
-        es_respuesta_pedido=True,
+        es_respuesta_pedido=etiqueta is not None,
         etiqueta_evento=etiqueta,
         confianza_ia=data.get("confianza_ia"),
         nombre_solicitante=data.get("nombre_solicitante"),

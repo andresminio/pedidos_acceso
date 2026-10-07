@@ -53,15 +53,20 @@ from supabase_client import (
 )
 
 
-def procesar_enviados(client, imap_host: str, imap_port: int, imap_user: str, imap_pass: str) -> int:
+def procesar_enviados(
+    client, imap_host: str, imap_port: int, imap_user: str, imap_pass: str
+) -> tuple[int, int]:
     """
-    Lee la carpeta de enviados de la misma casilla y deja los envíos que
-    son parte de un pedido como candidatos "pendiente" en "Respuestas para
-    vincular": la respuesta FINAL al solicitante (etiqueta "Respuesta
-    final", el panel la precarga para cerrar) y las comunicaciones
-    INTERMEDIAS (a Nora, Prosecretaría, etc., etiqueta tipo "Envío a
-    Nora", sin cerrar). Devuelve cuántos candidatos nuevos creó. Lo que no
-    tiene que ver con ningún pedido no se guarda.
+    Lee la carpeta de enviados de la misma casilla. Devuelve
+    (en_revision, descartados) creados en esta corrida.
+
+    - Envíos que son parte de un pedido -> candidato "pendiente" en
+      "Respuestas para vincular": la respuesta FINAL al solicitante
+      (etiqueta "Respuesta final", el panel la precarga para cerrar) y las
+      comunicaciones INTERMEDIAS (a Nora, Prosecretaría, etc., etiqueta
+      tipo "Envío a Nora", sin cerrar).
+    - El resto -> "descartado" (visible en "Ver descartados", se puede
+      pasar a vincular desde ahí si la IA se equivocó).
 
     Cualquier falla acá es no fatal para el resto de la corrida: el cursor
     de enviados no avanza más allá del último mail bien procesado, así que
@@ -78,46 +83,48 @@ def procesar_enviados(client, imap_host: str, imap_port: int, imap_user: str, im
         # resueltos) a la cola de revisión.
         update_uid_enviados(client, cursor_inicial)
         print(f"Enviados: primera vez, cursor inicial en UID {cursor_inicial} (sin procesar histórico).")
-        return 0
+        return 0, 0
 
     print(f"{len(mensajes)} mail(s) enviado(s) nuevo(s) desde UID {last_uid}")
-    creados = 0
+    en_revision = 0
+    descartados = 0
     for msg in mensajes:
         # Los UID de INBOX y de Enviados son espacios distintos: el prefijo
         # evita choques con candidatos_correo.email_uid (unique).
         uid_candidato = f"S:{msg.uid}"
         if not ya_existe_candidato(client, uid_candidato):
             clasif = classify_saliente(msg.destinatario, msg.asunto, msg.cuerpo)
-            if clasif is None:
-                print(f"Enviado UID {msg.uid}: no es parte de ningún pedido, se saltea.")
+            estado = "pendiente" if clasif.es_respuesta_pedido else "descartado"
+            upsert_candidato(
+                client,
+                {
+                    "email_uid": uid_candidato,
+                    "direccion": "saliente",
+                    "fecha_correo": msg.fecha.isoformat(),
+                    "remitente": msg.remitente,
+                    "destinatario": msg.destinatario,
+                    "asunto": msg.asunto,
+                    "cuerpo_resumen": msg.cuerpo[:2000],
+                    "cuerpo_html": msg.cuerpo_html,
+                    "es_pedido_acceso": False,
+                    "es_respuesta_pedido": clasif.es_respuesta_pedido,
+                    "etiqueta_evento": clasif.etiqueta_evento,
+                    "confianza_ia": clasif.confianza_ia,
+                    "nombre_solicitante": clasif.nombre_solicitante,
+                    "fecha_propuesta": msg.fecha.date().isoformat(),
+                    "estado_revision": estado,
+                },
+            )
+            if estado == "pendiente":
+                en_revision += 1
             else:
-                upsert_candidato(
-                    client,
-                    {
-                        "email_uid": uid_candidato,
-                        "direccion": "saliente",
-                        "fecha_correo": msg.fecha.isoformat(),
-                        "remitente": msg.remitente,
-                        "destinatario": msg.destinatario,
-                        "asunto": msg.asunto,
-                        "cuerpo_resumen": msg.cuerpo[:2000],
-                        "cuerpo_html": msg.cuerpo_html,
-                        "es_pedido_acceso": False,
-                        "es_respuesta_pedido": True,
-                        "etiqueta_evento": clasif.etiqueta_evento,
-                        "confianza_ia": clasif.confianza_ia,
-                        "nombre_solicitante": clasif.nombre_solicitante,
-                        "fecha_propuesta": msg.fecha.date().isoformat(),
-                        "estado_revision": "pendiente",
-                    },
-                )
-                creados += 1
-                print(
-                    f"Enviado UID {msg.uid}: guardado para vincular "
-                    f"('{clasif.etiqueta_evento}')."
-                )
+                descartados += 1
+            print(
+                f"Enviado UID {msg.uid}: guardado como '{estado}'"
+                + (f" ('{clasif.etiqueta_evento}')." if clasif.etiqueta_evento else ".")
+            )
         update_uid_enviados(client, msg.uid)
-    return creados
+    return en_revision, descartados
 
 
 def _hostname() -> str | None:
@@ -258,9 +265,12 @@ def main() -> int:
     # Respuestas salientes (carpeta Enviados). No fatal: si falla (IMAP,
     # Gemini saturado, etc.) se avisa por consola y el cursor de enviados
     # queda donde estaba, así que la próxima corrida lo reintenta. Lo que
-    # crea cuenta como "en revisión" (queda en Respuestas para vincular).
+    # crea cuenta como "en revisión" (queda en Respuestas para vincular; lo que no es de un pedido, en
+    # descartados).
     try:
-        en_revision += procesar_enviados(client, imap_host, imap_port, imap_user, imap_pass)
+        rev_env, desc_env = procesar_enviados(client, imap_host, imap_port, imap_user, imap_pass)
+        en_revision += rev_env
+        descartados += desc_env
     except Exception as e:
         print(f"AVISO: falló el procesamiento de enviados: {e}", file=sys.stderr)
         traceback.print_exc()
