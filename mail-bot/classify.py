@@ -358,20 +358,7 @@ def remitente_excluido(remitente: str) -> str | None:
     return None
 
 
-def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
-    prompt = PROMPT_TEMPLATE.format(
-        categorias=", ".join(CATEGORIAS),
-        subcategorias=_lista_subcategorias(),
-        contexto=_leer_contexto(),
-        email_nora=EMAIL_NORA,
-        email_prosecretaria=EMAIL_PROSECRETARIA,
-        email_secretaria_actuacion_electoral=EMAIL_SECRETARIA_ACTUACION_ELECTORAL,
-        email_consejo_abierto=EMAIL_CONSEJO_ABIERTO,
-        remitente=remitente,
-        asunto=asunto,
-        cuerpo=cuerpo[:4000],
-    )
-
+def _llamar_gemini_json(prompt: str) -> dict:
     # Códigos por los que vale la pena rotar a otro modelo:
     # 429/500/503 = saturado o límite de cuota (transitorio, el pool de
     # capacidad de otro modelo puede estar libre); 404 = el modelo fue
@@ -421,7 +408,24 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
         assert ultimo_error is not None
         raise ultimo_error
     raw = (response.text or "").strip()
-    data = json.loads(raw)
+    return json.loads(raw)
+
+
+def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
+    prompt = PROMPT_TEMPLATE.format(
+        categorias=", ".join(CATEGORIAS),
+        subcategorias=_lista_subcategorias(),
+        contexto=_leer_contexto(),
+        email_nora=EMAIL_NORA,
+        email_prosecretaria=EMAIL_PROSECRETARIA,
+        email_secretaria_actuacion_electoral=EMAIL_SECRETARIA_ACTUACION_ELECTORAL,
+        email_consejo_abierto=EMAIL_CONSEJO_ABIERTO,
+        remitente=remitente,
+        asunto=asunto,
+        cuerpo=cuerpo[:4000],
+    )
+
+    data = _llamar_gemini_json(prompt)
 
     categoria = data.get("categoria_propuesta")
     if categoria not in CATEGORIAS:
@@ -437,4 +441,106 @@ def classify_mail(remitente: str, asunto: str, cuerpo: str) -> Clasificacion:
         categoria_propuesta=categoria,
         subcategoria_propuesta=data.get("subcategoria_propuesta"),
         observaciones_propuesta=data.get("observaciones_propuesta"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Correos SALIENTES (carpeta Enviados). Todo lo que sea parte de un pedido
+# queda en "Respuestas para vincular" como un punto más de la línea de
+# tiempo:
+#   - respuesta FINAL al solicitante externo -> "Respuesta final" (el
+#     panel la precarga con "Cerrar pedido" tildado);
+#   - comunicación INTERMEDIA (a Nora, Prosecretaría, Secretaría de
+#     Actuación Electoral, Consejo Abierto u otra área, o un aviso/
+#     aclaración al solicitante) -> "Envío a <área>" o similar, sin cerrar.
+# Lo que no tiene que ver con ningún pedido concreto no se guarda.
+# ---------------------------------------------------------------------------
+
+ETIQUETA_RESPUESTA_FINAL = "Respuesta final"
+
+PROMPT_SALIENTE_TEMPLATE = """Sos un asistente que ayuda a una oficina pública \
+(Cámara Nacional Electoral). Te paso un mail ENVIADO por la oficina (sale \
+de su casilla). Tenés que decidir qué papel juega dentro del trámite de un \
+pedido de acceso a la información pública.
+
+Respondé ÚNICAMENTE con un JSON válido (sin markdown, sin texto extra):
+
+{{
+  "tipo": "final" | "intermedia" | "ninguna",
+  "etiqueta_evento": "si tipo es intermedia, etiqueta corta (2-5 palabras) para la línea de tiempo; si no, null",
+  "confianza_ia": "una frase corta explicando por qué",
+  "nombre_solicitante": "nombre del solicitante ORIGINAL del pedido, o null"
+}}
+
+Reglas:
+- "final": el destinatario es una persona o entidad EXTERNA (el solicitante) \
+y el mail le entrega la respuesta definitiva (o la información, o un adjunto \
+con la respuesta) a su pedido.
+- "intermedia": el mail es parte del trámite de un pedido concreto pero NO \
+es la respuesta definitiva al solicitante. Por ejemplo: reenviar o consultar \
+el pedido a un área interna ({email_nora}, {email_prosecretaria}, \
+{email_secretaria_actuacion_electoral}, {email_consejo_abierto}, otra \
+dirección @pjn.gov.ar), acusar recibo al solicitante, pedirle una \
+aclaración, avisarle una prórroga, o responderle algo parcial.
+- "ninguna": no tiene que ver con ningún pedido concreto de un solicitante \
+(coordinación general, temas administrativos, otros asuntos).
+- Si dudás entre "final" e "intermedia", elegí "intermedia" (cerrar un \
+pedido por error es peor que dejarlo abierto).
+- Si dudás entre "intermedia" y "ninguna", elegí "ninguna".
+- "etiqueta_evento" (solo si "intermedia"): según el destinatario — \
+{email_nora} → "Envío a Nora"; {email_prosecretaria} → "Envío a \
+Prosecretaría"; {email_secretaria_actuacion_electoral} → "Envío a \
+Secretaría de Actuación Electoral"; {email_consejo_abierto} → "Envío a \
+Consejo Abierto"; solicitante externo → una frase corta específica (por \
+ejemplo "Aclaración al solicitante" o "Aviso de prórroga"); otra área \
+interna → "Envío a <área>" con el nombre del área.
+- "nombre_solicitante": el solicitante ORIGINAL del pedido (no el \
+destinatario si es un área interna). Buscalo en el saludo ("Estimado Juan \
+Pérez"), la firma o el texto citado/reenviado del hilo; si el destinatario \
+es el propio solicitante, también sirve la dirección ("To") — inferí el \
+nombre de la dirección si no hay otra pista (ej. "juan.perez@gmail.com" → \
+"Juan Perez"), o null si no hay ninguna.
+
+Destinatario: {destinatario}
+Asunto: {asunto}
+Cuerpo:
+{cuerpo}
+"""
+
+
+def classify_saliente(destinatario: str, asunto: str, cuerpo: str) -> Clasificacion | None:
+    """
+    Devuelve una Clasificacion lista para guardar como candidato en
+    "Respuestas para vincular" (etiqueta "Respuesta final" o una intermedia
+    tipo "Envío a Nora"), o None si el mail saliente no tiene que ver con
+    ningún pedido (en ese caso no se guarda nada).
+    """
+    prompt = PROMPT_SALIENTE_TEMPLATE.format(
+        email_nora=EMAIL_NORA,
+        email_prosecretaria=EMAIL_PROSECRETARIA,
+        email_secretaria_actuacion_electoral=EMAIL_SECRETARIA_ACTUACION_ELECTORAL,
+        email_consejo_abierto=EMAIL_CONSEJO_ABIERTO,
+        destinatario=destinatario,
+        asunto=asunto,
+        cuerpo=cuerpo[:4000],
+    )
+    data = _llamar_gemini_json(prompt)
+
+    tipo = data.get("tipo")
+    if tipo == "final":
+        etiqueta = ETIQUETA_RESPUESTA_FINAL
+    elif tipo == "intermedia":
+        etiqueta = (data.get("etiqueta_evento") or "").strip() or "Envío intermedio"
+    else:
+        return None
+
+    return Clasificacion(
+        es_pedido_acceso=False,
+        es_respuesta_pedido=True,
+        etiqueta_evento=etiqueta,
+        confianza_ia=data.get("confianza_ia"),
+        nombre_solicitante=data.get("nombre_solicitante"),
+        solicitud_propuesta=None,
+        categoria_propuesta=None,
+        subcategoria_propuesta=None,
     )

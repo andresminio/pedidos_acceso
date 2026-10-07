@@ -44,6 +44,17 @@ def update_sync_state(client: Client, ultimo_uid: str | None, error: str | None 
     client.table("mail_sync_state").update(payload).eq("id", 1).execute()
 
 
+def get_last_uid_enviados(client: Client) -> str | None:
+    res = client.table("mail_sync_state").select("ultimo_uid_enviados").eq("id", 1).execute()
+    if res.data:
+        return res.data[0].get("ultimo_uid_enviados")
+    return None
+
+
+def update_uid_enviados(client: Client, ultimo_uid: str) -> None:
+    client.table("mail_sync_state").update({"ultimo_uid_enviados": ultimo_uid}).eq("id", 1).execute()
+
+
 def log_run(
     client: Client,
     hostname: str | None,

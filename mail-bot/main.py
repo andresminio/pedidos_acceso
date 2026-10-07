@@ -38,17 +38,86 @@ from secrets_loader import load_secrets
 # Bitwarden Secrets Manager (proyecto marybot) e inyecta en os.environ.
 load_secrets()
 
-from classify import Clasificacion, classify_mail, remitente_excluido
-from ingest import fetch_new_messages
+from classify import Clasificacion, classify_mail, classify_saliente, remitente_excluido
+from ingest import fetch_new_messages, fetch_sent_messages
 from supabase_client import (
     get_client,
     get_last_uid,
+    get_last_uid_enviados,
     log_run,
     update_sync_state,
+    update_uid_enviados,
     upsert_candidato,
     ya_esta_cargado,
     ya_existe_candidato,
 )
+
+
+def procesar_enviados(client, imap_host: str, imap_port: int, imap_user: str, imap_pass: str) -> int:
+    """
+    Lee la carpeta de enviados de la misma casilla y deja los envíos que
+    son parte de un pedido como candidatos "pendiente" en "Respuestas para
+    vincular": la respuesta FINAL al solicitante (etiqueta "Respuesta
+    final", el panel la precarga para cerrar) y las comunicaciones
+    INTERMEDIAS (a Nora, Prosecretaría, etc., etiqueta tipo "Envío a
+    Nora", sin cerrar). Devuelve cuántos candidatos nuevos creó. Lo que no
+    tiene que ver con ningún pedido no se guarda.
+
+    Cualquier falla acá es no fatal para el resto de la corrida: el cursor
+    de enviados no avanza más allá del último mail bien procesado, así que
+    la próxima corrida retoma desde ahí.
+    """
+    last_uid = get_last_uid_enviados(client)
+    mensajes, cursor_inicial = fetch_sent_messages(
+        imap_host, imap_port, imap_user, imap_pass, last_uid
+    )
+
+    if cursor_inicial is not None:
+        # Primera vez: se toma el estado actual como punto de partida, sin
+        # traer respuestas viejas (de pedidos que seguramente ya están
+        # resueltos) a la cola de revisión.
+        update_uid_enviados(client, cursor_inicial)
+        print(f"Enviados: primera vez, cursor inicial en UID {cursor_inicial} (sin procesar histórico).")
+        return 0
+
+    print(f"{len(mensajes)} mail(s) enviado(s) nuevo(s) desde UID {last_uid}")
+    creados = 0
+    for msg in mensajes:
+        # Los UID de INBOX y de Enviados son espacios distintos: el prefijo
+        # evita choques con candidatos_correo.email_uid (unique).
+        uid_candidato = f"S:{msg.uid}"
+        if not ya_existe_candidato(client, uid_candidato):
+            clasif = classify_saliente(msg.destinatario, msg.asunto, msg.cuerpo)
+            if clasif is None:
+                print(f"Enviado UID {msg.uid}: no es parte de ningún pedido, se saltea.")
+            else:
+                upsert_candidato(
+                    client,
+                    {
+                        "email_uid": uid_candidato,
+                        "direccion": "saliente",
+                        "fecha_correo": msg.fecha.isoformat(),
+                        "remitente": msg.remitente,
+                        "destinatario": msg.destinatario,
+                        "asunto": msg.asunto,
+                        "cuerpo_resumen": msg.cuerpo[:2000],
+                        "cuerpo_html": msg.cuerpo_html,
+                        "es_pedido_acceso": False,
+                        "es_respuesta_pedido": True,
+                        "etiqueta_evento": clasif.etiqueta_evento,
+                        "confianza_ia": clasif.confianza_ia,
+                        "nombre_solicitante": clasif.nombre_solicitante,
+                        "fecha_propuesta": msg.fecha.date().isoformat(),
+                        "estado_revision": "pendiente",
+                    },
+                )
+                creados += 1
+                print(
+                    f"Enviado UID {msg.uid}: guardado para vincular "
+                    f"('{clasif.etiqueta_evento}')."
+                )
+        update_uid_enviados(client, msg.uid)
+    return creados
 
 
 def _hostname() -> str | None:
@@ -185,6 +254,16 @@ def main() -> int:
             )
             print(f"Procesados OK antes del error: {procesados_ok}/{len(mensajes)}")
             return 1
+
+    # Respuestas salientes (carpeta Enviados). No fatal: si falla (IMAP,
+    # Gemini saturado, etc.) se avisa por consola y el cursor de enviados
+    # queda donde estaba, así que la próxima corrida lo reintenta. Lo que
+    # crea cuenta como "en revisión" (queda en Respuestas para vincular).
+    try:
+        en_revision += procesar_enviados(client, imap_host, imap_port, imap_user, imap_pass)
+    except Exception as e:
+        print(f"AVISO: falló el procesamiento de enviados: {e}", file=sys.stderr)
+        traceback.print_exc()
 
     update_sync_state(client, ultimo_uid=last_uid if not mensajes else mensajes[-1].uid, error=None)
     log_run(

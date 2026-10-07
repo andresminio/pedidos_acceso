@@ -153,6 +153,58 @@ def _extract_body(msg: email.message.Message) -> tuple[str, str | None, bool]:
     return body.strip()[:MAX_BODY_CHARS], html_final, tiene_adjuntos
 
 
+def _ssl_context() -> ssl.SSLContext:
+    # El servidor (red interna del organismo) usa un certificado
+    # autofirmado. Decisión tomada con el usuario: no verificar el
+    # certificado en vez de pinnear uno, porque la conexión ya viaja
+    # por una red controlada (VPN/intranet), no por internet abierto.
+    # Para volver a exigir verificación (si en algún momento el
+    # certificado es válido), setear IMAP_VERIFY_SSL=1.
+    if os.environ.get("IMAP_VERIFY_SSL") == "1":
+        return ssl.create_default_context()
+    return ssl._create_unverified_context()
+
+
+def _parse_message(uid: str, raw: bytes) -> MailMessage:
+    msg = email.message_from_bytes(raw)
+
+    fecha_raw = msg.get("Date")
+    try:
+        fecha = parsedate_to_datetime(fecha_raw) if fecha_raw else datetime.utcnow()
+    except Exception:
+        fecha = datetime.utcnow()
+
+    body, body_html, tiene_adjuntos = _extract_body(msg)
+
+    return MailMessage(
+        uid=uid,
+        fecha=fecha,
+        remitente=_decode(msg.get("From")),
+        destinatario=_decode(msg.get("To")),
+        asunto=_decode(msg.get("Subject")),
+        cuerpo=body,
+        cuerpo_html=body_html,
+        tiene_adjuntos=tiene_adjuntos,
+    )
+
+
+def _buscar_uids(imap: imaplib.IMAP4_SSL, last_uid: str | None) -> list[str]:
+    if last_uid:
+        status, data = imap.uid("search", None, f"UID {int(last_uid) + 1}:*")
+    else:
+        status, data = imap.uid("search", None, "ALL")
+
+    if status != "OK":
+        raise RuntimeError(f"Búsqueda IMAP falló: {status}")
+
+    uids = [u.decode() for u in data[0].split()] if data and data[0] else []
+    # Ojo: "UID N:*" siempre devuelve al menos el último mensaje, aunque
+    # su UID sea menor a N (así funciona IMAP) — se filtra a mano.
+    if last_uid:
+        uids = [u for u in uids if int(u) > int(last_uid)]
+    return uids
+
+
 def fetch_new_messages(
     host: str,
     port: int,
@@ -166,31 +218,13 @@ def fetch_new_messages(
     ascendente. Si `last_uid` es None, trae solo los últimos 20 (primera
     corrida, para no volcar años de correo histórico de una).
     """
-    # El servidor (red interna del organismo) usa un certificado
-    # autofirmado. Decisión tomada con el usuario: no verificar el
-    # certificado en vez de pinnear uno, porque la conexión ya viaja
-    # por una red controlada (VPN/intranet), no por internet abierto.
-    # Para volver a exigir verificación (si en algún momento el
-    # certificado es válido), setear IMAP_VERIFY_SSL=1.
-    if os.environ.get("IMAP_VERIFY_SSL") == "1":
-        context = ssl.create_default_context()
-    else:
-        context = ssl._create_unverified_context()
     messages: list[MailMessage] = []
 
-    with imaplib.IMAP4_SSL(host, port, ssl_context=context) as imap:
+    with imaplib.IMAP4_SSL(host, port, ssl_context=_ssl_context()) as imap:
         imap.login(user, password)
         imap.select(mailbox, readonly=True)  # nunca marcar como leído
 
-        if last_uid:
-            status, data = imap.uid("search", None, f"UID {int(last_uid) + 1}:*")
-        else:
-            status, data = imap.uid("search", None, "ALL")
-
-        if status != "OK":
-            raise RuntimeError(f"Búsqueda IMAP falló: {status}")
-
-        uids = [u.decode() for u in data[0].split()] if data and data[0] else []
+        uids = _buscar_uids(imap, last_uid)
 
         # Primera corrida sin last_uid: limitar a los últimos 20 para no
         # procesar todo el historial de golpe.
@@ -201,32 +235,112 @@ def fetch_new_messages(
             status, msg_data = imap.uid("fetch", uid, "(RFC822)")
             if status != "OK" or not msg_data or msg_data[0] is None:
                 continue
-
-            raw = msg_data[0][1]
-            msg = email.message_from_bytes(raw)
-
-            fecha_raw = msg.get("Date")
-            try:
-                fecha = parsedate_to_datetime(fecha_raw) if fecha_raw else datetime.utcnow()
-            except Exception:
-                fecha = datetime.utcnow()
-
-            body, body_html, tiene_adjuntos = _extract_body(msg)
-
-            messages.append(
-                MailMessage(
-                    uid=uid,
-                    fecha=fecha,
-                    remitente=_decode(msg.get("From")),
-                    destinatario=_decode(msg.get("To")),
-                    asunto=_decode(msg.get("Subject")),
-                    cuerpo=body,
-                    cuerpo_html=body_html,
-                    tiene_adjuntos=tiene_adjuntos,
-                )
-            )
+            messages.append(_parse_message(uid, msg_data[0][1]))
 
         imap.logout()
 
     messages.sort(key=lambda m: int(m.uid))
     return messages
+
+
+# Nombres habituales de la carpeta de enviados, por si el servidor no
+# anuncia el atributo \Sent. Se puede forzar con IMAP_SENT_FOLDER.
+_NOMBRES_ENVIADOS = [
+    "Sent",
+    "INBOX.Sent",
+    "Enviados",
+    "INBOX.Enviados",
+    "Elementos enviados",
+    "Sent Items",
+    "Sent Messages",
+]
+
+
+def _carpeta_enviados(imap: imaplib.IMAP4_SSL) -> str | None:
+    forzada = os.environ.get("IMAP_SENT_FOLDER")
+    if forzada:
+        return forzada
+
+    status, data = imap.list()
+    if status != "OK" or not data:
+        return None
+
+    # Línea típica: b'(\\HasNoChildren \\Sent) "/" "Sent"'
+    carpetas: list[tuple[str, str]] = []  # (flags, nombre)
+    for item in data:
+        if not isinstance(item, bytes):
+            continue
+        m = re.match(rb'\((?P<flags>[^)]*)\)\s+(?:"[^"]*"|NIL)\s+(?P<name>.+)$', item)
+        if not m:
+            continue
+        nombre = m.group("name").decode("utf-8", errors="replace").strip()
+        if nombre.startswith('"') and nombre.endswith('"'):
+            nombre = nombre[1:-1]
+        carpetas.append((m.group("flags").decode(errors="replace"), nombre))
+
+    for flags, nombre in carpetas:
+        if "\\sent" in flags.lower():
+            return nombre
+    nombres = {n.lower(): n for _, n in carpetas}
+    for candidato in _NOMBRES_ENVIADOS:
+        if candidato.lower() in nombres:
+            return nombres[candidato.lower()]
+    return None
+
+
+def fetch_sent_messages(
+    host: str,
+    port: int,
+    user: str,
+    password: str,
+    last_uid: str | None,
+) -> tuple[list[MailMessage], str | None]:
+    """
+    Igual que fetch_new_messages pero sobre la carpeta de enviados de la
+    misma casilla. Devuelve (mensajes, nuevo_cursor_inicial):
+
+    - Si `last_uid` ya existe: mensajes con UID mayor, y None.
+    - Si es la primera vez (last_uid None): NO trae nada — para no volcar
+      al panel respuestas viejas de pedidos ya resueltos — y devuelve el
+      UID más alto actual para que main.py lo guarde como punto de
+      partida (desde ahí en adelante se procesa todo lo nuevo).
+
+    Si no se encuentra la carpeta de enviados, devuelve ([], None) y lo
+    avisa por consola (no es un error que deba frenar el resto del bot).
+    """
+    with imaplib.IMAP4_SSL(host, port, ssl_context=_ssl_context()) as imap:
+        imap.login(user, password)
+
+        carpeta = _carpeta_enviados(imap)
+        if not carpeta:
+            print(
+                "AVISO: no se encontró la carpeta de enviados — se saltea. "
+                "Seteá IMAP_SENT_FOLDER si tiene un nombre no estándar."
+            )
+            imap.logout()
+            return [], None
+
+        # Los nombres con espacios/caracteres raros hay que entrecomillarlos.
+        status, _ = imap.select(f'"{carpeta}"', readonly=True)
+        if status != "OK":
+            print(f"AVISO: no se pudo abrir la carpeta de enviados '{carpeta}'.")
+            imap.logout()
+            return [], None
+
+        uids = _buscar_uids(imap, last_uid)
+
+        if not last_uid:
+            imap.logout()
+            return [], (uids[-1] if uids else "0")
+
+        mensajes: list[MailMessage] = []
+        for uid in uids:
+            status, msg_data = imap.uid("fetch", uid, "(RFC822)")
+            if status != "OK" or not msg_data or msg_data[0] is None:
+                continue
+            mensajes.append(_parse_message(uid, msg_data[0][1]))
+
+        imap.logout()
+
+    mensajes.sort(key=lambda m: int(m.uid))
+    return mensajes, None

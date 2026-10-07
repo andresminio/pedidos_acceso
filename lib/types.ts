@@ -136,6 +136,9 @@ export interface CandidatoCorreo {
   id: string;
   email_uid: string;
   fecha_correo: string; // timestamptz ISO
+  // 'entrante' (INBOX) o 'saliente' (carpeta Enviados: respuestas finales
+  // a solicitantes detectadas por el bot — ver mail-bot/main.py).
+  direccion: "entrante" | "saliente";
   remitente: string;
   // Destinatario ("To" del correo) — solo disponible para correos leídos
   // después de sumar esta columna; antes queda en null.

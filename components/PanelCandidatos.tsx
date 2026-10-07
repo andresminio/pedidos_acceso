@@ -816,7 +816,12 @@ function FilaRespuesta({
   // Vincular no cierra el pedido por sí solo: un pedido puede tener varios
   // pasos (reenvío, respuesta de Nora, repregunta...) antes del cierre
   // real, así que la decisión de cerrar es explícita acá.
-  const [cerrarPedido, setCerrarPedido] = useState(false);
+  // Precargado en true cuando el bot detectó una "Respuesta final" (correo
+  // saliente a un solicitante): lo normal es cerrar el pedido, solo falta
+  // elegir el sub-estado. Se puede destildar.
+  const [cerrarPedido, setCerrarPedido] = useState(
+    row.etiqueta_evento === "Respuesta final"
+  );
   // Obligatorio si se tilda "Cerrar pedido" — sin esto queda un "Cerrado
   // sin especificar" que no sirve para el resumen (ver PanelResumen).
   const [subestado, setSubestado] = useState("");
@@ -905,7 +910,9 @@ function FilaRespuesta({
     <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-[var(--muted-3)]">
-          correo · {fechaCortaHora(row.fecha_correo)} · de {row.remitente}
+          {row.direccion === "saliente"
+            ? `enviado · ${fechaCortaHora(row.fecha_correo)} · para ${row.destinatario ?? "—"}`
+            : `correo · ${fechaCortaHora(row.fecha_correo)} · de ${row.remitente}`}
         </p>
       </div>
 
