@@ -94,7 +94,7 @@ function PillEstado({ estado }: { estado: string }) {
 
 // Cuántas filas se muestran de entrada en la tabla; el resto se despliega
 // con "Ver todos" (la lista completa tiene cientos de pedidos).
-const FILAS_INICIALES = 30;
+const FILAS_INICIALES = 20;
 
 export default function PanelSolicitudes() {
   const { isLoggedIn } = useAuth();
@@ -425,7 +425,7 @@ export default function PanelSolicitudes() {
             onClick={() => setVerTodos((v) => !v)}
             className="whitespace-nowrap font-medium text-[var(--accent-hover)] hover:text-[var(--accent)]"
           >
-            {verTodos ? `Ver solo los primeros ${FILAS_INICIALES}` : "Ver todos"}
+            {verTodos ? "Ver menos" : "Ver todos"}
           </button>
         </div>
       )}
