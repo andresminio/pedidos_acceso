@@ -13,7 +13,6 @@ import {
 import { anioCuatrimestreDeFecha, fechaCorta } from "@/lib/fechas";
 import { diasHabilesEntre, sumarDiasHabiles } from "@/lib/feriados";
 import { useFeriados } from "@/lib/useFeriados";
-import type { Feriados } from "@/lib/useFeriados";
 import { ESTADOS, SUBESTADOS_CERRADO } from "@/lib/types";
 import type { PedidoEvento, Solicitud, SolicitudInput } from "@/lib/types";
 import SolicitudForm from "@/components/SolicitudForm";
@@ -93,37 +92,13 @@ function PillEstado({ estado }: { estado: string }) {
   );
 }
 
-// Pill sutil junto al solicitante, solo para pedidos Pendiente: cuántos
-// días hábiles judiciales faltan para el vencimiento del plazo legal de 15
-// días, o "Plazo vencido" si ya pasó. Mismo cálculo que infoPlazo más abajo
-// (ver FilaSolicitudEdicion), pero acá corre para toda fila Pendiente
-// visible en la tabla, no solo la que está expandida.
-function PillPlazo({ fecha, feriados }: { fecha: string; feriados: Set<string> }) {
-  const vencimiento = sumarDiasHabiles(fecha, 15, feriados);
-  const hoyISO = new Date().toISOString().slice(0, 10);
-  const dias = diasHabilesEntre(hoyISO, vencimiento, feriados);
-  const vencido = dias < 0;
-  const texto = vencido
-    ? "Plazo cumplido"
-    : dias === 0
-      ? "Vence hoy"
-      : `Faltan ${dias} día${dias === 1 ? "" : "s"} hábil${dias === 1 ? "" : "es"}`;
-  return (
-    <span
-      title={`Vence el ${fechaCorta(vencimiento)}`}
-      className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ${
-        vencido
-          ? "border border-[var(--danger-border)] bg-[var(--danger-bg)] text-[var(--danger-text)]"
-          : "bg-[var(--surface-3)] text-[var(--muted-2)]"
-      }`}
-    >
-      {texto}
-    </span>
-  );
-}
+// Cuántas filas se muestran de entrada en la tabla; el resto se despliega
+// con "Ver todos" (la lista completa tiene cientos de pedidos).
+const FILAS_INICIALES = 30;
 
 export default function PanelSolicitudes() {
   const { isLoggedIn } = useAuth();
+  const [verTodos, setVerTodos] = useState(false);
   const [rows, setRows] = useState<Solicitud[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -306,28 +281,15 @@ export default function PanelSolicitudes() {
     });
   }, [rows, filtroAnio, filtroCuatrimestre, filtroEstado, busqueda]);
 
+  const visibles = useMemo(
+    () => (verTodos ? filtered : filtered.slice(0, FILAS_INICIALES)),
+    [filtered, verTodos]
+  );
+
   const anios = useMemo(
     () => Array.from(new Set(rows.map((r) => r.anio))).sort((a, b) => b - a),
     [rows]
   );
-
-  // Feriados para la pill de "faltan N días hábiles"/"Plazo vencido" que se
-  // muestra junto al solicitante en cada fila Pendiente de la tabla (no la
-  // de la fila expandida — esa ya tiene su propio useFeriados). Se calcula
-  // una sola vez acá arriba, para todas las filas visibles, en vez de que
-  // cada fila pida lo mismo por separado.
-  const aniosFeriadosLista = useMemo(() => {
-    const anioHoy = new Date().getFullYear();
-    const anios = new Set<number>([anioHoy, anioHoy + 1]);
-    for (const r of filtered) {
-      if (r.estado.trim().toLowerCase() === "pendiente" && r.fecha) {
-        anios.add(Number(r.fecha.slice(0, 4)));
-      }
-    }
-    return [...anios];
-  }, [filtered]);
-  const feriadosLista = useFeriados(aniosFeriadosLista);
-
 
   return (
     <div>
@@ -434,7 +396,7 @@ export default function PanelSolicitudes() {
                 </td>
               </tr>
             )}
-            {filtered.map((row) => (
+            {visibles.map((row) => (
               <FilaSolicitud
                 key={row.id}
                 row={row}
@@ -447,12 +409,26 @@ export default function PanelSolicitudes() {
                 onCerrarEdicion={() => setEditandoId(null)}
                 tieneCorreo={pedidosConCorreo.has(row.id) && !pedidosConRespuesta.has(row.id)}
                 tieneRespuesta={pedidosConRespuesta.has(row.id)}
-                feriadosLista={feriadosLista}
               />
             ))}
           </tbody>
         </table>
       </div>
+
+      {!loading && filtered.length > FILAS_INICIALES && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-3 text-sm">
+          <p className="text-[var(--muted-3)]">
+            Mostrando {visibles.length} de {filtered.length} pedidos.
+          </p>
+          <button
+            type="button"
+            onClick={() => setVerTodos((v) => !v)}
+            className="whitespace-nowrap font-medium text-[var(--accent-hover)] hover:text-[var(--accent)]"
+          >
+            {verTodos ? `Ver solo los primeros ${FILAS_INICIALES}` : "Ver todos"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -468,7 +444,6 @@ function FilaSolicitud({
   onCerrarEdicion,
   tieneCorreo,
   tieneRespuesta,
-  feriadosLista,
 }: {
   row: Solicitud;
   onUpdate: (id: string, patch: Partial<Solicitud>) => Promise<void>;
@@ -480,22 +455,15 @@ function FilaSolicitud({
   onCerrarEdicion: () => void;
   tieneCorreo: boolean;
   tieneRespuesta: boolean;
-  feriadosLista: Feriados;
 }) {
   const colSpanTotal = colsVisibles.size;
-  const esPendiente = row.estado.trim().toLowerCase() === "pendiente";
 
   const celdas: Record<string, ReactNode> = {
     anio: row.anio,
     cuatrimestre: row.cuatrimestre,
     fecha: <span className="whitespace-nowrap">{fechaCorta(row.fecha)}</span>,
     solicitante: (
-      <span className="inline-flex flex-wrap items-center gap-1.5">
-        <span className="font-medium text-[var(--foreground)]">{row.nombre_solicitante}</span>
-        {esPendiente && !feriadosLista.cargando && (
-          <PillPlazo fecha={row.fecha} feriados={feriadosLista.set} />
-        )}
-      </span>
+      <span className="font-medium text-[var(--foreground)]">{row.nombre_solicitante}</span>
     ),
     solicitud: (
       <span className="inline-flex max-w-xs items-center gap-1.5" title={row.solicitud}>
@@ -1177,18 +1145,12 @@ function FilaSolicitudEdicion({
               "Calculando plazo…"
             ) : infoPlazo.tipo === "pendiente" ? (
               <>
-                Plazo legal (15 días hábiles): vence el{" "}
-                <span
-                  className={
-                    infoPlazo.diasHabiles < 0
-                      ? "font-medium text-[var(--danger-text)]"
-                      : "font-medium text-[var(--fg-soft)]"
-                  }
-                >
+                Plazo legal (15 días hábiles): {infoPlazo.diasHabiles < 0 ? "venció" : "vence"} el{" "}
+                <span className="font-medium text-[var(--fg-soft)]">
                   {fechaCorta(infoPlazo.vencimiento)}
                 </span>{" "}
                 {infoPlazo.diasHabiles < 0
-                  ? `— vencido hace ${Math.abs(infoPlazo.diasHabiles)} día(s) hábil(es)`
+                  ? `— hace ${Math.abs(infoPlazo.diasHabiles)} día(s) hábil(es)`
                   : infoPlazo.diasHabiles === 0
                     ? "— vence hoy"
                     : `— faltan ${infoPlazo.diasHabiles} día(s) hábil(es)`}
