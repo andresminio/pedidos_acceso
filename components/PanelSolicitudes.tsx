@@ -611,7 +611,12 @@ function FilaSolicitudEdicion({
       .from("pedido_eventos")
       .select("*")
       .eq("pedido_id", row.id)
-      .order("fecha", { ascending: true });
+      // Por día, y dentro del mismo día por hora del correo (fecha_hora);
+      // los que no tienen hora (ej. el borrador de IA) van al final de su
+      // día, desempatados por orden de creación.
+      .order("fecha", { ascending: true })
+      .order("fecha_hora", { ascending: true, nullsFirst: false })
+      .order("creado_en", { ascending: true });
     setEventos((data as PedidoEvento[]) ?? []);
   }, [row.id]);
 

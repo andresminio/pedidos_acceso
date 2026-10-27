@@ -187,6 +187,9 @@ export interface PedidoEvento {
   id: string;
   pedido_id: string;
   fecha: string; // date ISO (yyyy-mm-dd)
+  // Hora exacta del correo (timestamptz ISO) — ordena los eventos del
+  // mismo día. null en eventos que no vienen de un correo (ej. borrador IA).
+  fecha_hora: string | null;
   etiqueta: string;
   cuerpo: string | null;
   cuerpo_html: string | null;

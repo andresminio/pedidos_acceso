@@ -309,6 +309,8 @@ export default function PanelCandidatos() {
     const { error: errEvento } = await supabase.from("pedido_eventos").insert({
       pedido_id: pedidoId,
       fecha: fechaCorreo,
+      // Hora exacta: ordena los eventos del mismo día (ver cargarEventos).
+      fecha_hora: row.fecha_correo,
       etiqueta,
       cuerpo: row.cuerpo_resumen,
       cuerpo_html: row.cuerpo_html,
