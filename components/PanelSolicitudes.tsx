@@ -1343,6 +1343,11 @@ function LineaTiempoPedido({
   eventos: PedidoEvento[];
   onAbrir: (item: PedidoEvento | "recepcion") => void;
 }) {
+  // Primer punto "Respuesta final" (el cierre): desde ahí en adelante los
+  // puntos se pintan distinto (intercambios posteriores al cierre).
+  const indiceFinal = eventos.findIndex((ev) =>
+    ev.etiqueta.trim().toLowerCase().startsWith("respuesta final")
+  );
   return (
     <div className="mt-5">
       <p className="mb-3 text-sm text-[var(--muted)]">Línea de tiempo</p>
@@ -1372,14 +1377,18 @@ function LineaTiempoPedido({
             </button>
           </div>
         )}
-        {eventos.map((ev) => (
+        {eventos.map((ev, i) => (
           <div key={ev.id} className="flex min-w-0 flex-1 items-start">
             <div className="mt-2.5 h-px min-w-2 flex-1 bg-[var(--surface-3)]" />
             <PuntoTiempo
               etiqueta={ev.etiqueta}
               fecha={ev.fecha}
               color={
-                ev.etiqueta === ETIQUETA_BORRADOR ? "bg-[var(--warning)]" : "bg-[var(--success)]"
+                ev.etiqueta === ETIQUETA_BORRADOR
+                  ? "bg-[var(--warning)]"
+                  : indiceFinal >= 0 && i >= indiceFinal
+                    ? "bg-[var(--accent-hover)]" // respuesta final y todo lo posterior: azul, como la recepción
+                    : "bg-[var(--success)]"
               }
               onClick={() => onAbrir(ev)}
             />
