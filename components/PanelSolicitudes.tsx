@@ -1346,7 +1346,9 @@ function LineaTiempoPedido({
   return (
     <div className="mt-5">
       <p className="mb-3 text-sm text-[var(--muted)]">Línea de tiempo</p>
-      <div className="flex items-start overflow-x-auto pb-2">
+      {/* Ocupa todo el ancho sin scroll: los conectores se achican para
+          que entren todos los puntos (overflow-x solo como último recurso). */}
+      <div className="flex w-full items-start overflow-x-auto pb-2">
         <PuntoTiempo
           etiqueta="Recepción"
           fecha={row.fecha}
@@ -1371,8 +1373,8 @@ function LineaTiempoPedido({
           </div>
         )}
         {eventos.map((ev) => (
-          <div key={ev.id} className="flex shrink-0 items-start">
-            <div className="mt-2.5 h-px w-12 shrink-0 bg-[var(--surface-3)]" />
+          <div key={ev.id} className="flex min-w-0 flex-1 items-start">
+            <div className="mt-2.5 h-px min-w-2 flex-1 bg-[var(--surface-3)]" />
             <PuntoTiempo
               etiqueta={ev.etiqueta}
               fecha={ev.fecha}
@@ -1669,14 +1671,14 @@ function PuntoTiempo({
     <button
       type="button"
       onClick={onClick}
-      className="flex shrink-0 flex-col items-center gap-1.5 px-3"
+      className="flex w-20 shrink-0 flex-col items-center gap-1.5 px-1"
     >
       <span className={`h-4 w-4 rounded-full ${color}`} />
       <span className="whitespace-nowrap text-xs text-[var(--muted-3)]">
         {fechaCorta(fecha)}
       </span>
       <span
-        className="max-w-32 truncate text-xs font-medium text-[var(--muted-2)]"
+        className="w-full break-words text-center text-xs font-medium leading-tight text-[var(--muted-2)]"
         title={etiqueta}
       >
         {etiqueta}
