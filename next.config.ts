@@ -24,5 +24,8 @@ export default async function nextConfig(phase: string): Promise<NextConfig> {
 
   return {
     reactStrictMode: true,
+    // El SDK de Bitwarden es un módulo nativo (.node): no se puede
+    // empaquetar con el bundler, se carga tal cual desde node_modules.
+    serverExternalPackages: ["@bitwarden/sdk-napi"],
   };
 }

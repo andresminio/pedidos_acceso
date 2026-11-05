@@ -16,7 +16,8 @@
     "googleapis": "^144.0.0",
     "web-push": "^3.6.7",
     "xlsx": "^0.18.5",
-    "dompurify": "^3.2.0"
+    "dompurify": "^3.2.0",
+    "@bitwarden/sdk-napi": "^1.0.0"
   },
   "devDependencies": {
     "typescript": "^5.6.2",
