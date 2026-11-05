@@ -9,6 +9,8 @@
 // en la práctica siempre está saturado (503) y solo hace perder tiempo
 // antes de rotar al siguiente modelo (ver mail-bot/classify.py, mismo
 // criterio).
+import { obtenerSecreto } from "@/lib/bitwardenServer";
+
 const MODELOS_FALLBACK = ["gemini-3.5-flash-lite", "gemini-3.6-flash"];
 
 function modelosAIntentar(): string[] {
@@ -28,9 +30,15 @@ const CODIGOS_REINTENTABLES = new Set([404, 429, 500, 503]);
 export async function generarConGemini(
   prompt: string
 ): Promise<{ texto: string } | { error: string; status: number }> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return { error: "GEMINI_API_KEY no configurado en el servidor.", status: 500 };
+  // La key se trae de Bitwarden (misma fuente que mail-bot/classify.py),
+  // no de una env var de Vercel: así hay una sola copia y no se
+  // desincroniza al rotarla. Ver lib/bitwardenServer.ts.
+  let apiKey: string;
+  try {
+    apiKey = await obtenerSecreto("GEMINI_API_KEY");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "error desconocido";
+    return { error: `No se pudo obtener GEMINI_API_KEY desde Bitwarden: ${message}`, status: 500 };
   }
 
   const modelos = modelosAIntentar();
@@ -40,10 +48,14 @@ export async function generarConGemini(
     const model = modelos[i];
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          // La key va en el header, no como ?key= en la URL: con las keys
+          // de formato nuevo ("AQ.") el query param devolvía 401
+          // ACCESS_TOKEN_TYPE_UNSUPPORTED. Es además lo que hace el SDK
+          // oficial que usa classify.py.
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
         }
       );
